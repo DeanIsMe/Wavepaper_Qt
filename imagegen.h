@@ -70,59 +70,6 @@ public:
     QRect getRect() const {return QRect(xLeft, yTop, width, height);}
 };
 
-template <typename T>
-class Array2DMap_C {
-private:
-    T* data = nullptr;
-public:
-    const int32_t xLeft; // Usually negative
-    const int32_t yTop; // Usually negative
-    const int32_t width;
-    const int32_t height;
-
-    explicit Array2DMap_C(int32_t xLeft_, int32_t xRight_, int32_t yTop_, int32_t yBottom_) :
-        width(xRight_ - xLeft_), height(yBottom_ - yTop_),
-        xLeft(xLeft_), yTop(yTop_) {
-        data = new T[width * height]();
-    }
-    ~Array2DMap_C() {
-        if (data != nullptr) {
-            delete data;
-        }
-    }
-
-
-    inline T& getPoint(int32_t x, int32_t y) const {
-        return data[x - xLeft + (y - yTop) * width];
-    }
-    inline void setPoint(int32_t x, int32_t y, const T& val) {
-        data[(x - xLeft) +  + (y - yTop) * width] = val;
-    }
-    inline T& getPoint(QPoint p) const {
-        return data[(p.x() - xLeft) + (p.y() - yTop) * width];
-    }
-    inline void setPoint(QPoint p, const T& val) {
-        data[(p.x() - xLeft) + (p.y() - yTop) * width] = val;
-    }
-};
-
-class CoordMapper_C {
-    // Maps Input coordinates (including negatives) to array indices
-public:
-    const int32_t xLeft; // Usually negative
-    const int32_t yTop; // Usually negatifve
-    inline QPoint coordToIndices(int32_t x, int32_t y) {
-        return QPoint(x - xLeft, y - yTop);
-    }
-    inline int32_t xToIndex(int32_t x) {
-        return x - xLeft;
-    }
-    inline int32_t yToIndex(int32_t y) {
-        return y - yTop;
-    }
-};
-
-
 typedef double fpComplex; // Float or double
 typedef std::complex<fpComplex> complex;
 typedef Array2D_C<complex> Complex2D_C;
