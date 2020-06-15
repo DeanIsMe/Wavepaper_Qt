@@ -7,6 +7,8 @@
 #include <QDebug>
 #include <complex>
 
+#define FP_TO_INT(fp) (fp + 0.5 - (fp<0))
+
 /** ****************************************************************************
  * @brief The Map2D_C class
  * A 2D array of a data type
@@ -76,6 +78,14 @@ typedef std::complex<fpComplex> complex;
 typedef Array2D_C<complex> Complex2D_C;
 typedef Array2D_C<double> Double2D_C;
 typedef Array2D_C<QRgb> Rgb2D_C;
+
+/** ****************************************************************************
+ * @brief The State_S struct
+ */
+struct State_S {
+    double imgPerSimUnit;
+};
+extern State_S state;
 
 
 inline QString RectToQString(const QRect & r) {

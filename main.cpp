@@ -1,6 +1,8 @@
 #include "mainwindow.h"
-
+#include "datatypes.h"
 #include <QApplication>
+
+State_S state;
 
 int main(int argc, char *argv[])
 {

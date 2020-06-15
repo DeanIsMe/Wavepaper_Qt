@@ -18,34 +18,31 @@ ImageGen::ImageGen()
  * @param pixData
  * @return
  */
-int ImageGen::generateImage(Rgb2D_C & pixArr) {
+int ImageGen::generateImage(Rgb2D_C & pixArr, QList<QPoint> & emLocsImg) {
     QElapsedTimer fnTimer;
     fnTimer.start();
 
-    QRect viewWindow = pixArr.getRect();
+    // This function works in image logical coordinates, which are integers
+    QRect imgRect = pixArr.getRect(); // The range that the result will be
+    // generated for, in image coordinates
 
-    QList<QPoint> emLocs;
-    emLocs.append(QPoint(30, 50));
-    emLocs.append(QPoint(50, 50));
-    emLocs.append(QPoint(70, 50));
-
-    if (emLocs.size() == 0) {
-        qWarning("No emitters! Abort drawing");
-        return 1;
+    if (emLocsImg.size() == 0) {
+        qWarning("generateImage: No emitters! Abort drawing");
+        return -1;
     }
 
     // Determine the range of the offset template
     QRect templateRange(0,0,0,0);
-    for (QPoint p : emLocs) {
-        templateRange |= viewWindow.translated(-p);
+    for (QPoint p : emLocsImg) {
+        templateRange |= imgRect.translated(-p);
         // !@# need to upgrade the use of this template function to avoid crazy big arrays
     }
     qDebug() << "Template range is " << RectToQString(templateRange);
 
     // Generate a template array of distance, depending on the offset
-    double distDelta = 0.01;
+    double simUnitPerIndex = 1 / state.imgPerSimUnit;
     Double2D_C * templateDist = new Double2D_C(templateRange);
-    calcDistArr(distDelta, *templateDist);
+    calcDistArr(simUnitPerIndex, *templateDist);
 
     // Generate a template array of the amplitudes
     double attnFactor = 1;
@@ -54,11 +51,12 @@ int ImageGen::generateImage(Rgb2D_C & pixArr) {
 
     // Generate a map of the phasors for each emitter, and sum together
     // Use the templates
-    double wavelength = 0.3;
-    Complex2D_C * phasorSumArr = new Complex2D_C(viewWindow);
-    for (QPoint p : emLocs) {
+    double wavelength = 20;
+    double wlImg = wavelength * state.imgPerSimUnit; // Wavelength in image coordinates
+    Complex2D_C * phasorSumArr = new Complex2D_C(imgRect);
+    for (QPoint p : emLocsImg) {
         double distOffset = 12.5;
-        addPhasorArr(wavelength, distOffset, *templateDist, *templateAmp, p, *phasorSumArr);
+        addPhasorArr(wlImg, distOffset, *templateDist, *templateAmp, p, *phasorSumArr);
     }
 
     // Use the resultant amplitude to fill in the pixel data
@@ -77,15 +75,15 @@ int ImageGen::generateImage(Rgb2D_C & pixArr) {
 
 /** ****************************************************************************
  * @brief ImageGen::calcDistArr
- * @param delta is the distance gap between each index
+ * @param simUnitPerIndex is the distance gap between each index
  * @param arr
  */
-void ImageGen::calcDistArr(double delta, Double2D_C & arr) {
+void ImageGen::calcDistArr(double simUnitPerIndex, Double2D_C & arr) {
     // Calculate the distance at every point
 
     for (int32_t y = arr.yTop; y < arr.yTop + arr.height; y++) {
         for (int32_t x = arr.xLeft; x < arr.xLeft + arr.width; x++) {
-            arr.setPoint(x, y, delta * sqrt((x*x) + (y*y)));
+            arr.setPoint(x, y, simUnitPerIndex * sqrt((x*x) + (y*y)));
         }
     }
     return;
