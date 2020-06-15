@@ -40,12 +40,7 @@ int ImageGen::generateImage(Rgb2D_C & pixArr) {
         templateRange |= viewWindow.translated(-p);
         // !@# need to upgrade the use of this template function to avoid crazy big arrays
     }
-    qDebug("Template range: @(%d, %d), %d x %d",
-           templateRange.x(), templateRange.y(),
-           templateRange.width(), templateRange.height());
-    qDebug("ViewWindow : @(%d, %d), %d x %d",
-           viewWindow.x(), viewWindow.y(),
-           viewWindow.width(), viewWindow.height());
+    qDebug() << "Template range is " << RectToQString(templateRange);
 
     // Generate a template array of distance, depending on the offset
     double distDelta = 0.01;

@@ -22,6 +22,7 @@ SOURCES += \
     preview.cpp
 
 HEADERS += \
+    datatypes.h \
     imagegen.h \
     mainwindow.h \
     preview.h

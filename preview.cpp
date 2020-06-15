@@ -1,6 +1,5 @@
 #include <QImage>
 #include <QPainter>
-#include <QDebug>
 #include "preview.h"
 #include "imagegen.h"
 
@@ -37,17 +36,14 @@ void Preview::paintEvent(QPaintEvent *event)
         imgGen.generateImage(pixArr);
     }
 
+    RectToQString(this->rect());
+    qDebug() << "Preview window is " << RectToQString(this->rect());
+    qDebug() << "   View window is " << RectToQString(viewWindow);
 
     QPainter painter(this);
-    painter.setPen(QColor(255,0,0));
-    painter.drawRect(QRect(0,0,10,10));
-
     painter.setWindow(viewWindow);
 
     QImage img((uchar*)pixArr.getDataPtr(), pixArr.width, pixArr.height, QImage::Format_ARGB32); // QRgb is ARGB32 (8 bits per channel)
-
-    painter.setPen(QColorConstants::Blue);
-    painter.drawRect(QRect(0,0,10,10));
 
     painter.drawImage(viewWindow.x(), viewWindow.y(), img);
 }

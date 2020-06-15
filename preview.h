@@ -2,6 +2,7 @@
 #define PREVIEW_H
 
 #include <QWidget>
+#include "datatypes.h"
 
 class Preview : public QWidget
 {
