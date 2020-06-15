@@ -15,28 +15,41 @@ void Preview::paintEvent(QPaintEvent *event)
 {
     qDebug("Paint preview");
     (void) event;
-    QRgb * pixData = new QRgb[this->width()*this->height()];
-    QImage img((uchar*)pixData, this->width(), this->height(), QImage::Format_ARGB32); // QRgb is ARGB32 (8 bits per channel)
+
+    QRect viewWindow(0, 0, this->width(), this->height());
+    //QRect viewWindow(0, 0, 100, 200);
+    viewWindow.moveCenter(QPoint(0,0));
+
+    Rgb2D_C pixArr(viewWindow);
 
     // Fill in the image data
     if (0) {
         // Test gradient
-        for (int y = 0; y < img.height(); y++) {
-            int hOff = y * img.width();
-            for (int x = 0; x < img.width(); x++) {
-                pixData[hOff + x] = qRgb(0, x * 255 / img.width(), y * 255 / img.height());
+        for (int y = pixArr.yTop; y < pixArr.yTop + pixArr.height; y++) {
+            for (int x = pixArr.xLeft; x < pixArr.xLeft + pixArr.width; x++) {
+                pixArr.setPoint(x, y, qRgb(0, x * 255 / pixArr.width, y * 255 / pixArr.height));
             }
         }
     }
     else {
         // Image Gen
         ImageGen imgGen;
-        imgGen.draw(img.width(), img.height(), pixData);
+        imgGen.generateImage(pixArr);
     }
 
+
     QPainter painter(this);
-    painter.drawImage(0, 0, img);
-    delete pixData;
+    painter.setPen(QColor(255,0,0));
+    painter.drawRect(QRect(0,0,10,10));
+
+    painter.setWindow(viewWindow);
+
+    QImage img((uchar*)pixArr.getDataPtr(), pixArr.width, pixArr.height, QImage::Format_ARGB32); // QRgb is ARGB32 (8 bits per channel)
+
+    painter.setPen(QColorConstants::Blue);
+    painter.drawRect(QRect(0,0,10,10));
+
+    painter.drawImage(viewWindow.x(), viewWindow.y(), img);
 }
 
 
