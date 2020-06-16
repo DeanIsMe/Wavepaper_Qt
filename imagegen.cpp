@@ -1,7 +1,11 @@
 #include "imagegen.h"
 #include <QList>
 #include <QElapsedTimer>
+#include <QImage>
+#include <QPainter>
+#include <QWidget>
 
+ImageGen imageGen;
 
 /** ****************************************************************************
  * @brief ImageGen::ImageGen
@@ -11,14 +15,98 @@ ImageGen::ImageGen()
 
 }
 
+
+int ImageGen::drawPreview(QWidget * targetWidget)
+{
+    qDebug("\n\nPaint preview");
+
+    QRectF simWindow(0, 0, 100, 100. * 1920./1080.);
+    simWindow.moveCenter(QPoint(0,0));
+
+    // Determine the viewing window in image coordinates
+
+    imgPerSimUnit = sqrt(targetImgPoints / simWindow.width() / simWindow.height());
+    QRect imgRect(FP_TO_INT(simWindow.x() * imgPerSimUnit),
+                  FP_TO_INT(simWindow.y() * imgPerSimUnit),
+                  FP_TO_INT(simWindow.width() * imgPerSimUnit),
+                  FP_TO_INT(simWindow.height()) * imgPerSimUnit);
+
+    if (abs(simWindow.width() / simWindow.height() / (qreal)imgRect.width() * (qreal)imgRect.height() - 1) > 0.02) {
+        qFatal("generateImage: viewWindow and simWindow are different ratios!");
+        return -1;
+    }
+
+    // Emitter locations
+    QList<EmitterF> emittersF;
+    emittersF.append(EmitterF(QPointF(-30, 0)));
+    emittersF.append(EmitterF(QPointF(0, 0)));
+    emittersF.append(EmitterF(QPointF(30, 0)));
+
+    if (emittersF.size() == 0) {
+        qWarning("No emitters! Abort drawing");
+        return -2;
+    }
+
+    qDebug() << "Simulation window is " << RectFToQString(simWindow) << "[sim units]";
+    {
+        qDebug() << "Emitter locations (sim):";
+        QStringList strList;
+        for (EmitterF e : emittersF) {
+            strList.append(e.ToString());
+        }
+        qDebug(strList.join('\n').toLatin1());
+    }
+
+    // Convert emLocs to image coordinates
+    QList<EmitterI> emittersImg;
+    for (EmitterF e : emittersF) {
+        emittersImg.append(EmitterI(e, imgPerSimUnit));
+    }
+
+    // Fill in the image data
+    Rgb2D_C pixArr(imgRect);
+
+    // Image Generator
+    ImageGen imgGen;
+    imgGen.fillImageData(pixArr, emittersImg);
+
+    if (0) {
+        // Test gradient pattern
+        for (int y = pixArr.yTop; y < pixArr.yTop + pixArr.height; y++) {
+            for (int x = pixArr.xLeft; x < pixArr.xLeft + pixArr.width; x++) {
+                pixArr.setPoint(x, y, qRgb(0, x * 255 / pixArr.width, y * 255 / pixArr.height));
+            }
+        }
+    }
+
+    qDebug() << "Preview window is " << RectToQString(targetWidget->rect()) << "[real pixels]";
+    qDebug() << "   View window is " << RectToQString(imgRect) << "[img units]";
+    {
+        qDebug() << "Emitter locations (img):";
+        QStringList strList;
+        for (EmitterI e : emittersImg) {
+            strList.append(e.ToString());
+        }
+        qDebug(strList.join('\n').toLatin1());
+    }
+
+    QPainter painter(targetWidget);
+    painter.setWindow(imgRect);
+
+    QImage img((uchar*)pixArr.getDataPtr(), pixArr.width, pixArr.height, QImage::Format_ARGB32); // QRgb is ARGB32 (8 bits per channel)
+
+    painter.drawImage(imgRect.x(), imgRect.y(), img);
+    return 0;
+}
+
 /** ****************************************************************************
- * @brief ImageGen::generateImage
+ * @brief ImageGen::fillImageData
  * @param width
  * @param height
  * @param pixData
  * @return
  */
-int ImageGen::generateImage(Rgb2D_C & pixArr, QList<QPoint> & emLocsImg) {
+int ImageGen::fillImageData(Rgb2D_C & pixArr, QList<EmitterI> & emitters) {
     QElapsedTimer fnTimer;
     fnTimer.start();
 
@@ -26,37 +114,34 @@ int ImageGen::generateImage(Rgb2D_C & pixArr, QList<QPoint> & emLocsImg) {
     QRect imgRect = pixArr.getRect(); // The range that the result will be
     // generated for, in image coordinates
 
-    if (emLocsImg.size() == 0) {
-        qWarning("generateImage: No emitters! Abort drawing");
+    if (emitters.size() == 0) {
+        qWarning("fillImageData: No emitters! Abort drawing");
         return -1;
     }
 
     // Determine the range of the offset template
     QRect templateRange(0,0,0,0);
-    for (QPoint p : emLocsImg) {
-        templateRange |= imgRect.translated(-p);
+    for (EmitterI e : emitters) {
+        templateRange |= imgRect.translated(-e.loc);
         // !@# need to upgrade the use of this template function to avoid crazy big arrays
     }
     qDebug() << "Template range is " << RectToQString(templateRange);
 
     // Generate a template array of distance, depending on the offset
-    double simUnitPerIndex = 1 / state.imgPerSimUnit;
+    double simUnitPerIndex = 1 / imgPerSimUnit;
     Double2D_C * templateDist = new Double2D_C(templateRange);
     calcDistArr(simUnitPerIndex, *templateDist);
 
     // Generate a template array of the amplitudes
-    double attnFactor = 1;
     Double2D_C * templateAmp = new Double2D_C(templateRange);
-    calcAmpArr(attnFactor, *templateDist, *templateAmp);
+    calcAmpArr(s.attnFactor, *templateDist, *templateAmp);
 
     // Generate a map of the phasors for each emitter, and sum together
     // Use the templates
-    double wavelength = 20;
-    double wlImg = wavelength * state.imgPerSimUnit; // Wavelength in image coordinates
+    double wlImg = s.wavelength * imgPerSimUnit; // Wavelength in image coordinates
     Complex2D_C * phasorSumArr = new Complex2D_C(imgRect);
-    for (QPoint p : emLocsImg) {
-        double distOffset = 12.5;
-        addPhasorArr(wlImg, distOffset, *templateDist, *templateAmp, p, *phasorSumArr);
+    for (EmitterI e : emitters) {
+        addPhasorArr(wlImg, e, *templateDist, *templateAmp, *phasorSumArr);
     }
 
     // Use the resultant amplitude to fill in the pixel data
@@ -153,13 +238,13 @@ void ImageGen::calcPhasorArr(double wavelength, double distOffset,
  * @param emLoc is the emitter location that this phasor array is calculated for
  * @param phasorArr is the output array. It also defines the view window
  */
-void ImageGen::addPhasorArr(double wavelength, double distOffset,
+void ImageGen::addPhasorArr(double wavelength, EmitterI e,
                              const Double2D_C & templateDist, const Double2D_C & templateAmp,
-                            QPoint emLoc, Complex2D_C & phasorArr) {
+                            Complex2D_C & phasorArr) {
     // phasorArray dimensions are that of the view window. emLoc is the location we're calculating for
-    QRect rect = phasorArr.getRect().translated(-emLoc); // emitter location is the center
+    QRect rect = phasorArr.getRect().translated(-e.loc); // emitter location is the center
     // Distort the phasorArr coordinates during this function, such that the emitter is at the center
-    phasorArr.translate(-emLoc);
+    phasorArr.translate(-e.loc);
 
     // Checks
     if (!templateDist.getRect().contains(phasorArr.getRect())) {
@@ -175,11 +260,11 @@ void ImageGen::addPhasorArr(double wavelength, double distOffset,
     for (int32_t y = rect.top(); y < rect.top() + rect.height(); y++) {
         for (int32_t x = rect.x(); x < rect.x() + rect.width(); x++) {
             phasorArr.addPoint(x, y,std::polar<fpComplex>(templateAmp.getPoint(x,y),
-                                                          (templateDist.getPoint(x, y) + distOffset) * radPerDist));
+                                                          (templateDist.getPoint(x, y) + e.distOffset) * radPerDist));
         }
     }
     // Restore the phasorArr coordinates
-    phasorArr.translate(emLoc);
+    phasorArr.translate(e.loc);
     return;
 }
 

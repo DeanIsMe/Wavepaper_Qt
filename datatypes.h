@@ -82,14 +82,19 @@ typedef Array2D_C<QRgb> Rgb2D_C;
 /** ****************************************************************************
  * @brief The State_S struct
  */
+// !@#$ delete me
 struct State_S {
-    double imgPerSimUnit;
+
 };
 extern State_S state;
 
 
 inline QString RectToQString(const QRect & r) {
     return QString::asprintf("%d x %d @(%d, %d)", r.width(), r.height(), r.x(), r.y());
+}
+
+inline QString RectFToQString(const QRectF & r) {
+    return QString::asprintf("%.1f x %.1f @(%.1f, %.1f)", r.width(), r.height(), r.x(), r.y());
 }
 
 
