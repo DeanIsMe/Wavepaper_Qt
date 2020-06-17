@@ -54,7 +54,7 @@ struct EmitterI { // Emitter, integer coords
 };
 
 struct Settings {
-    double wavelength = 20; // Wavelength. Simulation units
+    double wavelength = 40; // Wavelength. Simulation units
     double attnFactor = 1; // Normally 1. Amplitude drops off at rate of 1/(r^attnFactor). 1/r is standard.
     bool emittersInSync; // If true then all emitters are in phase with the same amplitude. If false, then the energizer determines phase & amplitude
     QPointF energizerLoc; // The location of the energizer that determines amplitude and phase by the distance to each emitter

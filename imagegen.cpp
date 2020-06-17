@@ -63,12 +63,22 @@ int ImageGen::drawPreview(QWidget * targetWidget)
         emittersImg.append(EmitterI(e, imgPerSimUnit));
     }
 
+    qDebug() << "Preview window is " << RectToQString(targetWidget->rect()) << "[real pixels]";
+    qDebug() << "   View window is " << RectToQString(imgRect) << "[img units]";
+    {
+        qDebug() << "Emitter locations (img):";
+        QStringList strList;
+        for (EmitterI e : emittersImg) {
+            strList.append(e.ToString());
+        }
+        qDebug(strList.join('\n').toLatin1());
+    }
+
     // Fill in the image data
     Rgb2D_C pixArr(imgRect);
 
     // Image Generator
-    ImageGen imgGen;
-    imgGen.fillImageData(pixArr, emittersImg);
+    fillImageData(pixArr, emittersImg);
 
     if (0) {
         // Test gradient pattern
@@ -144,10 +154,13 @@ int ImageGen::fillImageData(Rgb2D_C & pixArr, QList<EmitterI> & emitters) {
         addPhasorArr(wlImg, e, *templateDist, *templateAmp, *phasorSumArr);
     }
 
+    // Scaler will be 1/[emitter amplitude at half the simulation width]
+    double scaler = pow(simUnitPerIndex * imgRect.width() / 2, s.attnFactor);
+
     // Use the resultant amplitude to fill in the pixel data
     for (int y = pixArr.yTop; y < pixArr.yTop + pixArr.height; y++) {
         for (int x = pixArr.xLeft; x < pixArr.xLeft + pixArr.width; x++) {
-            pixArr.setPoint(x, y, colourAngleToQrgb(std::abs(phasorSumArr->getPoint(x, y)) * 1530 * 5., 255));
+            pixArr.setPoint(x, y, colourAngleToQrgb(std::abs(phasorSumArr->getPoint(x, y)) * scaler * 1530 * 3., 255));
         }
     }
 
@@ -203,7 +216,7 @@ void ImageGen::calcAmpArr(double attnFactor, const Double2D_C & distArr, Double2
     else {
         for (int32_t y = ampArr.yTop; y < ampArr.yTop + ampArr.height; y++) {
             for (int32_t x = ampArr.xLeft; x < ampArr.xLeft + ampArr.width; x++) {
-                ampArr.setPoint(x, y, 1/pow(distArr.getPoint(x, y), attnFactor));
+                ampArr.setPoint(x, y, pow(distArr.getPoint(x, y), -attnFactor)); // 1/r^attnFactor = r^-attnFactor
             }
         }
     }
