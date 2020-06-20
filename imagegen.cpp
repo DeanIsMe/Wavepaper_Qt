@@ -16,11 +16,11 @@ ImageGen::ImageGen()
 }
 
 /** ****************************************************************************
- * @brief ImageGen::drawPreview
+ * @brief ImageGen::DrawPreview
  * @param targetWidget
  * @return
  */
-int ImageGen::drawPreview(QWidget * targetWidget)
+int ImageGen::DrawPreview(QWidget * targetWidget)
 {
     qDebug("\n\nPaint preview");
 
@@ -71,7 +71,7 @@ int ImageGen::drawPreview(QWidget * targetWidget)
     Rgb2D_C pixArr(imgRect);
 
     // Image Generator
-    fillImageData(pixArr, emittersImg);
+    FillImageData(pixArr, emittersImg);
 
     if (0) {
         // Test gradient pattern
@@ -92,13 +92,13 @@ int ImageGen::drawPreview(QWidget * targetWidget)
 }
 
 /** ****************************************************************************
- * @brief ImageGen::fillImageData
+ * @brief ImageGen::FillImageData
  * @param width
  * @param height
  * @param pixData
  * @return
  */
-int ImageGen::fillImageData(Rgb2D_C & pixArr, QVector<EmitterI> & emitters) {
+int ImageGen::FillImageData(Rgb2D_C & pixArr, QVector<EmitterI> & emitters) {
     QElapsedTimer fnTimer;
     fnTimer.start();
 
@@ -122,18 +122,18 @@ int ImageGen::fillImageData(Rgb2D_C & pixArr, QVector<EmitterI> & emitters) {
     // Generate a template array of distance, depending on the offset
     double simUnitPerIndex = 1 / imgPerSimUnit;
     Double2D_C * templateDist = new Double2D_C(templateRange);
-    calcDistArr(simUnitPerIndex, *templateDist);
+    CalcDistArr(simUnitPerIndex, *templateDist);
 
     // Generate a template array of the amplitudes
     Double2D_C * templateAmp = new Double2D_C(templateRange);
-    calcAmpArr(s.attnFactor, *templateDist, *templateAmp);
+    CalcAmpArr(s.attnFactor, *templateDist, *templateAmp);
 
     // Generate a map of the phasors for each emitter, and sum together
     // Use the templates
     double wlImg = s.wavelength * imgPerSimUnit; // Wavelength in image coordinates
     Complex2D_C * phasorSumArr = new Complex2D_C(imgRect);
     for (EmitterI e : emitters) {
-        addPhasorArr(wlImg, e, *templateDist, *templateAmp, *phasorSumArr);
+        AddPhasorArr(wlImg, e, *templateDist, *templateAmp, *phasorSumArr);
     }
 
     // Scaler will be 1/[emitter amplitude at half the simulation width]
@@ -142,7 +142,7 @@ int ImageGen::fillImageData(Rgb2D_C & pixArr, QVector<EmitterI> & emitters) {
     // Use the resultant amplitude to fill in the pixel data
     for (int y = pixArr.yTop; y < pixArr.yTop + pixArr.height; y++) {
         for (int x = pixArr.xLeft; x < pixArr.xLeft + pixArr.width; x++) {
-            pixArr.setPoint(x, y, colourAngleToQrgb(std::abs(phasorSumArr->getPoint(x, y)) * scaler * 1530 * 3., 255));
+            pixArr.setPoint(x, y, ColourAngleToQrgb(std::abs(phasorSumArr->getPoint(x, y)) * scaler * 1530 * 3., 255));
         }
     }
 
@@ -154,11 +154,11 @@ int ImageGen::fillImageData(Rgb2D_C & pixArr, QVector<EmitterI> & emitters) {
 }
 
 /** ****************************************************************************
- * @brief ImageGen::calcDistArr
+ * @brief ImageGen::CalcDistArr
  * @param simUnitPerIndex is the distance gap between each index
  * @param arr
  */
-void ImageGen::calcDistArr(double simUnitPerIndex, Double2D_C & arr) {
+void ImageGen::CalcDistArr(double simUnitPerIndex, Double2D_C & arr) {
     // Calculate the distance at every point
 
     for (int32_t y = arr.yTop; y < arr.yTop + arr.height; y++) {
@@ -171,11 +171,11 @@ void ImageGen::calcDistArr(double simUnitPerIndex, Double2D_C & arr) {
 
 
 /** ****************************************************************************
- * @brief ImageGen::calcAmpArr
+ * @brief ImageGen::CalcAmpArr
  * @param attnFactor is normally 1. Amplitude drops off at rate of 1/(r^attnFactor). 1/r is standard.
  * @param arr
  */
-void ImageGen::calcAmpArr(double attnFactor, const Double2D_C & distArr, Double2D_C & ampArr) {
+void ImageGen::CalcAmpArr(double attnFactor, const Double2D_C & distArr, Double2D_C & ampArr) {
     // Calculate the complex phasor at every point
     if (distArr.getRect() != ampArr.getRect()) {
         qFatal("calcAmpArr distArr != ampArr! (not supported, but it could be)");
@@ -206,12 +206,12 @@ void ImageGen::calcAmpArr(double attnFactor, const Double2D_C & distArr, Double2
 }
 
 /** ****************************************************************************
- * @brief ImageGen::calcPhasorArr
+ * @brief ImageGen::CalcPhasorArr
  * @param wavelength
  * @param attnFactor is normally 1. Amplitude drops off at rate of 1/(r^attnFactor). 1/r is standard.
  * @param arr
  */
-void ImageGen::calcPhasorArr(double wavelength, double distOffset,
+void ImageGen::CalcPhasorArr(double wavelength, double distOffset,
                              const Double2D_C & distArr, const Double2D_C & ampArr, Complex2D_C & phasorArr) {
     // Calculate the complex phasor at every point
     double radPerDist = -2 * 3.14159265359 / wavelength; // Radians per unit distance, * -1
@@ -224,7 +224,7 @@ void ImageGen::calcPhasorArr(double wavelength, double distOffset,
 }
 
 /** ****************************************************************************
- * @brief ImageGen::addPhasorArr for 1 emitter, calculates the phasor at every
+ * @brief ImageGen::AddPhasorArr for 1 emitter, calculates the phasor at every
  * location in the view window and add it to phasorArr
  * @param wavelength
  * @param distOffset causes a constant phase shift on every point
@@ -233,7 +233,7 @@ void ImageGen::calcPhasorArr(double wavelength, double distOffset,
  * @param emLoc is the emitter location that this phasor array is calculated for
  * @param phasorArr is the output array. It also defines the view window
  */
-void ImageGen::addPhasorArr(double wavelength, EmitterI e,
+void ImageGen::AddPhasorArr(double wavelength, EmitterI e,
                              const Double2D_C & templateDist, const Double2D_C & templateAmp,
                             Complex2D_C & phasorArr) {
     // phasorArray dimensions are that of the view window. emLoc is the location we're calculating for
@@ -265,13 +265,13 @@ void ImageGen::addPhasorArr(double wavelength, EmitterI e,
 
 
 /** ****************************************************************************
- * @brief ImageGen::colourAngleToQrgb sets a red, green and blue bytes to a point on a colour wheel
+ * @brief ImageGen::ColourAngleToQrgb sets a red, green and blue bytes to a point on a colour wheel
  *        This is useful for a simple colour map
  * @param angle - ranges from 0 to 1529, representing the entire colour wheel
  * @param alpha is the alpha value - just passed on to the colour
  * @return
  */
-QRgb ImageGen::colourAngleToQrgb(int32_t angle, uint8_t alpha) {
+QRgb ImageGen::ColourAngleToQrgb(int32_t angle, uint8_t alpha) {
     angle = angle % 1530; // 1530 steps/values total.
     int32_t stage = angle/255; // 0 to 5
     uint8_t colour[3];
@@ -287,12 +287,12 @@ QRgb ImageGen::colourAngleToQrgb(int32_t angle, uint8_t alpha) {
 
 
 /** ****************************************************************************
- * @brief emitterArrangementToLocs determines and returns the locations of the emitters, given the arrangement
+ * @brief EmitterArrangementToLocs determines and returns the locations of the emitters, given the arrangement
  * @param arngmt
  * @param emLocsOut
  * @return
  */
-int ImageGen::emitterArrangementToLocs(const EmArrangement & arngmt, QVector<QPointF> & emLocsOut) {
+int ImageGen::EmitterArrangementToLocs(const EmArrangement & arngmt, QVector<QPointF> & emLocsOut) {
     switch (arngmt.type) {
     case EmType::blank:
         emLocsOut.resize(0);
@@ -368,7 +368,7 @@ int ImageGen::PrepareEmitters(QVector<EmitterI> emittersImg) {
     arn.count = 5;
 
     QVector<QPointF> emLocs;
-    emitterArrangementToLocs(arn, emLocs);
+    EmitterArrangementToLocs(arn, emLocs);
     QVector<EmitterF> emittersF(emLocs.size());
     for (int32_t i = 0; i < emLocs.size(); i++) {
         emittersF[i].loc = emLocs[i];

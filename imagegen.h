@@ -79,15 +79,15 @@ public:
     double imgPerSimUnit;
 public:
     ImageGen();
-    int drawPreview(QWidget *targetWidget);
-    int fillImageData(Rgb2D_C &pixArr, QVector<EmitterI> &emitters);
+    int DrawPreview(QWidget *targetWidget);
+    int FillImageData(Rgb2D_C &pixArr, QVector<EmitterI> &emitters);
 private:
-    static void calcDistArr(double simUnitPerIndex, Double2D_C &arr);
-    static void calcAmpArr(double attnFactor, const Double2D_C &distArr, Double2D_C &ampArr);
-    static void calcPhasorArr(double wavelength, double distOffset, const Double2D_C &distArr, const Double2D_C &ampArr, Complex2D_C &phasorArr);
-    static QRgb colourAngleToQrgb(int32_t angle, uint8_t alpha = 255);
-    static void addPhasorArr(double wavelength, EmitterI e, const Double2D_C &templateDist, const Double2D_C &templateAmp, Complex2D_C &phasorArr);
-    int emitterArrangementToLocs(const EmArrangement &arngmt, QVector<QPointF> &emLocsOut);
+    static void CalcDistArr(double simUnitPerIndex, Double2D_C &arr);
+    static void CalcAmpArr(double attnFactor, const Double2D_C &distArr, Double2D_C &ampArr);
+    static void CalcPhasorArr(double wavelength, double distOffset, const Double2D_C &distArr, const Double2D_C &ampArr, Complex2D_C &phasorArr);
+    static QRgb ColourAngleToQrgb(int32_t angle, uint8_t alpha = 255);
+    static void AddPhasorArr(double wavelength, EmitterI e, const Double2D_C &templateDist, const Double2D_C &templateAmp, Complex2D_C &phasorArr);
+    int EmitterArrangementToLocs(const EmArrangement &arngmt, QVector<QPointF> &emLocsOut);
     int PrepareEmitters(QVector<EmitterI> emittersImg);
 };
 
