@@ -34,6 +34,7 @@ struct EmitterF { // Emitter, floating point coords
     QPointF loc; // Simulation coordinates
     double distOffset; // determines the phase. default 0
     double amplitude; // default of 1
+    EmitterF() : loc(0,0), distOffset(0), amplitude(1) {}
     EmitterF(QPointF p) : loc(p), distOffset(0), amplitude(1) {}
     EmitterF(QPointF p, double distOffset_, double amp) : loc(p), distOffset(distOffset_), amplitude(amp) {}
     QString ToString() {return QString::asprintf("Em_f @(%5.1f, %5.1f). o=%.1f. a=%.2f.",
@@ -44,6 +45,7 @@ struct EmitterI { // Emitter, integer coords
     QPoint loc; // Image coordinates (integers)
     double distOffset; // determines the phase
     double amplitude; // default of 1
+    EmitterI() : loc(0,0), distOffset(0), amplitude(1) {}
     EmitterI(QPoint p) : loc(p), distOffset(0), amplitude(1) {}
     EmitterI(QPoint p, double distOffset_, double amp) : loc(p), distOffset(distOffset_), amplitude(amp) {}
     EmitterI(EmitterF e, double imgPerSimUnit) :
@@ -78,13 +80,15 @@ public:
 public:
     ImageGen();
     int drawPreview(QWidget *targetWidget);
-    int fillImageData(Rgb2D_C &pixArr, QList<EmitterI> &emitters);
+    int fillImageData(Rgb2D_C &pixArr, QVector<EmitterI> &emitters);
 private:
     static void calcDistArr(double simUnitPerIndex, Double2D_C &arr);
     static void calcAmpArr(double attnFactor, const Double2D_C &distArr, Double2D_C &ampArr);
     static void calcPhasorArr(double wavelength, double distOffset, const Double2D_C &distArr, const Double2D_C &ampArr, Complex2D_C &phasorArr);
     static QRgb colourAngleToQrgb(int32_t angle, uint8_t alpha = 255);
     static void addPhasorArr(double wavelength, EmitterI e, const Double2D_C &templateDist, const Double2D_C &templateAmp, Complex2D_C &phasorArr);
+    int emitterArrangementToLocs(const EmArrangement &arngmt, QVector<QPointF> &emLocsOut);
+    int PrepareEmitters(QVector<EmitterI> emittersImg);
 };
 
 extern ImageGen imageGen;

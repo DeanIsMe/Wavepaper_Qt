@@ -15,7 +15,11 @@ ImageGen::ImageGen()
 
 }
 
-
+/** ****************************************************************************
+ * @brief ImageGen::drawPreview
+ * @param targetWidget
+ * @return
+ */
 int ImageGen::drawPreview(QWidget * targetWidget)
 {
     qDebug("\n\nPaint preview");
@@ -36,35 +40,19 @@ int ImageGen::drawPreview(QWidget * targetWidget)
         return -1;
     }
 
-    // Emitter locations
-    QList<EmitterF> emittersF;
-    emittersF.append(EmitterF(QPointF(-30, 0)));
-    emittersF.append(EmitterF(QPointF(0, 0)));
-    emittersF.append(EmitterF(QPointF(30, 0)));
-
-    if (emittersF.size() == 0) {
-        qWarning("No emitters! Abort drawing");
+    QVector<EmitterI> emittersImg;
+    if (PrepareEmitters(emittersImg)) {
         return -2;
     }
 
-    qDebug() << "Simulation window is " << RectFToQString(simWindow) << "[sim units]";
-    {
-        qDebug() << "Emitter locations (sim):";
-        QStringList strList;
-        for (EmitterF e : emittersF) {
-            strList.append(e.ToString());
-        }
-        qDebug(strList.join('\n').toLatin1());
-    }
-
-    // Convert emLocs to image coordinates
-    QList<EmitterI> emittersImg;
-    for (EmitterF e : emittersF) {
-        emittersImg.append(EmitterI(e, imgPerSimUnit));
-    }
-
-    qDebug() << "Preview window is " << RectToQString(targetWidget->rect()) << "[real pixels]";
-    qDebug() << "   View window is " << RectToQString(imgRect) << "[img units]";
+//    {
+//        qDebug() << "Emitter locations (sim):";
+//        QStringList strList;
+//        for (EmitterF e : emittersF) {
+//            strList.append(e.ToString());
+//        }
+//        qDebug(strList.join('\n').toLatin1());
+//    }
     {
         qDebug() << "Emitter locations (img):";
         QStringList strList;
@@ -73,6 +61,11 @@ int ImageGen::drawPreview(QWidget * targetWidget)
         }
         qDebug(strList.join('\n').toLatin1());
     }
+
+
+    qDebug() << "Simulation window is " << RectFToQString(simWindow) << "[sim units]";
+    qDebug() << "Preview window is " << RectToQString(targetWidget->rect()) << "[real pixels]";
+    qDebug() << "   View window is " << RectToQString(imgRect) << "[img units]";
 
     // Fill in the image data
     Rgb2D_C pixArr(imgRect);
@@ -87,17 +80,6 @@ int ImageGen::drawPreview(QWidget * targetWidget)
                 pixArr.setPoint(x, y, qRgb(0, x * 255 / pixArr.width, y * 255 / pixArr.height));
             }
         }
-    }
-
-    qDebug() << "Preview window is " << RectToQString(targetWidget->rect()) << "[real pixels]";
-    qDebug() << "   View window is " << RectToQString(imgRect) << "[img units]";
-    {
-        qDebug() << "Emitter locations (img):";
-        QStringList strList;
-        for (EmitterI e : emittersImg) {
-            strList.append(e.ToString());
-        }
-        qDebug(strList.join('\n').toLatin1());
     }
 
     QPainter painter(targetWidget);
@@ -116,7 +98,7 @@ int ImageGen::drawPreview(QWidget * targetWidget)
  * @param pixData
  * @return
  */
-int ImageGen::fillImageData(Rgb2D_C & pixArr, QList<EmitterI> & emitters) {
+int ImageGen::fillImageData(Rgb2D_C & pixArr, QVector<EmitterI> & emitters) {
     QElapsedTimer fnTimer;
     fnTimer.start();
 
@@ -310,7 +292,7 @@ QRgb ImageGen::colourAngleToQrgb(int32_t angle, uint8_t alpha) {
  * @param emLocsOut
  * @return
  */
-int emitterArrangementToLocs(const EmArrangement & arngmt, QVector<QPointF> & emLocsOut) {
+int ImageGen::emitterArrangementToLocs(const EmArrangement & arngmt, QVector<QPointF> & emLocsOut) {
     switch (arngmt.type) {
     case EmType::blank:
         emLocsOut.resize(0);
@@ -367,6 +349,47 @@ int emitterArrangementToLocs(const EmArrangement & arngmt, QVector<QPointF> & em
         for (int32_t i = 0; i < len/2; i++) {
             emLocsOut[len + i] = mirror.map(emLocsOut[i]);
         }
+    }
+    return 0;
+}
+
+
+/** ****************************************************************************
+ * @brief PrepareEmitters
+ * @param emittersImg
+ */
+int ImageGen::PrepareEmitters(QVector<EmitterI> emittersImg) {
+
+    // Emitter locations
+    EmArrangement arn;
+    arn.type = EmType::arc;
+    arn.arcRadius = 30;
+    arn.arcAng = 90;
+    arn.count = 5;
+
+    QVector<QPointF> emLocs;
+    emitterArrangementToLocs(arn, emLocs);
+    QVector<EmitterF> emittersF(emLocs.size());
+    for (int32_t i = 0; i < emLocs.size(); i++) {
+        emittersF[i].loc = emLocs[i];
+    }
+
+    /*
+    QList<EmitterF> emittersF;
+    emittersF.append(EmitterF(QPointF(-30, 0)));
+    emittersF.append(EmitterF(QPointF(0, 0)));
+    emittersF.append(EmitterF(QPointF(30, 0)));
+    */
+
+    if (emittersF.size() == 0) {
+        qWarning("No emitters! Abort drawing");
+        return -2;
+    }
+
+    // Convert emLocs to image coordinates
+    emittersImg.resize(emittersF.size());
+    for (int32_t i = 0; i < emLocs.size(); i++) {
+        emittersImg[i] = EmitterI(emittersF[i], imgPerSimUnit);
     }
     return 0;
 }
