@@ -304,3 +304,69 @@ QRgb ImageGen::colourAngleToQrgb(int32_t angle, uint8_t alpha) {
 }
 
 
+/** ****************************************************************************
+ * @brief emitterArrangementToLocs determines and returns the locations of the emitters, given the arrangement
+ * @param arngmt
+ * @param emLocsOut
+ * @return
+ */
+int emitterArrangementToLocs(const EmArrangement & arngmt, QVector<QPointF> & emLocsOut) {
+    switch (arngmt.type) {
+    case EmType::blank:
+        emLocsOut.resize(0);
+        break;
+    case EmType::arc:
+        emLocsOut.resize(arngmt.count);
+        for (int32_t i = 0; i < emLocsOut.size(); i++) {
+            // First, calc the angle from +ve x to start at
+            double angle = 3 * 3.1415926/2 + arngmt.arcAng * ((i-0.5)/arngmt.count - 0.5);
+            emLocsOut[i] = QPointF(arngmt.arcRadius * cos(angle), arngmt.arcRadius * sin(angle));
+        }
+        break;
+    case EmType::line:
+        emLocsOut.resize(arngmt.count);
+        if (arngmt.count == 1) {
+            emLocsOut[0] = QPointF(0, 0);
+        }
+        else {
+            double step = 1.0/(arngmt.count-1.0);
+            for (int32_t i = 0; i < emLocsOut.size(); i++) {
+                emLocsOut[i] = QPointF(arngmt.lenTotal * (-0.5 + i * step), 0);
+            }
+        }
+        break;
+    case EmType::square:
+        // !@#$ implement!
+        break;
+    case EmType::custom:
+        emLocsOut = arngmt.customLocs;
+        break;
+    }
+
+    // Rotate and translate the scatterers, if needed (about the origin)
+    QTransform transform;
+    transform.rotate(-arngmt.rotation);
+    transform.translate(arngmt.center.x(), arngmt.center.y());
+    for (QPointF &p : emLocsOut) {
+        p = transform.map(p)   ;
+    }
+
+    // Mirror
+    if (arngmt.mirrorHor) {
+        int32_t len = emLocsOut.size();
+        emLocsOut.resize(len * 2);
+        QTransform mirror(-1., 0., 0., 1., 0, 0);
+        for (int32_t i = 0; i < len/2; i++) {
+            emLocsOut[len + i] = mirror.map(emLocsOut[i]);
+        }
+    }
+    if (arngmt.mirrorVert) {
+        int32_t len = emLocsOut.size();
+        emLocsOut.resize(len * 2);
+        QTransform mirror(1., 0., 0., -1., 0, 0);
+        for (int32_t i = 0; i < len/2; i++) {
+            emLocsOut[len + i] = mirror.map(emLocsOut[i]);
+        }
+    }
+    return 0;
+}
