@@ -28,7 +28,7 @@ int ImageGen::DrawPreview(QWidget * targetWidget)
     simWindow.moveCenter(QPoint(0,0));
 
     // Determine the viewing window in image coordinates
-
+    targetImgPoints = 100000;
     imgPerSimUnit = sqrt(targetImgPoints / simWindow.width() / simWindow.height());
     QRect imgRect(FP_TO_INT(simWindow.x() * imgPerSimUnit),
                   FP_TO_INT(simWindow.y() * imgPerSimUnit),
@@ -45,14 +45,7 @@ int ImageGen::DrawPreview(QWidget * targetWidget)
         return -2;
     }
 
-//    {
-//        qDebug() << "Emitter locations (sim):";
-//        QStringList strList;
-//        for (EmitterF e : emittersF) {
-//            strList.append(e.ToString());
-//        }
-//        qDebug(strList.join('\n').toLatin1());
-//    }
+
     {
         qDebug() << "Emitter locations (img):";
         QStringList strList;
@@ -142,7 +135,7 @@ int ImageGen::FillImageData(Rgb2D_C & pixArr, QVector<EmitterI> & emitters) {
     // Use the resultant amplitude to fill in the pixel data
     for (int y = pixArr.yTop; y < pixArr.yTop + pixArr.height; y++) {
         for (int x = pixArr.xLeft; x < pixArr.xLeft + pixArr.width; x++) {
-            pixArr.setPoint(x, y, ColourAngleToQrgb(std::abs(phasorSumArr->getPoint(x, y)) * scaler * 1530 * 3., 255));
+            pixArr.setPoint(x, y, ColourAngleToQrgb(std::abs(phasorSumArr->getPoint(x, y)) * scaler * 1530 * 1.5, 255));
         }
     }
 
@@ -301,7 +294,7 @@ int ImageGen::EmitterArrangementToLocs(const EmArrangement & arngmt, QVector<QPo
         emLocsOut.resize(arngmt.count);
         for (int32_t i = 0; i < emLocsOut.size(); i++) {
             // First, calc the angle from +ve x to start at
-            double angle = 3 * 3.1415926/2 + arngmt.arcAng * ((i-0.5)/arngmt.count - 0.5);
+            double angle = 3 * 3.1415926/2 + arngmt.arcAng * ((double)i/(double)(arngmt.count-1) - 0.5);
             emLocsOut[i] = QPointF(arngmt.arcRadius * cos(angle), arngmt.arcRadius * sin(angle));
         }
         break;
@@ -323,6 +316,13 @@ int ImageGen::EmitterArrangementToLocs(const EmArrangement & arngmt, QVector<QPo
     case EmType::custom:
         emLocsOut = arngmt.customLocs;
         break;
+    }
+
+    {
+        qDebug() << "Emitter locations (sim):";
+        for (QPointF e : emLocsOut) {
+            qDebug() << e.x() << ", " << e.y();
+        }
     }
 
     // Rotate and translate the scatterers, if needed (about the origin)
@@ -358,17 +358,30 @@ int ImageGen::EmitterArrangementToLocs(const EmArrangement & arngmt, QVector<QPo
  * @brief PrepareEmitters
  * @param emittersImg
  */
-int ImageGen::PrepareEmitters(QVector<EmitterI> emittersImg) {
+int ImageGen::PrepareEmitters(QVector<EmitterI> & emittersImg) {
 
-    // Emitter locations
-    EmArrangement arn;
-    arn.type = EmType::arc;
-    arn.arcRadius = 30;
-    arn.arcAng = 90;
-    arn.count = 5;
+    // Get all arrangements !@#$ TODO
+    QList<EmArrangement> arngmtList;
 
+    { // Dummy arrangement
+        // Emitter locations
+        EmArrangement arn;
+        arn.type = EmType::arc;
+        arn.arcRadius = 30;
+        arn.arcAng = 3.14159/2;
+        arn.count = 5;
+        arngmtList.append(arn);
+    }
+
+    // Build a vector of all emitter locations from the arrangements
     QVector<QPointF> emLocs;
-    EmitterArrangementToLocs(arn, emLocs);
+    for (EmArrangement arn : arngmtList) {
+        QVector<QPointF> thisEmLocs;
+        EmitterArrangementToLocs(arn, thisEmLocs);
+        emLocs.append(thisEmLocs);
+    }
+
+    // Create emitters from the locations
     QVector<EmitterF> emittersF(emLocs.size());
     for (int32_t i = 0; i < emLocs.size(); i++) {
         emittersF[i].loc = emLocs[i];

@@ -16,7 +16,7 @@ enum class EmType {
 
 struct EmArrangement {
     EmType type = EmType::blank;
-    QPointF center;
+    QPointF center = QPointF(0,0);
     int count = 1;
     double rotation = 0; // in radians
     bool mirrorHor = false;
@@ -87,8 +87,8 @@ private:
     static void CalcPhasorArr(double wavelength, double distOffset, const Double2D_C &distArr, const Double2D_C &ampArr, Complex2D_C &phasorArr);
     static QRgb ColourAngleToQrgb(int32_t angle, uint8_t alpha = 255);
     static void AddPhasorArr(double wavelength, EmitterI e, const Double2D_C &templateDist, const Double2D_C &templateAmp, Complex2D_C &phasorArr);
-    int EmitterArrangementToLocs(const EmArrangement &arngmt, QVector<QPointF> &emLocsOut);
-    int PrepareEmitters(QVector<EmitterI> emittersImg);
+    static int EmitterArrangementToLocs(const EmArrangement &arngmt, QVector<QPointF> &emLocsOut);
+    int PrepareEmitters(QVector<EmitterI> &emittersImg);
 };
 
 extern ImageGen imageGen;
