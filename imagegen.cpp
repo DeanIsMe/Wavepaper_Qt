@@ -2,7 +2,6 @@
 #include <QList>
 #include <QElapsedTimer>
 #include <QImage>
-#include <QPainter>
 #include <QWidget>
 
 ImageGen imageGen;
@@ -45,17 +44,7 @@ int ImageGen::DrawPreview(QWidget * targetWidget)
         return -2;
     }
 
-
-    {
-        qDebug() << "Emitter locations (img):";
-        QStringList strList;
-        for (EmitterI e : emittersImg) {
-            strList.append(e.ToString());
-        }
-        qDebug(strList.join('\n').toLatin1());
-    }
-
-
+    DebugEmitterLocs(emittersImg);
     qDebug() << "Simulation window is " << RectFToQString(simWindow) << "[sim units]";
     qDebug() << "Preview window is " << RectToQString(targetWidget->rect()) << "[real pixels]";
     qDebug() << "   View window is " << RectToQString(imgRect) << "[img units]";
@@ -81,6 +70,10 @@ int ImageGen::DrawPreview(QWidget * targetWidget)
     QImage img((uchar*)pixArr.getDataPtr(), pixArr.width, pixArr.height, QImage::Format_ARGB32); // QRgb is ARGB32 (8 bits per channel)
 
     painter.drawImage(imgRect.x(), imgRect.y(), img);
+
+    // Draw the emitters
+    DrawEmitters(painter, emittersImg);
+
     return 0;
 }
 
@@ -387,13 +380,6 @@ int ImageGen::PrepareEmitters(QVector<EmitterI> & emittersImg) {
         emittersF[i].loc = emLocs[i];
     }
 
-    /*
-    QList<EmitterF> emittersF;
-    emittersF.append(EmitterF(QPointF(-30, 0)));
-    emittersF.append(EmitterF(QPointF(0, 0)));
-    emittersF.append(EmitterF(QPointF(30, 0)));
-    */
-
     if (emittersF.size() == 0) {
         qWarning("No emitters! Abort drawing");
         return -2;
@@ -405,4 +391,41 @@ int ImageGen::PrepareEmitters(QVector<EmitterI> & emittersImg) {
         emittersImg[i] = EmitterI(emittersF[i], imgPerSimUnit);
     }
     return 0;
+}
+
+
+/** ****************************************************************************
+ * @brief ImageGen::DrawEmitters
+ * @param painter
+ * @param emitterImg
+ */
+void ImageGen::DrawEmitters(QPainter& painter, const QVector<EmitterI>& emittersImg) {
+    painter.setBrush(QBrush(QColorConstants::Black));
+    painter.setPen(QPen());
+    double emitterRadiusImg = s.emitterRadius * imgPerSimUnit;
+    for (EmitterI e : emittersImg) {
+        painter.drawEllipse((double)e.loc.x(), (double)e.loc.y(), emitterRadiusImg, emitterRadiusImg);
+    }
+}
+
+/** ****************************************************************************
+ * @brief ImageGen::DebugEmitterLocs
+ * @param emittersImg
+ */
+void ImageGen::DebugEmitterLocs(const QVector<EmitterI> &emittersImg) {
+    qDebug() << "Emitter locations (img):";
+    QStringList strList;
+    for (EmitterI e : emittersImg) {
+        strList.append(e.ToString());
+    }
+    qDebug(strList.join('\n').toLatin1());
+}
+
+void ImageGen::DebugEmitterLocs(const QVector<EmitterF> &emittersF) {
+    qDebug() << "Emitter locations (sim):";
+    QStringList strList;
+    for (EmitterF e : emittersF) {
+        strList.append(e.ToString());
+    }
+    qDebug(strList.join('\n').toLatin1());
 }

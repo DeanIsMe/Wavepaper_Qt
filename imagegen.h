@@ -4,6 +4,7 @@
 #include <QPoint>
 #include <QRect>
 #include <QList>
+#include <QPainter>
 #include "datatypes.h"
 
 enum class EmType {
@@ -58,6 +59,7 @@ struct EmitterI { // Emitter, integer coords
 struct Settings {
     double wavelength = 40; // Wavelength. Simulation units
     double attnFactor = 1; // Normally 1. Amplitude drops off at rate of 1/(r^attnFactor). 1/r is standard.
+    double emitterRadius = 3; // Emitter radius, simulation units
     bool emittersInSync; // If true then all emitters are in phase with the same amplitude. If false, then the energizer determines phase & amplitude
     QPointF energizerLoc; // The location of the energizer that determines amplitude and phase by the distance to each emitter
     QList<EmArrangement> emArrangements;
@@ -89,6 +91,10 @@ private:
     static void AddPhasorArr(double wavelength, EmitterI e, const Double2D_C &templateDist, const Double2D_C &templateAmp, Complex2D_C &phasorArr);
     static int EmitterArrangementToLocs(const EmArrangement &arngmt, QVector<QPointF> &emLocsOut);
     int PrepareEmitters(QVector<EmitterI> &emittersImg);
+    void DrawEmitters(QPainter &painter, const QVector<EmitterI> &emittersImg);
+
+    void DebugEmitterLocs(const QVector<EmitterI>& emittersImg);
+    void DebugEmitterLocs(const QVector<EmitterF> &emittersF);
 };
 
 extern ImageGen imageGen;
