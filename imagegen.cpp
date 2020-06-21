@@ -139,6 +139,18 @@ int ImageGen::FillImageData(Rgb2D_C & pixArr, QVector<EmitterI> & emitters) {
     return 0;
 }
 
+/**
+ * @brief ImageGen::GetActiveArrangement
+ * @return
+ */
+EmArrangement *ImageGen::GetActiveArrangement()
+{
+    if (arngmtList.size() == 0) {
+        return nullptr;
+    }
+    return &arngmtList.last();
+}
+
 /** ****************************************************************************
  * @brief ImageGen::CalcDistArr
  * @param simUnitPerIndex is the distance gap between each index
@@ -353,17 +365,8 @@ int ImageGen::EmitterArrangementToLocs(const EmArrangement & arngmt, QVector<QPo
  */
 int ImageGen::PrepareEmitters(QVector<EmitterI> & emittersImg) {
 
-    // Get all arrangements !@#$ TODO
-    QList<EmArrangement> arngmtList;
-
-    { // Dummy arrangement
-        // Emitter locations
-        EmArrangement arn;
-        arn.type = EmType::arc;
-        arn.arcRadius = 30;
-        arn.arcAng = 3.14159/2;
-        arn.count = 5;
-        arngmtList.append(arn);
+    if (arngmtList.size() == 0) {
+        arngmtList.append(DefaultArrangement());
     }
 
     // Build a vector of all emitter locations from the arrangements
@@ -428,4 +431,18 @@ void ImageGen::DebugEmitterLocs(const QVector<EmitterF> &emittersF) {
         strList.append(e.ToString());
     }
     qDebug(strList.join('\n').toLatin1());
+}
+
+/**
+ * @brief ImageGen::DefaultArrangement
+ * @return
+ */
+EmArrangement ImageGen::DefaultArrangement() {
+    EmArrangement arn;
+    arn.type = EmType::arc;
+    arn.arcRadius = 30;
+    arn.arcAng = 3.14159/2;
+    arn.count = 5;
+    arngmtList.append(arn);
+    return arn;
 }

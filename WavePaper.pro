@@ -17,6 +17,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     imagegen.cpp \
+    interact.cpp \
     main.cpp \
     mainwindow.cpp \
     preview.cpp
@@ -24,6 +25,7 @@ SOURCES += \
 HEADERS += \
     datatypes.h \
     imagegen.h \
+    interact.h \
     mainwindow.h \
     preview.h
 

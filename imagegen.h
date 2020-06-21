@@ -75,6 +75,8 @@ struct Settings {
  */
 class ImageGen
 {
+private:
+    QList<EmArrangement> arngmtList;
 public:
     Settings s;
     double targetImgPoints = 100000; // Total number of points in the preview
@@ -83,6 +85,7 @@ public:
     ImageGen();
     int DrawPreview(QWidget *targetWidget);
     int FillImageData(Rgb2D_C &pixArr, QVector<EmitterI> &emitters);
+    EmArrangement* GetActiveArrangement();
 private:
     static void CalcDistArr(double simUnitPerIndex, Double2D_C &arr);
     static void CalcAmpArr(double attnFactor, const Double2D_C &distArr, Double2D_C &ampArr);
@@ -95,6 +98,7 @@ private:
 
     void DebugEmitterLocs(const QVector<EmitterI>& emittersImg);
     void DebugEmitterLocs(const QVector<EmitterF> &emittersF);
+    EmArrangement DefaultArrangement();
 };
 
 extern ImageGen imageGen;
