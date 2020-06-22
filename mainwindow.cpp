@@ -3,7 +3,8 @@
 #include <QLayout>
 #include <QWidget>
 #include <QPushButton>
-#include "preview.h"
+#include "previewscene.h"
+#include "imagegen.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -11,27 +12,38 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    Preview * winPreview = new Preview;
+    QWidget * central = new QWidget;
+    setCentralWidget(central);
+    QHBoxLayout * layoutCentral = new QHBoxLayout;
+    central->setLayout(layoutCentral);
 
-    QWidget * winEmitter = new QWidget;
-    QVBoxLayout * layoutVert = new QVBoxLayout;
-
+    // Example button column
+    QVBoxLayout * layoutButtonCol = new QVBoxLayout;
 
     QPushButton * btnGo = new QPushButton("Go");
     QPushButton * btnTwo = new QPushButton("Two");
-    layoutVert->addWidget(btnGo);
-    layoutVert->addWidget(btnTwo);
+    layoutButtonCol->addWidget(btnGo);
+    layoutButtonCol->addWidget(btnTwo);
 
-    winEmitter->setLayout(layoutVert);
+    layoutCentral->addLayout(layoutButtonCol);
 
-    QHBoxLayout * layoutHor = new QHBoxLayout;
-    layoutHor->addWidget(winEmitter);
-    layoutHor->addWidget(winPreview);
+    imageGen.InitViewAreas();
 
-    QWidget * central = new QWidget;
-    central->setLayout(layoutHor);
+    PreviewView * previewView = new PreviewView(this);
+    layoutCentral->addWidget(previewView);
 
-    setCentralWidget(central);
+    PreviewScene * previewScene = new PreviewScene;
+
+    imageGen.AddEmitters(previewScene);
+    previewView->setScene(previewScene);
+
+    QImage image;
+    imageGen.GenerateImage(image);
+    previewScene->addPixmap(QPixmap::fromImage(image, Qt::AutoColor));
+
+
+    //imageGen.DrawPreview(previewView);
+
 }
 
 MainWindow::~MainWindow()

@@ -5,7 +5,9 @@
 #include <QRect>
 #include <QList>
 #include <QPainter>
+#include <QGraphicsView>
 #include "datatypes.h"
+#include "previewscene.h"
 
 enum class EmType {
     blank,
@@ -81,11 +83,19 @@ public:
     Settings s;
     double targetImgPoints = 100000; // Total number of points in the preview
     double imgPerSimUnit;
+    QRectF simArea; // The rectangle of the image view area (simulation coordinates)
+    QRect imgArea; // The rectangle of the image view area (image coordinates)
+    QSize outResolution; // The output will be rendered to this resolution
+    qreal aspectRatio() const {return (qreal)outResolution.width() / (qreal)outResolution.height();}
+
 public:
     ImageGen();
-    int DrawPreview(QWidget *targetWidget);
-    int FillImageData(Rgb2D_C &pixArr, QVector<EmitterI> &emitters);
+    int DrawPreview(QGraphicsView *targetWidget);
+    int GenerateImage(QImage &imageOut);
+    int DrawEmitters(QWidget * targetWidget);
     EmArrangement* GetActiveArrangement();
+    int AddEmitters(PreviewScene *scene);
+    int InitViewAreas();
 private:
     static void CalcDistArr(double simUnitPerIndex, Double2D_C &arr);
     static void CalcAmpArr(double attnFactor, const Double2D_C &distArr, Double2D_C &ampArr);

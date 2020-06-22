@@ -20,14 +20,14 @@ SOURCES += \
     interact.cpp \
     main.cpp \
     mainwindow.cpp \
-    preview.cpp
+    previewscene.cpp
 
 HEADERS += \
     datatypes.h \
     imagegen.h \
     interact.h \
     mainwindow.h \
-    preview.h
+    previewscene.h
 
 FORMS += \
     mainwindow.ui

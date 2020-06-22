@@ -11,7 +11,28 @@ ImageGen imageGen;
  */
 ImageGen::ImageGen()
 {
+    InitViewAreas();
+}
 
+
+int ImageGen::InitViewAreas() {
+    outResolution = QSize(1080, 1920);
+    simArea = QRectF(0, 0, 100, 100. / aspectRatio());
+    simArea.moveCenter(QPoint(0,0));
+
+    // Determine the viewing window in image coordinates
+    targetImgPoints = 100000;
+    imgPerSimUnit = sqrt(targetImgPoints / simArea.width() / simArea.height());
+    imgArea = QRect(FP_TO_INT(simArea.x() * imgPerSimUnit),
+                  FP_TO_INT(simArea.y() * imgPerSimUnit),
+                  FP_TO_INT(simArea.width() * imgPerSimUnit),
+                  FP_TO_INT(simArea.height()) * imgPerSimUnit);
+
+    if (abs(simArea.width() / simArea.height() / (qreal)imgArea.width() * (qreal)imgArea.height() - 1) > 0.02) {
+        qFatal("generateImage: viewWindow and simWindow are different ratios!");
+        return -1;
+    }
+    return 0;
 }
 
 /** ****************************************************************************
@@ -19,88 +40,75 @@ ImageGen::ImageGen()
  * @param targetWidget
  * @return
  */
-int ImageGen::DrawPreview(QWidget * targetWidget)
+int ImageGen::DrawPreview(QGraphicsView *targetWidget)
 {
     qDebug("\n\nPaint preview");
-
-    QRectF simWindow(0, 0, 100, 100. * 1920./1080.);
-    simWindow.moveCenter(QPoint(0,0));
-
-    // Determine the viewing window in image coordinates
-    targetImgPoints = 100000;
-    imgPerSimUnit = sqrt(targetImgPoints / simWindow.width() / simWindow.height());
-    QRect imgRect(FP_TO_INT(simWindow.x() * imgPerSimUnit),
-                  FP_TO_INT(simWindow.y() * imgPerSimUnit),
-                  FP_TO_INT(simWindow.width() * imgPerSimUnit),
-                  FP_TO_INT(simWindow.height()) * imgPerSimUnit);
-
-    if (abs(simWindow.width() / simWindow.height() / (qreal)imgRect.width() * (qreal)imgRect.height() - 1) > 0.02) {
-        qFatal("generateImage: viewWindow and simWindow are different ratios!");
+    if (InitViewAreas()) {
         return -1;
     }
 
-    QVector<EmitterI> emittersImg;
-    if (PrepareEmitters(emittersImg)) {
-        return -2;
-    }
-
-    DebugEmitterLocs(emittersImg);
-    qDebug() << "Simulation window is " << RectFToQString(simWindow) << "[sim units]";
     qDebug() << "Preview window is " << RectToQString(targetWidget->rect()) << "[real pixels]";
-    qDebug() << "   View window is " << RectToQString(imgRect) << "[img units]";
 
-    // Fill in the image data
-    Rgb2D_C pixArr(imgRect);
+    // Generate the image
+    QImage image;
+    GenerateImage(image);
 
-    // Image Generator
-    FillImageData(pixArr, emittersImg);
-
-    if (0) {
-        // Test gradient pattern
-        for (int y = pixArr.yTop; y < pixArr.yTop + pixArr.height; y++) {
-            for (int x = pixArr.xLeft; x < pixArr.xLeft + pixArr.width; x++) {
-                pixArr.setPoint(x, y, qRgb(0, x * 255 / pixArr.width, y * 255 / pixArr.height));
-            }
-        }
-    }
-
+    // Paint the image
+    // !@#$ FIX THIS!
     QPainter painter(targetWidget);
-    painter.setWindow(imgRect);
+    painter.setWindow(imgArea);
+    //painter.setBrush(img);
+    targetWidget->render(&painter, imgArea, imgArea);
 
-    QImage img((uchar*)pixArr.getDataPtr(), pixArr.width, pixArr.height, QImage::Format_ARGB32); // QRgb is ARGB32 (8 bits per channel)
-
-    painter.drawImage(imgRect.x(), imgRect.y(), img);
+    // painter.drawImage(imgRect.x(), imgRect.y(), image);
 
     // Draw the emitters
-    DrawEmitters(painter, emittersImg);
+    //DrawEmitters(painter, emittersImg);
 
     return 0;
 }
 
+
 /** ****************************************************************************
- * @brief ImageGen::FillImageData
- * @param width
- * @param height
- * @param pixData
+ * @brief ImageDataDealloc is a small utility function to clean up mem alloc
+ * @note Function is of type QImageCleanupFunction
+ * @param info
+ */
+void ImageDataDealloc(void * info) {
+    if (info) {
+        delete static_cast<Rgb2D_C*>(info);
+    }
+}
+
+/** ****************************************************************************
+ * @brief ImageGen::GenerateImage
+ * @param imgRect - the range that the result will be generated for, in image coordinates
+ * @param emitters
+ * @param imageOut is the output
  * @return
  */
-int ImageGen::FillImageData(Rgb2D_C & pixArr, QVector<EmitterI> & emitters) {
+int ImageGen::GenerateImage(QImage& imageOut) {
     QElapsedTimer fnTimer;
     fnTimer.start();
-
     // This function works in image logical coordinates, which are integers
-    QRect imgRect = pixArr.getRect(); // The range that the result will be
-    // generated for, in image coordinates
 
+    QVector<EmitterI> emitters;
+    if (PrepareEmitters(emitters)) {
+        return -2;
+    }
     if (emitters.size() == 0) {
         qWarning("fillImageData: No emitters! Abort drawing");
         return -1;
     }
 
+    DebugEmitterLocs(emitters);
+    qDebug() << "Simulation window is " << RectFToQString(simArea) << "[sim units]";
+    qDebug() << "   View window is " << RectToQString(imgArea) << "[img units]";
+
     // Determine the range of the offset template
     QRect templateRange(0,0,0,0);
     for (EmitterI e : emitters) {
-        templateRange |= imgRect.translated(-e.loc);
+        templateRange |= imgArea.translated(-e.loc);
         // !@# need to upgrade the use of this template function to avoid crazy big arrays
     }
     qDebug() << "Template range is " << RectToQString(templateRange);
@@ -117,27 +125,41 @@ int ImageGen::FillImageData(Rgb2D_C & pixArr, QVector<EmitterI> & emitters) {
     // Generate a map of the phasors for each emitter, and sum together
     // Use the templates
     double wlImg = s.wavelength * imgPerSimUnit; // Wavelength in image coordinates
-    Complex2D_C * phasorSumArr = new Complex2D_C(imgRect);
+    Complex2D_C * phasorSumArr = new Complex2D_C(imgArea);
     for (EmitterI e : emitters) {
         AddPhasorArr(wlImg, e, *templateDist, *templateAmp, *phasorSumArr);
     }
 
     // Scaler will be 1/[emitter amplitude at half the simulation width]
-    double scaler = pow(simUnitPerIndex * imgRect.width() / 2, s.attnFactor);
+    double scaler = pow(simUnitPerIndex * imgArea.width() / 2, s.attnFactor);
 
     // Use the resultant amplitude to fill in the pixel data
-    for (int y = pixArr.yTop; y < pixArr.yTop + pixArr.height; y++) {
-        for (int x = pixArr.xLeft; x < pixArr.xLeft + pixArr.width; x++) {
-            pixArr.setPoint(x, y, ColourAngleToQrgb(std::abs(phasorSumArr->getPoint(x, y)) * scaler * 1530 * 1.5, 255));
+    Rgb2D_C* pixArr = new Rgb2D_C(imgArea);
+    for (int y = pixArr->yTop; y < pixArr->yTop + pixArr->height; y++) {
+        for (int x = pixArr->xLeft; x < pixArr->xLeft + pixArr->width; x++) {
+            pixArr->setPoint(x, y, ColourAngleToQrgb(std::abs(phasorSumArr->getPoint(x, y)) * scaler * 1530 * 1.5, 255));
         }
     }
+
+    if (0) {
+        // Test gradient pattern
+        for (int y = pixArr->yTop; y < pixArr->yTop + pixArr->height; y++) {
+            for (int x = pixArr->xLeft; x < pixArr->xLeft + pixArr->width; x++) {
+                pixArr->setPoint(x, y, qRgb(0, x * 255 / pixArr->width, y * 255 / pixArr->height));
+            }
+        }
+    }
+    imageOut = QImage((uchar*)pixArr->getDataPtr(), pixArr->width, pixArr->height, QImage::Format_ARGB32,
+                      &ImageDataDealloc, pixArr);
+                      // QRgb is ARGB32 (8 bits per channel)
 
     delete templateDist;
     delete templateAmp;
     delete phasorSumArr;
-    qDebug("ImageGen::draw took %4lld ms", fnTimer.elapsed());
+    qDebug("ImageGen::GenerateImage took %4lld ms", fnTimer.elapsed());
     return 0;
 }
+
 
 /**
  * @brief ImageGen::GetActiveArrangement
@@ -323,13 +345,6 @@ int ImageGen::EmitterArrangementToLocs(const EmArrangement & arngmt, QVector<QPo
         break;
     }
 
-    {
-        qDebug() << "Emitter locations (sim):";
-        for (QPointF e : emLocsOut) {
-            qDebug() << e.x() << ", " << e.y();
-        }
-    }
-
     // Rotate and translate the scatterers, if needed (about the origin)
     QTransform transform;
     transform.rotate(-arngmt.rotation);
@@ -393,6 +408,46 @@ int ImageGen::PrepareEmitters(QVector<EmitterI> & emittersImg) {
     for (int32_t i = 0; i < emLocs.size(); i++) {
         emittersImg[i] = EmitterI(emittersF[i], imgPerSimUnit);
     }
+    return 0;
+}
+
+/**
+ * @brief ImageGen::AddEmitters
+ * @param scene
+ * @return
+ */
+int ImageGen::AddEmitters(PreviewScene* scene)
+{
+    QVector<EmitterI> emittersImg;
+    if (PrepareEmitters(emittersImg)) {
+        return -2;
+    }
+
+    double emitterDiameterImg = s.emitterRadius * imgPerSimUnit * 2.0;
+    QPen pen(QColorConstants::Black);
+    QBrush brush(QColorConstants::Red);
+
+    for (EmitterI e : emittersImg) {
+        scene->addEllipse((double)e.loc.x(), (double)e.loc.y(), emitterDiameterImg, emitterDiameterImg, pen, brush);
+    }
+    return 0;
+}
+
+/**
+ * @brief ImageGen::DrawEmitters
+ * @param targetWidget
+ * @return
+ */
+int ImageGen::DrawEmitters(QWidget * targetWidget)
+{
+    QVector<EmitterI> emittersImg;
+    if (PrepareEmitters(emittersImg)) {
+        return -2;
+    }
+
+    QPainter painter(targetWidget);
+
+    DrawEmitters(painter, emittersImg);
     return 0;
 }
 
