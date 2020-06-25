@@ -60,7 +60,7 @@ int ImageGen::DrawPreview(QGraphicsView *targetWidget)
     //painter.setBrush(img);
     targetWidget->render(&painter, imgArea, imgArea);
 
-    // painter.drawImage(imgRect.x(), imgRect.y(), image);
+    // painter.drawImage(imgArea.x(), imgArea.y(), image);
 
     // Draw the emitters
     //DrawEmitters(painter, emittersImg);
@@ -92,22 +92,27 @@ int ImageGen::GenerateImage(QImage& imageOut) {
     fnTimer.start();
     // This function works in image logical coordinates, which are integers
 
-    QVector<EmitterI> emitters;
-    if (PrepareEmitters(emitters)) {
+    QVector<EmitterF> emittersF;
+    if (PrepareEmitters(emittersF)) {
         return -2;
     }
-    if (emitters.size() == 0) {
+    if (emittersF.size() == 0) {
         qWarning("fillImageData: No emitters! Abort drawing");
         return -1;
     }
+    // Convert emLocs to image coordinates
+    QVector<EmitterI> emittersImg(emittersF.size());
+    for (int32_t i = 0; i < emittersF.size(); i++) {
+        emittersImg[i] = EmitterI(emittersF[i], imgPerSimUnit);
+    }
 
-    DebugEmitterLocs(emitters);
+    DebugEmitterLocs(emittersImg);
     qDebug() << "Simulation window is " << RectFToQString(simArea) << "[sim units]";
     qDebug() << "   View window is " << RectToQString(imgArea) << "[img units]";
 
     // Determine the range of the offset template
     QRect templateRange(0,0,0,0);
-    for (EmitterI e : emitters) {
+    for (EmitterI e : emittersImg) {
         templateRange |= imgArea.translated(-e.loc);
         // !@# need to upgrade the use of this template function to avoid crazy big arrays
     }
@@ -126,7 +131,7 @@ int ImageGen::GenerateImage(QImage& imageOut) {
     // Use the templates
     double wlImg = s.wavelength * imgPerSimUnit; // Wavelength in image coordinates
     Complex2D_C * phasorSumArr = new Complex2D_C(imgArea);
-    for (EmitterI e : emitters) {
+    for (EmitterI e : emittersImg) {
         AddPhasorArr(wlImg, e, *templateDist, *templateAmp, *phasorSumArr);
     }
 
@@ -378,7 +383,7 @@ int ImageGen::EmitterArrangementToLocs(const EmArrangement & arngmt, QVector<QPo
  * @brief PrepareEmitters
  * @param emittersImg
  */
-int ImageGen::PrepareEmitters(QVector<EmitterI> & emittersImg) {
+int ImageGen::PrepareEmitters(QVector<EmitterF> & emitters) {
 
     if (arngmtList.size() == 0) {
         arngmtList.append(DefaultArrangement());
@@ -393,21 +398,16 @@ int ImageGen::PrepareEmitters(QVector<EmitterI> & emittersImg) {
     }
 
     // Create emitters from the locations
-    QVector<EmitterF> emittersF(emLocs.size());
+    emitters.resize(emLocs.size());
     for (int32_t i = 0; i < emLocs.size(); i++) {
-        emittersF[i].loc = emLocs[i];
+        emitters[i].loc = emLocs[i];
     }
 
-    if (emittersF.size() == 0) {
+    if (emitters.size() == 0) {
         qWarning("No emitters! Abort drawing");
         return -2;
     }
 
-    // Convert emLocs to image coordinates
-    emittersImg.resize(emittersF.size());
-    for (int32_t i = 0; i < emLocs.size(); i++) {
-        emittersImg[i] = EmitterI(emittersF[i], imgPerSimUnit);
-    }
     return 0;
 }
 
@@ -416,10 +416,10 @@ int ImageGen::PrepareEmitters(QVector<EmitterI> & emittersImg) {
  * @param scene
  * @return
  */
-int ImageGen::AddEmitters(PreviewScene* scene)
+int ImageGen::AddEmitters(QGraphicsScene* scene)
 {
-    QVector<EmitterI> emittersImg;
-    if (PrepareEmitters(emittersImg)) {
+    QVector<EmitterF> emitters;
+    if (PrepareEmitters(emitters)) {
         return -2;
     }
 
@@ -427,8 +427,8 @@ int ImageGen::AddEmitters(PreviewScene* scene)
     QPen pen(QColorConstants::Black);
     QBrush brush(QColorConstants::Red);
 
-    for (EmitterI e : emittersImg) {
-        scene->addEllipse((double)e.loc.x(), (double)e.loc.y(), emitterDiameterImg, emitterDiameterImg, pen, brush);
+    for (EmitterF e : emitters) {
+        scene->addEllipse(e.loc.x(), e.loc.y(), emitterDiameterImg, emitterDiameterImg, pen, brush);
     }
     return 0;
 }
@@ -440,6 +440,7 @@ int ImageGen::AddEmitters(PreviewScene* scene)
  */
 int ImageGen::DrawEmitters(QWidget * targetWidget)
 {
+    /*
     QVector<EmitterI> emittersImg;
     if (PrepareEmitters(emittersImg)) {
         return -2;
@@ -448,6 +449,7 @@ int ImageGen::DrawEmitters(QWidget * targetWidget)
     QPainter painter(targetWidget);
 
     DrawEmitters(painter, emittersImg);
+    */
     return 0;
 }
 
@@ -458,12 +460,14 @@ int ImageGen::DrawEmitters(QWidget * targetWidget)
  * @param emitterImg
  */
 void ImageGen::DrawEmitters(QPainter& painter, const QVector<EmitterI>& emittersImg) {
+    /*
     painter.setBrush(QBrush(QColorConstants::Black));
     painter.setPen(QPen());
     double emitterRadiusImg = s.emitterRadius * imgPerSimUnit;
     for (EmitterI e : emittersImg) {
         painter.drawEllipse((double)e.loc.x(), (double)e.loc.y(), emitterRadiusImg, emitterRadiusImg);
     }
+    */
 }
 
 /** ****************************************************************************
@@ -477,6 +481,7 @@ void ImageGen::DebugEmitterLocs(const QVector<EmitterI> &emittersImg) {
         strList.append(e.ToString());
     }
     qDebug(strList.join('\n').toLatin1());
+    qDebug("\n");
 }
 
 void ImageGen::DebugEmitterLocs(const QVector<EmitterF> &emittersF) {
@@ -486,6 +491,7 @@ void ImageGen::DebugEmitterLocs(const QVector<EmitterF> &emittersF) {
         strList.append(e.ToString());
     }
     qDebug(strList.join('\n').toLatin1());
+    qDebug("\n");
 }
 
 /**
@@ -498,6 +504,6 @@ EmArrangement ImageGen::DefaultArrangement() {
     arn.arcRadius = 30;
     arn.arcAng = 3.14159/2;
     arn.count = 5;
-    arngmtList.append(arn);
+    arn.mirrorHor = arn.mirrorVert = false;
     return arn;
 }

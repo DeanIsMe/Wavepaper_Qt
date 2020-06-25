@@ -58,6 +58,11 @@ public:
     // QWidget interface
 protected:
     void resizeEvent(QResizeEvent *event) override;
+
+
+    // QGraphicsView interface
+protected:
+    void drawBackground(QPainter *painter, const QRectF &rect);
 };
 
 #endif // PREVIEWSCENE_H

@@ -86,7 +86,8 @@ public:
     QRectF simArea; // The rectangle of the image view area (simulation coordinates)
     QRect imgArea; // The rectangle of the image view area (image coordinates)
     QSize outResolution; // The output will be rendered to this resolution
-    qreal aspectRatio() const {return (qreal)outResolution.width() / (qreal)outResolution.height();}
+    qreal aspectRatio() const {return (qreal)outResolution.width() / (qreal)outResolution.height();} // Width / height
+    QImage image;
 
 public:
     ImageGen();
@@ -94,7 +95,7 @@ public:
     int GenerateImage(QImage &imageOut);
     int DrawEmitters(QWidget * targetWidget);
     EmArrangement* GetActiveArrangement();
-    int AddEmitters(PreviewScene *scene);
+    int AddEmitters(QGraphicsScene *scene);
     int InitViewAreas();
 private:
     static void CalcDistArr(double simUnitPerIndex, Double2D_C &arr);
@@ -103,12 +104,12 @@ private:
     static QRgb ColourAngleToQrgb(int32_t angle, uint8_t alpha = 255);
     static void AddPhasorArr(double wavelength, EmitterI e, const Double2D_C &templateDist, const Double2D_C &templateAmp, Complex2D_C &phasorArr);
     static int EmitterArrangementToLocs(const EmArrangement &arngmt, QVector<QPointF> &emLocsOut);
-    int PrepareEmitters(QVector<EmitterI> &emittersImg);
+    int PrepareEmitters(QVector<EmitterF> &emitters);
     void DrawEmitters(QPainter &painter, const QVector<EmitterI> &emittersImg);
 
-    void DebugEmitterLocs(const QVector<EmitterI>& emittersImg);
-    void DebugEmitterLocs(const QVector<EmitterF> &emittersF);
-    EmArrangement DefaultArrangement();
+    static void DebugEmitterLocs(const QVector<EmitterI>& emittersImg);
+    static void DebugEmitterLocs(const QVector<EmitterF> &emittersF);
+    static EmArrangement DefaultArrangement();
 };
 
 extern ImageGen imageGen;
