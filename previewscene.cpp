@@ -22,6 +22,7 @@ void PreviewScene::Cancel()
         if (grpActive) {
             *grpActive = grpBackup;
         }
+        imageGen.setTargetImgPoints(backupImgPoints);
     }
     active = false;
 }
@@ -40,6 +41,8 @@ void PreviewScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
         return;
     }
     active = true;
+    backupImgPoints = imageGen.targetImgPoints;
+    imageGen.setTargetImgPoints(40000);
     grpBackup = *grpActive; // Save, so that it can be reverted
     pressPos = event->scenePos();
 }
@@ -51,9 +54,10 @@ void PreviewScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
 void PreviewScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
     qDebug("Scene release event (%7.2f, %7.2f)", event-> scenePos().x(), event->scenePos().y());
+    imageGen.setTargetImgPoints(backupImgPoints);
     imageGen.GenerateImage(imageGen.image);
     this->invalidate(imageGen.simArea); // Forces redraw
-    this->views()[0]->resetCachedContent(); // Delete previously cached background to force redraw
+    //this->views()[0]->resetCachedContent(); // Delete previously cached background to force redraw
     this->views()[0]->update();
     active = false;
 }
@@ -66,6 +70,8 @@ void PreviewScene::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
     qreal moveDistY = event->scenePos().y() - pressPos.y();
     grpActive->arcRadius = std::max(0.0, grpBackup.arcRadius - moveDistY);
     AddEmitters(imageGen);
+    imageGen.GenerateImage(imageGen.image);
+    this->invalidate(imageGen.simArea); // Forces redraw
 }
 
 /** ****************************************************************************

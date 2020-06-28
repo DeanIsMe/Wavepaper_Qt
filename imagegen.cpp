@@ -21,17 +21,30 @@ int ImageGen::InitViewAreas() {
     simArea.moveCenter(QPoint(0,0));
 
     // Determine the viewing window in image coordinates
-    targetImgPoints = 10000; // !@#$ 100000; // !@#$
+    targetImgPoints = 200000;
     imgPerSimUnit = sqrt(targetImgPoints / simArea.width() / simArea.height());
     QRectF imgAreaF(simArea.topLeft() * imgPerSimUnit, simArea.bottomRight() * imgPerSimUnit);
     imgArea = imgAreaF.toRect();
 
     if (abs(simArea.width() / simArea.height() / (qreal)imgArea.width() * (qreal)imgArea.height() - 1) > 0.02) {
-        qFatal("generateImage: viewWindow and simWindow are different ratios!");
+        qFatal("InitViewAreas: viewWindow and simWindow are different ratios!");
         return -1;
     }
     return 0;
 }
+
+void ImageGen::setTargetImgPoints(qint32 imgPoints) {
+    // Determine the viewing window in image coordinates
+    targetImgPoints = imgPoints;
+    imgPerSimUnit = sqrt(targetImgPoints / simArea.width() / simArea.height());
+    QRectF imgAreaF(simArea.topLeft() * imgPerSimUnit, simArea.bottomRight() * imgPerSimUnit);
+    imgArea = imgAreaF.toRect();
+
+    if (abs(simArea.width() / simArea.height() / (qreal)imgArea.width() * (qreal)imgArea.height() - 1) > 0.02) {
+        qFatal("setTargetImgPoints: viewWindow and simWindow are different ratios!");
+    }
+}
+
 
 /** ****************************************************************************
  * @brief ImageGen::DrawPreview

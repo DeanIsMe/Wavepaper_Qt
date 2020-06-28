@@ -82,11 +82,14 @@ private:
     QList<EmArrangement> arngmtList;
 public:
     Settings s;
+
+    // The block below must be kept in sync
     double targetImgPoints = 100000; // Total number of points in the preview
     double imgPerSimUnit;
     QRectF simArea; // The rectangle of the image view area (simulation coordinates)
     QRect imgArea; // The rectangle of the image view area (image coordinates)
     QSize outResolution; // The output will be rendered to this resolution
+
     qreal aspectRatio() const {return (qreal)outResolution.width() / (qreal)outResolution.height();} // Width / height
     QImage image;
     qreal testVal = 0;
@@ -112,6 +115,7 @@ public:
     static void DebugEmitterLocs(const QVector<EmitterI>& emittersImg);
     static void DebugEmitterLocs(const QVector<EmitterF> &emittersF);
     static EmArrangement DefaultArrangement();
+    void setTargetImgPoints(qint32 imgPoints);
 };
 
 extern ImageGen imageGen;

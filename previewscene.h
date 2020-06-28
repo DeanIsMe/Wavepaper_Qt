@@ -21,6 +21,7 @@ private:
     EmArrangement grpBackup;
     EmArrangement * grpActive;
     QPointF pressPos;
+    qint32 backupImgPoints;
     void Cancel();
 
 public:
