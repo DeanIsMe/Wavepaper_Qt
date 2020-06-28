@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include "datatypes.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -15,7 +16,14 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+    PreviewView * previewView;
+    PreviewScene * previewScene;
+
 private:
     Ui::MainWindow *ui;
+
+    // QWidget interface
+protected:
+    void keyPressEvent(QKeyEvent *event);
 };
 #endif // MAINWINDOW_H

@@ -3,6 +3,7 @@
 
 #include <QGraphicsScene>
 #include <QGraphicsView>
+#include "imagegen.h"
 
 /*
  *
@@ -36,6 +37,8 @@ class PreviewScene : public QGraphicsScene
     Q_OBJECT
 public:
     explicit PreviewScene(QObject *parent = nullptr);
+    QGraphicsItemGroup * emItemGroup = nullptr;
+    void ListAllItems();
 
 signals:
 
@@ -48,6 +51,10 @@ protected:
 //    void mousePressEvent(QMouseEvent *event);
 //    void mouseReleaseEvent(QMouseEvent *event);
 //    void mouseMoveEvent(QMouseEvent *event);
+
+    // Custom
+public:
+    void AddEmitters(ImageGen &imageGen);
 };
 
 

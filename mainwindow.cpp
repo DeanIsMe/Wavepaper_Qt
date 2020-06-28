@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QPushButton>
 #include <QBrush>
+#include <QKeyEvent>
 #include "previewscene.h"
 #include "imagegen.h"
 
@@ -17,6 +18,10 @@ protected:
     void paintEvent(QPaintEvent *event);
 };
 
+/** ****************************************************************************
+ * @brief MainWindow::MainWindow
+ * @param parent
+ */
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -40,14 +45,15 @@ MainWindow::MainWindow(QWidget *parent)
 
     imageGen.InitViewAreas();
 
-    PreviewView * previewView = new PreviewView(this);
+    previewView = new PreviewView(this);
     layoutCentral->addWidget(previewView);
 
-    PreviewScene * previewScene = new PreviewScene(this);
+    previewScene = new PreviewScene(previewView);
     previewScene->setSceneRect(imageGen.simArea);
     previewView->setScene(previewScene);
 
-    imageGen.AddEmitters(previewScene);
+    previewView->setSceneRect(imageGen.simArea);
+    previewScene->AddEmitters(imageGen);
 
     imageGen.GenerateImage(imageGen.image); // Stored for use later
 
@@ -62,6 +68,7 @@ MainWindow::MainWindow(QWidget *parent)
 //    QBrush brush(*image);
 //    previewScene->setBackgroundBrush(brush);
 
+    previewScene->AddEmitters(imageGen);
 
     // Print test image
     TestWidget * testCanvas = new TestWidget(this);
@@ -72,6 +79,31 @@ MainWindow::MainWindow(QWidget *parent)
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::keyPressEvent(QKeyEvent *event)
+{
+    qDebug() << "Key pressed: " << event->key();
+    switch (event->key()) {
+    case Qt::Key_1:
+        imageGen.s.wavelength *= 1.5;
+        imageGen.GenerateImage(imageGen.image);
+        qDebug("Image regenerated. Wavelength = %.2f", imageGen.s.wavelength);
+        break;
+    case Qt::Key_2:
+        imageGen.testVal += 10;
+        qDebug("TestVal = %.2f", imageGen.testVal);
+        break;
+    case Qt::Key_3:
+        imageGen.testVal -= 10;
+        qDebug("TestVal = %.2f", imageGen.testVal);
+        break;
+    case Qt::Key_4:
+        previewScene->ListAllItems();
+        break;
+    default:
+        event->ignore();
+    }
 }
 
 

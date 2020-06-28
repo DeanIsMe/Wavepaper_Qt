@@ -23,10 +23,8 @@ int ImageGen::InitViewAreas() {
     // Determine the viewing window in image coordinates
     targetImgPoints = 100000;
     imgPerSimUnit = sqrt(targetImgPoints / simArea.width() / simArea.height());
-    imgArea = QRect(FP_TO_INT(simArea.x() * imgPerSimUnit),
-                  FP_TO_INT(simArea.y() * imgPerSimUnit),
-                  FP_TO_INT(simArea.width() * imgPerSimUnit),
-                  FP_TO_INT(simArea.height()) * imgPerSimUnit);
+    QRectF imgAreaF(simArea.topLeft() * imgPerSimUnit, simArea.bottomRight() * imgPerSimUnit);
+    imgArea = imgAreaF.toRect();
 
     if (abs(simArea.width() / simArea.height() / (qreal)imgArea.width() * (qreal)imgArea.height() - 1) > 0.02) {
         qFatal("generateImage: viewWindow and simWindow are different ratios!");
@@ -93,7 +91,7 @@ int ImageGen::GenerateImage(QImage& imageOut) {
     // This function works in image logical coordinates, which are integers
 
     QVector<EmitterF> emittersF;
-    if (PrepareEmitters(emittersF)) {
+    if (GetEmitterList(emittersF)) {
         return -2;
     }
     if (emittersF.size() == 0) {
@@ -142,7 +140,7 @@ int ImageGen::GenerateImage(QImage& imageOut) {
     Rgb2D_C* pixArr = new Rgb2D_C(imgArea);
     for (int y = pixArr->yTop; y < pixArr->yTop + pixArr->height; y++) {
         for (int x = pixArr->xLeft; x < pixArr->xLeft + pixArr->width; x++) {
-            pixArr->setPoint(x, y, ColourAngleToQrgb(std::abs(phasorSumArr->getPoint(x, y)) * scaler * 1530 * 1.5, 255));
+            pixArr->setPoint(x, y, ColourAngleToQrgb(std::abs(phasorSumArr->getPoint(x, y)) * scaler * 1530 * 0.2, 255));
         }
     }
 
@@ -150,7 +148,9 @@ int ImageGen::GenerateImage(QImage& imageOut) {
         // Test gradient pattern
         for (int y = pixArr->yTop; y < pixArr->yTop + pixArr->height; y++) {
             for (int x = pixArr->xLeft; x < pixArr->xLeft + pixArr->width; x++) {
-                pixArr->setPoint(x, y, qRgb(0, x * 255 / pixArr->width, y * 255 / pixArr->height));
+                pixArr->setPoint(x, y,
+                                 ColourAngleToQrgb(((x - pixArr->xLeft) * 1530) / pixArr->width +
+                                                   ((y - pixArr->yTop) * 1000) / pixArr->height, 255));
             }
         }
     }
@@ -383,7 +383,7 @@ int ImageGen::EmitterArrangementToLocs(const EmArrangement & arngmt, QVector<QPo
  * @brief PrepareEmitters
  * @param emittersImg
  */
-int ImageGen::PrepareEmitters(QVector<EmitterF> & emitters) {
+int ImageGen::GetEmitterList(QVector<EmitterF> & emitters) {
 
     if (arngmtList.size() == 0) {
         arngmtList.append(DefaultArrangement());
@@ -412,34 +412,13 @@ int ImageGen::PrepareEmitters(QVector<EmitterF> & emitters) {
 }
 
 /**
- * @brief ImageGen::AddEmitters
- * @param scene
- * @return
- */
-int ImageGen::AddEmitters(QGraphicsScene* scene)
-{
-    QVector<EmitterF> emitters;
-    if (PrepareEmitters(emitters)) {
-        return -2;
-    }
-
-    double emitterDiameterImg = s.emitterRadius * imgPerSimUnit * 2.0;
-    QPen pen(QColorConstants::Black);
-    QBrush brush(QColorConstants::Red);
-
-    for (EmitterF e : emitters) {
-        scene->addEllipse(e.loc.x(), e.loc.y(), emitterDiameterImg, emitterDiameterImg, pen, brush);
-    }
-    return 0;
-}
-
-/**
  * @brief ImageGen::DrawEmitters
  * @param targetWidget
  * @return
  */
 int ImageGen::DrawEmitters(QWidget * targetWidget)
 {
+    // !@# remove?
     /*
     QVector<EmitterI> emittersImg;
     if (PrepareEmitters(emittersImg)) {
@@ -505,5 +484,7 @@ EmArrangement ImageGen::DefaultArrangement() {
     arn.arcAng = 3.14159/2;
     arn.count = 5;
     arn.mirrorHor = arn.mirrorVert = false;
+    arn.center = QPointF(0, 0);
+    arn.count = 12;
     return arn;
 }

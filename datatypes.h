@@ -2,12 +2,17 @@
 #define DATATYPES_H
 
 #include <QString>
+#include <QStringBuilder>
 #include <QRect>
 #include <QRgb>
 #include <QDebug>
 #include <complex>
 
 #define FP_TO_INT(fp) (fp + 0.5 - (fp<0))
+
+class ImageGen;
+class PreviewView;
+class PreviewScene;
 
 /** ****************************************************************************
  * @brief The Map2D_C class
