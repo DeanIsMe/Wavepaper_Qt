@@ -21,7 +21,7 @@ int ImageGen::InitViewAreas() {
     simArea.moveCenter(QPoint(0,0));
 
     // Determine the viewing window in image coordinates
-    targetImgPoints = 100000;
+    targetImgPoints = 10000; // !@#$ 100000; // !@#$
     imgPerSimUnit = sqrt(targetImgPoints / simArea.width() / simArea.height());
     QRectF imgAreaF(simArea.topLeft() * imgPerSimUnit, simArea.bottomRight() * imgPerSimUnit);
     imgArea = imgAreaF.toRect();

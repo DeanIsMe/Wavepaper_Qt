@@ -70,6 +70,7 @@ struct Settings {
     } view;
     // Controlling information displayed
     double emitterRadius = 2.; // Emitter radius, simulation units
+
 };
 
 /** ****************************************************************************

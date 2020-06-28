@@ -28,6 +28,8 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    imageGen.s.emitterRadius = 2.0;
+
     QWidget * central = new QWidget;
     setCentralWidget(central);
     QHBoxLayout * layoutCentral = new QHBoxLayout;

@@ -12,6 +12,9 @@ PreviewScene::PreviewScene(QObject *parent) :
 
 }
 
+/** ****************************************************************************
+ * @brief PreviewScene::Cancel
+ */
 void PreviewScene::Cancel()
 {
     // Restore the backup
@@ -23,7 +26,10 @@ void PreviewScene::Cancel()
     active = false;
 }
 
-
+/** ****************************************************************************
+ * @brief PreviewScene::mousePressEvent
+ * @param event
+ */
 void PreviewScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
     qDebug("Scene press   event (%7.2f, %7.2f)", event->scenePos().x(), event->scenePos().y());
@@ -38,6 +44,10 @@ void PreviewScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
     pressPos = event->scenePos();
 }
 
+/** ****************************************************************************
+ * @brief PreviewScene::mouseReleaseEvent
+ * @param event
+ */
 void PreviewScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
     qDebug("Scene release event (%7.2f, %7.2f)", event-> scenePos().x(), event->scenePos().y());
@@ -53,8 +63,8 @@ void PreviewScene::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
     qDebug("Scene move    event (%7.2f, %7.2f)", event->scenePos().x(), event->scenePos().y());
     if (!active) {return;}
     // Determine how much the mouse has moved while clicked
-    qreal moveDistY = pressPos.y() - event->scenePos().y();
-    grpActive->arcRadius = std::max(0.0, grpBackup.arcRadius + moveDistY);
+    qreal moveDistY = event->scenePos().y() - pressPos.y();
+    grpActive->arcRadius = std::max(0.0, grpBackup.arcRadius - moveDistY);
     AddEmitters(imageGen);
 }
 
@@ -70,7 +80,7 @@ void PreviewScene::AddEmitters(ImageGen & imageGen) {
 
     const double emDia = imageGen.s.emitterRadius * 2.0; // Simulation/scene coordinates
     QPen pen(QColorConstants::Black);
-    pen.setWidthF(0.5);
+    pen.setWidthF(imageGen.s.emitterRadius * 0.3);
     QBrush brush(QColorConstants::White);
 
     for (QGraphicsItem * item : emItemGroup.childItems()) {
@@ -79,10 +89,16 @@ void PreviewScene::AddEmitters(ImageGen & imageGen) {
     }
 
     // !@#$ upgrade to group together each arrangement
+
+    // Note that the actual ellipse position is a combination of the QGraphicsItem
+    // position and the QGraphicsEllipseItem rect position.
+    // If the item pos is (0,0) and the rect() is centered on (10,20), then
+    // the ellipse will be centered on (10,20).
     QRectF emRect(0., 0., emDia, emDia);
+    emRect.moveCenter(QPointF(0,0)); // The rect() will always be centered around 0
     for (EmitterF e : emitters) {
-        emRect.moveCenter(e.loc);
         QGraphicsEllipseItem * item = new QGraphicsEllipseItem(emRect, &emItemGroup);
+        item->setPos(e.loc);
         item->setPen(pen);
         item->setBrush(brush);
     }
@@ -126,26 +142,15 @@ void PreviewView::drawBackground(QPainter *painter, const QRectF &rect)
 
     // All painting is done in scene (simulation) coordinates!
     // rect is in scene coords
+    // This function is called to draw partial backgrounds and complete backgrounds.
+    // 'rect' indicates the background section to draw (in scene units)
 
-    painter->setViewport(this->rect());
-    painter->setWindow(painter->viewport());
-    painter->drawImage(rect, image);
-
-    // The above is the code that works. I don't understand exactly why...
-    // It doesn't seem right to me.
-    // The painter paints on scene coordinates.
-    // Anyway, I've wasted hours on this which is more than enough.
-
-    // Example values (very wide window)
-    // Exposed rect (input)=  "166.0 x 297.0 @(-157.0, -280.0)"
-    // PreviewView rect    =  "167 x 298 @(0, 0)"
-    // Image rect          =  "237 x 422 @(0, 0)"
-    // Before window & viewport transform:
-    // Paint Window        =  "1109 x 298 @(0, 0)"
-    // Paint Viewport      =  "1109 x 298 @(0, 0)"
-    // After transform:
-    // Paint Window        =  "237 x 422 @(0, 0)"
-    // Paint Viewport      =  "167 x 298 @(0, 0)"
+    // Image coordinates map to the scene / simulation coordinates with
+    // a factor of imgPerSimUnit. The image itself has dimensions that start at 0,0,
+    // whilst the scene can start at any point.
+    QRectF imgSourceRect((rect.topLeft() - sceneRect().topLeft()) * imageGen.imgPerSimUnit,
+                      rect.size() * imageGen.imgPerSimUnit);
+    painter->drawImage(rect, image, imgSourceRect);
 
     painter->restore();
 }
@@ -157,7 +162,8 @@ void PreviewScene::ListAllItems() {
     QStringList strList;
     strList.append(QString::asprintf("%d items in scene. Locs = ", items().size()));
     for (auto item : items()) {
-        strList.append(QString::asprintf("(%.2f, %.2f), ", item->x(), item->y()));
+        QPointF scenePos = item->mapToScene(item->pos());
+        strList.append(QString::asprintf("(%.2f, %.2f), ", scenePos.x(), scenePos.y()));
     }
     qDebug() << strList.join("");
 }
