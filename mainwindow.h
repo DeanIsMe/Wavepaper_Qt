@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QDebug>
 #include "datatypes.h"
 
 QT_BEGIN_NAMESPACE
@@ -25,5 +26,9 @@ private:
     // QWidget interface
 protected:
     void keyPressEvent(QKeyEvent *event);
+
+
+    // QWidget interface
+protected:
 };
 #endif // MAINWINDOW_H

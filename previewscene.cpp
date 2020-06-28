@@ -2,31 +2,61 @@
 #include "imagegen.h"
 #include <QDebug>
 #include <QResizeEvent>
-#include <QGraphicsItem>
 #include <QGraphicsEllipseItem>
+#include <QGraphicsItem>
 #include <QGradient>
 
-PreviewScene::PreviewScene(QObject *parent) : QGraphicsScene(parent)
+PreviewScene::PreviewScene(QObject *parent) :
+    QGraphicsScene(parent)
 {
 
 }
 
-
-void PreviewScene::dragEnterEvent(QGraphicsSceneDragDropEvent *event)
+void PreviewScene::Cancel()
 {
-    qDebug("Scene Drag enter");
+    // Restore the backup
+    if (active) {
+        if (grpActive) {
+            *grpActive = grpBackup;
+        }
+    }
+    active = false;
 }
 
-void PreviewScene::dragMoveEvent(QGraphicsSceneDragDropEvent *event)
+
+void PreviewScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
-    qDebug("Scene Drag move");
+    qDebug("Scene press   event (%7.2f, %7.2f)", event->scenePos().x(), event->scenePos().y());
+    Cancel();
+    grpActive = imageGen.GetActiveArrangement();
+    if (!grpActive) {
+        // No active groups
+        return;
+    }
+    active = true;
+    grpBackup = *grpActive; // Save, so that it can be reverted
+    pressPos = event->scenePos();
 }
 
-void PreviewScene::dragLeaveEvent(QGraphicsSceneDragDropEvent *event)
+void PreviewScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
-    qDebug("Scene Drag leave");
+    qDebug("Scene release event (%7.2f, %7.2f)", event-> scenePos().x(), event->scenePos().y());
+    imageGen.GenerateImage(imageGen.image);
+    this->invalidate(imageGen.simArea); // Forces redraw
+    this->views()[0]->resetCachedContent(); // Delete previously cached background to force redraw
+    this->views()[0]->update();
+    active = false;
 }
 
+void PreviewScene::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
+{
+    qDebug("Scene move    event (%7.2f, %7.2f)", event->scenePos().x(), event->scenePos().y());
+    if (!active) {return;}
+    // Determine how much the mouse has moved while clicked
+    qreal moveDistY = pressPos.y() - event->scenePos().y();
+    grpActive->arcRadius = std::max(0.0, grpBackup.arcRadius + moveDistY);
+    AddEmitters(imageGen);
+}
 
 /** ****************************************************************************
  * @brief PreviewScene::AddEmitters
@@ -38,23 +68,27 @@ void PreviewScene::AddEmitters(ImageGen & imageGen) {
         return;
     }
 
-    QList<QGraphicsItem *> emItemList;
-
     const double emDia = imageGen.s.emitterRadius * 2.0; // Simulation/scene coordinates
     QPen pen(QColorConstants::Black);
     pen.setWidthF(0.5);
     QBrush brush(QColorConstants::White);
 
-    if (emItemGroup) {
-        this->destroyItemGroup(emItemGroup);
+    for (QGraphicsItem * item : emItemGroup.childItems()) {
+        emItemGroup.removeFromGroup(item);
+        delete item;
     }
 
+    // !@#$ upgrade to group together each arrangement
     QRectF emRect(0., 0., emDia, emDia);
     for (EmitterF e : emitters) {
         emRect.moveCenter(e.loc);
-        emItemList.append(this->addEllipse(emRect, pen, brush));
+        QGraphicsEllipseItem * item = new QGraphicsEllipseItem(emRect, &emItemGroup);
+        item->setPen(pen);
+        item->setBrush(brush);
     }
-    emItemGroup = this->createItemGroup(emItemList);
+
+    this->removeItem(&emItemGroup);
+    this->addItem(&emItemGroup);
 }
 
 /** ****************************************************************************
@@ -78,7 +112,6 @@ void PreviewView::resizeEvent(QResizeEvent *event) {
     this->resize(newWidth, newWidth / imageGen.aspectRatio());
     // Ensure that the viewable section of the screen stays the same
     this->fitInView(imageGen.simArea, Qt::KeepAspectRatio);
-    qDebug("resizeEvent DONE");
 }
 
 /** ****************************************************************************
@@ -128,3 +161,4 @@ void PreviewScene::ListAllItems() {
     }
     qDebug() << strList.join("");
 }
+

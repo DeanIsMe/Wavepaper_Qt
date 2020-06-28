@@ -104,7 +104,6 @@ int ImageGen::GenerateImage(QImage& imageOut) {
         emittersImg[i] = EmitterI(emittersF[i], imgPerSimUnit);
     }
 
-    DebugEmitterLocs(emittersImg);
     qDebug() << "Simulation window is " << RectFToQString(simArea) << "[sim units]";
     qDebug() << "   View window is " << RectToQString(imgArea) << "[img units]";
 
@@ -485,6 +484,6 @@ EmArrangement ImageGen::DefaultArrangement() {
     arn.count = 5;
     arn.mirrorHor = arn.mirrorVert = false;
     arn.center = QPointF(0, 0);
-    arn.count = 12;
+    arn.count = 5;
     return arn;
 }
