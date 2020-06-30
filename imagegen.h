@@ -92,13 +92,11 @@ public:
 
     qreal aspectRatio() const {return (qreal)outResolution.width() / (qreal)outResolution.height();} // Width / height
     QImage image;
-    qreal testVal = 0;
+    qreal testVal = 1;
 
 public:
     ImageGen();
-    int DrawPreview(QGraphicsView *targetWidget);
     int GenerateImage(QImage &imageOut);
-    int DrawEmitters(QWidget * targetWidget);
     EmArrangement* GetActiveArrangement();
     int InitViewAreas();
 private:
@@ -108,7 +106,6 @@ private:
     static QRgb ColourAngleToQrgb(int32_t angle, uint8_t alpha = 255);
     static void AddPhasorArr(double wavelength, EmitterI e, const Double2D_C &templateDist, const Double2D_C &templateAmp, Complex2D_C &phasorArr);
     static int EmitterArrangementToLocs(const EmArrangement &arngmt, QVector<QPointF> &emLocsOut);
-    void DrawEmitters(QPainter &painter, const QVector<EmitterI> &emittersImg);
 
 public:
     int GetEmitterList(QVector<EmitterF> &emitters);

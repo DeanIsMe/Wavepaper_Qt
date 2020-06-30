@@ -45,41 +45,6 @@ void ImageGen::setTargetImgPoints(qint32 imgPoints) {
     }
 }
 
-
-/** ****************************************************************************
- * @brief ImageGen::DrawPreview
- * @param targetWidget
- * @return
- */
-int ImageGen::DrawPreview(QGraphicsView *targetWidget)
-{
-    qDebug("\n\nPaint preview");
-    if (InitViewAreas()) {
-        return -1;
-    }
-
-    qDebug() << "Preview window is " << RectToQString(targetWidget->rect()) << "[real pixels]";
-
-    // Generate the image
-    QImage image;
-    GenerateImage(image);
-
-    // Paint the image
-    // !@#$ FIX THIS!
-    QPainter painter(targetWidget);
-    painter.setWindow(imgArea);
-    //painter.setBrush(img);
-    targetWidget->render(&painter, imgArea, imgArea);
-
-    // painter.drawImage(imgArea.x(), imgArea.y(), image);
-
-    // Draw the emitters
-    //DrawEmitters(painter, emittersImg);
-
-    return 0;
-}
-
-
 /** ****************************************************************************
  * @brief ImageDataDealloc is a small utility function to clean up mem alloc
  * @note Function is of type QImageCleanupFunction
@@ -117,8 +82,9 @@ int ImageGen::GenerateImage(QImage& imageOut) {
         emittersImg[i] = EmitterI(emittersF[i], imgPerSimUnit);
     }
 
-    qDebug() << "Simulation window is " << RectFToQString(simArea) << "[sim units]";
-    qDebug() << "   View window is " << RectToQString(imgArea) << "[img units]";
+    qDebug() << "Simulation window " << RectFToQString(simArea) << "[sim units]";
+    qDebug() << "   Image size " << RectToQString(imgArea) << "[img units]";
+    qDebug("imgPerSimUnit = %.2f. numpoints", imgPerSimUnit);
 
     // Determine the range of the offset template
     QRect templateRange(0,0,0,0);
@@ -421,44 +387,6 @@ int ImageGen::GetEmitterList(QVector<EmitterF> & emitters) {
     }
 
     return 0;
-}
-
-/**
- * @brief ImageGen::DrawEmitters
- * @param targetWidget
- * @return
- */
-int ImageGen::DrawEmitters(QWidget * targetWidget)
-{
-    // !@# remove?
-    /*
-    QVector<EmitterI> emittersImg;
-    if (PrepareEmitters(emittersImg)) {
-        return -2;
-    }
-
-    QPainter painter(targetWidget);
-
-    DrawEmitters(painter, emittersImg);
-    */
-    return 0;
-}
-
-
-/** ****************************************************************************
- * @brief ImageGen::DrawEmitters
- * @param painter
- * @param emitterImg
- */
-void ImageGen::DrawEmitters(QPainter& painter, const QVector<EmitterI>& emittersImg) {
-    /*
-    painter.setBrush(QBrush(QColorConstants::Black));
-    painter.setPen(QPen());
-    double emitterRadiusImg = s.emitterRadius * imgPerSimUnit;
-    for (EmitterI e : emittersImg) {
-        painter.drawEllipse((double)e.loc.x(), (double)e.loc.y(), emitterRadiusImg, emitterRadiusImg);
-    }
-    */
 }
 
 /** ****************************************************************************

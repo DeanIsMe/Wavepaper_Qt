@@ -144,8 +144,6 @@ void PreviewView::resizeEvent(QResizeEvent *event) {
 void PreviewView::drawBackground(QPainter *painter, const QRectF &rect)
 {
     painter->save();
-    QImage & image = imageGen.image;
-
     // All painting is done in scene (simulation) coordinates!
     // rect is in scene coords
     // This function is called to draw partial backgrounds and complete backgrounds.
@@ -156,7 +154,7 @@ void PreviewView::drawBackground(QPainter *painter, const QRectF &rect)
     // whilst the scene can start at any point.
     QRectF imgSourceRect((rect.topLeft() - sceneRect().topLeft()) * imageGen.imgPerSimUnit,
                       rect.size() * imageGen.imgPerSimUnit);
-    painter->drawImage(rect, image, imgSourceRect);
+    painter->drawImage(rect, imageGen.image, imgSourceRect);
 
     painter->restore();
 }

@@ -93,12 +93,12 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         qDebug("Image regenerated. Wavelength = %.2f", imageGen.s.wavelength);
         break;
     case Qt::Key_2:
-        imageGen.testVal += 10;
-        qDebug("TestVal = %.2f", imageGen.testVal);
+        imageGen.testVal *= 2;
+        qDebug("TestVal = %.3f", imageGen.testVal);
         break;
     case Qt::Key_3:
-        imageGen.testVal -= 10;
-        qDebug("TestVal = %.2f", imageGen.testVal);
+        imageGen.testVal *= 0.5;
+        qDebug("TestVal = %.3f", imageGen.testVal);
         break;
     case Qt::Key_4:
         previewScene->ListAllItems();
