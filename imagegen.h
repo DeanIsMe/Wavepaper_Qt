@@ -80,6 +80,9 @@ class ImageGen
 {
 private:
     QList<EmArrangement> arngmtList;
+    Double2D_C * templateDist = nullptr;
+    Double2D_C * templateAmp = nullptr;
+
 public:
     Settings s;
 
@@ -106,6 +109,7 @@ private:
     static QRgb ColourAngleToQrgb(int32_t angle, uint8_t alpha = 255);
     static void AddPhasorArr(double imgPerSimUnit, double wavelength, EmitterI e, const Double2D_C &templateDist, const Double2D_C &templateAmp, Complex2D_C &phasorArr);
     static int EmitterArrangementToLocs(const EmArrangement &arngmt, QVector<QPointF> &emLocsOut);
+    void CalcTemplates(QRect templateRect);
 
 public:
     int GetEmitterList(QVector<EmitterF> &emitters);

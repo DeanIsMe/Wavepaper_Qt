@@ -78,7 +78,7 @@ public:
     QRect getRect() const {return QRect(xLeft, yTop, width, height);}
 };
 
-typedef double fpComplex; // Float or double
+typedef qreal fpComplex; // Float or double
 typedef std::complex<fpComplex> complex;
 typedef Array2D_C<complex> Complex2D_C;
 typedef Array2D_C<double> Double2D_C;
