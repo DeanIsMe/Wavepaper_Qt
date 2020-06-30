@@ -106,6 +106,12 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     default:
         event->ignore();
     }
+
+    // !@#$
+    imageGen.setTargetImgPoints(100000 * imageGen.testVal);
+    imageGen.GenerateImage(imageGen.image);
+    previewScene->invalidate(previewView->sceneRect());
+    // !@#$
 }
 
 

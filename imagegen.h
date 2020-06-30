@@ -104,7 +104,7 @@ private:
     static void CalcAmpArr(double attnFactor, const Double2D_C &distArr, Double2D_C &ampArr);
     static void CalcPhasorArr(double wavelength, double distOffset, const Double2D_C &distArr, const Double2D_C &ampArr, Complex2D_C &phasorArr);
     static QRgb ColourAngleToQrgb(int32_t angle, uint8_t alpha = 255);
-    static void AddPhasorArr(double wavelength, EmitterI e, const Double2D_C &templateDist, const Double2D_C &templateAmp, Complex2D_C &phasorArr);
+    static void AddPhasorArr(double imgPerSimUnit, double wavelength, EmitterI e, const Double2D_C &templateDist, const Double2D_C &templateAmp, Complex2D_C &phasorArr);
     static int EmitterArrangementToLocs(const EmArrangement &arngmt, QVector<QPointF> &emLocsOut);
 
 public:

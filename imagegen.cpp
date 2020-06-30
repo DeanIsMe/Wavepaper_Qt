@@ -94,25 +94,24 @@ int ImageGen::GenerateImage(QImage& imageOut) {
     }
     qDebug() << "Template range is " << RectToQString(templateRange);
 
-    // Generate a template array of distance, depending on the offset
-    double simUnitPerIndex = 1 / imgPerSimUnit;
+    // Generate a template array of distance (image units)
     Double2D_C * templateDist = new Double2D_C(templateRange);
-    CalcDistArr(simUnitPerIndex, *templateDist);
+    CalcDistArr(1.0, *templateDist);
 
-    // Generate a template array of the amplitudes
+    // Generate a template array of the amplitudes, depending on the attenuation factor
+    // templateAmp also uses image units (which means the value will be off by a factor of imgPerSimUnit^attnFactor
     Double2D_C * templateAmp = new Double2D_C(templateRange);
     CalcAmpArr(s.attnFactor, *templateDist, *templateAmp);
 
     // Generate a map of the phasors for each emitter, and sum together
-    // Use the templates
-    double wlImg = s.wavelength * imgPerSimUnit; // Wavelength in image coordinates
+    // Use the distance and amplitude templates
     Complex2D_C * phasorSumArr = new Complex2D_C(imgArea);
     for (EmitterI e : emittersImg) {
-        AddPhasorArr(wlImg, e, *templateDist, *templateAmp, *phasorSumArr);
+        AddPhasorArr(imgPerSimUnit, s.wavelength, e, *templateDist, *templateAmp, *phasorSumArr);
     }
 
     // Scaler will be 1/[emitter amplitude at half the simulation width]
-    double scaler = pow(simUnitPerIndex * imgArea.width() / 2, s.attnFactor);
+    double scaler = 1/templateAmp->getPoint(imgArea.width() / 2, 0);
 
     // Use the resultant amplitude to fill in the pixel data
     Rgb2D_C* pixArr = new Rgb2D_C(imgArea);
@@ -229,18 +228,18 @@ void ImageGen::CalcPhasorArr(double wavelength, double distOffset,
 /** ****************************************************************************
  * @brief ImageGen::AddPhasorArr for 1 emitter, calculates the phasor at every
  * location in the view window and add it to phasorArr
- * @param wavelength
+ * @param wavelength (sim units)
  * @param distOffset causes a constant phase shift on every point
  * @param templateDist contains pre-calculated distance values for a given offset
  * @param templateAmp contains pre-calculated amplitude values for a given offset
  * @param emLoc is the emitter location that this phasor array is calculated for
  * @param phasorArr is the output array. It also defines the view window
  */
-void ImageGen::AddPhasorArr(double wavelength, EmitterI e,
+void ImageGen::AddPhasorArr(double imgPerSimUnit, double wavelength, EmitterI e,
                              const Double2D_C & templateDist, const Double2D_C & templateAmp,
                             Complex2D_C & phasorArr) {
-    // phasorArray dimensions are that of the view window. emLoc is the location we're calculating for
-    QRect rect = phasorArr.getRect().translated(-e.loc); // emitter location is the center
+    // phasorArray dimensions are that of the image. emLoc is the location we're calculating for
+    QRect rect = phasorArr.getRect().translated(-e.loc); // image rect with emitter location is the center
     // Distort the phasorArr coordinates during this function, such that the emitter is at the center
     phasorArr.translate(-e.loc);
 
@@ -254,11 +253,13 @@ void ImageGen::AddPhasorArr(double wavelength, EmitterI e,
         return;
     }
 
-    double radPerDist = -2 * 3.14159265359 / wavelength; // Radians per unit distance, * -1
+    // templateDist is in image units (pixels)
+    qreal distOffsetImg = e.distOffset * imgPerSimUnit;
+    double radPerImg = -2 * 3.14159265359 / (wavelength * imgPerSimUnit); // Radians per unit distance, * -1
     for (int32_t y = rect.top(); y < rect.top() + rect.height(); y++) {
         for (int32_t x = rect.x(); x < rect.x() + rect.width(); x++) {
             phasorArr.addPoint(x, y,std::polar<fpComplex>(templateAmp.getPoint(x,y),
-                                                          (templateDist.getPoint(x, y) + e.distOffset) * radPerDist));
+                                                          (templateDist.getPoint(x, y) + distOffsetImg) * radPerImg));
         }
     }
     // Restore the phasorArr coordinates
