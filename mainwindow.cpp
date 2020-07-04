@@ -8,16 +8,6 @@
 #include "previewscene.h"
 #include "imagegen.h"
 
-class TestWidget : public QWidget {
-    QImage image;
-public:
-    explicit TestWidget(QWidget * parent) : QWidget(parent) {
-        imageGen.GenerateImage(image);
-    }
-protected:
-    void paintEvent(QPaintEvent *event);
-};
-
 /** ****************************************************************************
  * @brief MainWindow::MainWindow
  * @param parent
@@ -64,7 +54,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     previewScene->AddEmitters(imageGen);
 
-    imageGen.GenerateImage(imageGen.image); // Stored for use later
+    imageGen.GeneratePreview();
 
     qDebug() << "Preview view rect " << RectToQString(previewView->rect());
     qDebug() << "Preview view frameRect " << RectToQString(previewView->frameRect());
@@ -79,11 +69,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     previewScene->AddEmitters(imageGen);
     emit imageGen.PreviewImageChanged();
-
-    // Print test image
-    TestWidget * testCanvas = new TestWidget(this);
-    testCanvas->setMinimumSize(200, 300);
-    layoutCentral->addWidget(testCanvas);
 }
 
 MainWindow::~MainWindow()
@@ -97,7 +82,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     switch (event->key()) {
     case Qt::Key_1:
         imageGen.s.wavelength *= 1.5;
-        imageGen.GenerateImage(imageGen.image);
+        imageGen.GenerateImage(imageGen.imgPreview);
         qDebug("Image regenerated. Wavelength = %.2f", imageGen.s.wavelength);
         break;
     case Qt::Key_2:
@@ -117,7 +102,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 
     // !@#$
     imageGen.setTargetImgPoints(100000 * imageGen.testVal);
-    imageGen.GenerateImage(imageGen.image);
+    imageGen.GenerateImage(imageGen.imgPreview);
     previewScene->invalidate(previewView->sceneRect());
     // !@#$
 }

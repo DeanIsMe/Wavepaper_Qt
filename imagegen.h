@@ -80,6 +80,10 @@ struct Settings {
 class ImageGen : public QObject
 {
     Q_OBJECT
+public:
+    static constexpr qint32 imgPointsQuick = 40000;
+    static constexpr qint32 imgPointsPreview = 200000;
+
 
 private:
     QList<EmArrangement> arngmtList;
@@ -90,21 +94,30 @@ public:
     Settings s;
 
     // The block below must be kept in sync
-    double targetImgPoints = 100000; // Total number of points in the preview
+    double targetImgPoints = imgPointsPreview; // Total number of points in the preview
     double imgPerSimUnit;
     QRectF simArea; // The rectangle of the image view area (simulation coordinates)
     QRect imgArea; // The rectangle of the image view area (image coordinates)
     QSize outResolution; // The output will be rendered to this resolution
 
     qreal aspectRatio() const {return (qreal)outResolution.width() / (qreal)outResolution.height();} // Width / height
-    QImage image;
+    QImage imgPreview;
     qreal testVal = 1;
 
 public:
     ImageGen();
+    void GeneratePreview();
     int GenerateImage(QImage &imageOut);
     EmArrangement *GetActiveArrangement();
     int InitViewAreas();
+
+    int GetEmitterList(QVector<EmitterF> &emitters);
+    static void DebugEmitterLocs(const QVector<EmitterI>& emittersImg);
+    static void DebugEmitterLocs(const QVector<EmitterF> &emittersF);
+    static EmArrangement DefaultArrangement();
+    void setTargetImgPoints(qint32 imgPoints);
+    void EmitterCountIncrease();
+    void EmitterCountDecrease();
 
 signals:
     void PreviewImageChanged();
@@ -119,13 +132,7 @@ private:
     void CalcTemplates(QRect templateRect);
 
 public:
-    int GetEmitterList(QVector<EmitterF> &emitters);
-    static void DebugEmitterLocs(const QVector<EmitterI>& emittersImg);
-    static void DebugEmitterLocs(const QVector<EmitterF> &emittersF);
-    static EmArrangement DefaultArrangement();
-    void setTargetImgPoints(qint32 imgPoints);
-    void EmitterCountIncrease();
-    void EmitterCountDecrease();
+
 };
 
 extern ImageGen imageGen;

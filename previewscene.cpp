@@ -42,7 +42,7 @@ void PreviewScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
     }
     active = true;
     backupImgPoints = imageGen.targetImgPoints;
-    imageGen.setTargetImgPoints(40000);
+    imageGen.setTargetImgPoints(imageGen.imgPointsQuick);
     grpBackup = *grpActive; // Save, so that it can be reverted
     pressPos = event->scenePos();
 }
@@ -56,8 +56,7 @@ void PreviewScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
     qDebug("Scene release event (%7.2f, %7.2f)", event-> scenePos().x(), event->scenePos().y());
     imageGen.setTargetImgPoints(backupImgPoints);
 
-    imageGen.GenerateImage(imageGen.image);
-    emit imageGen.PreviewImageChanged();
+    imageGen.GeneratePreview();
     active = false;
 }
 
@@ -74,8 +73,7 @@ void PreviewScene::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
     grpActive->arcRadius = std::max(0.0, grpBackup.arcRadius - moveDistY);
     AddEmitters(imageGen);
 
-    imageGen.GenerateImage(imageGen.image);
-    emit imageGen.PreviewImageChanged();
+    imageGen.GeneratePreview();
 }
 
 /** ****************************************************************************
@@ -139,6 +137,7 @@ void PreviewView::resizeEvent(QResizeEvent *event) {
     this->resize(newWidth, newWidth / imageGen.aspectRatio());
     // Ensure that the viewable section of the screen stays the same
     this->fitInView(imageGen.simArea, Qt::KeepAspectRatio);
+    // Background redraw will be triggered
 }
 
 /** ****************************************************************************
@@ -168,7 +167,7 @@ void PreviewView::drawBackground(QPainter *painter, const QRectF &rect)
     // whilst the scene can start at any point.
     QRectF imgSourceRect((rect.topLeft() - sceneRect().topLeft()) * imageGen.imgPerSimUnit,
                       rect.size() * imageGen.imgPerSimUnit);
-    painter->drawImage(rect, imageGen.image, imgSourceRect);
+    painter->drawImage(rect, imageGen.imgPreview, imgSourceRect);
 }
 
 /** ****************************************************************************

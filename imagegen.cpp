@@ -14,7 +14,16 @@ ImageGen::ImageGen()
     InitViewAreas();
 }
 
+void ImageGen::GeneratePreview()
+{
+    imageGen.GenerateImage(imageGen.imgPreview);
+    emit imageGen.PreviewImageChanged();
+}
 
+/**
+ * @brief ImageGen::InitViewAreas
+ * @return
+ */
 int ImageGen::InitViewAreas() {
     outResolution = QSize(1080, 1920);
     simArea = QRectF(0, 0, 100, 100. / aspectRatio());
@@ -33,6 +42,10 @@ int ImageGen::InitViewAreas() {
     return 0;
 }
 
+/**
+ * @brief ImageGen::setTargetImgPoints
+ * @param imgPoints
+ */
 void ImageGen::setTargetImgPoints(qint32 imgPoints) {
     // Determine the viewing window in image coordinates
     targetImgPoints = imgPoints;
@@ -45,20 +58,26 @@ void ImageGen::setTargetImgPoints(qint32 imgPoints) {
     }
 }
 
+/**
+ * @brief ImageGen::EmitterCountIncrease
+ */
 void ImageGen::EmitterCountIncrease() {
     EmArrangement * group = GetActiveArrangement();
     group->count = std::max(group->count + 1, qRound((qreal)group->count * 1.2));
-    GenerateImage(image);
+    GenerateImage(imgPreview);
     emit PreviewImageChanged();
     emit EmittersChanged();
 }
 
+/**
+ * @brief ImageGen::EmitterCountDecrease
+ */
 void ImageGen::EmitterCountDecrease() {
     EmArrangement * group = GetActiveArrangement();
     int prevVal = group->count;
     group->count = std::max(1, std::min(group->count - 1, qRound((qreal)group->count * 0.8)));
     if (group->count != prevVal) {
-        GenerateImage(image);
+        GenerateImage(imgPreview);
         emit PreviewImageChanged();
         emit EmittersChanged();
     }
