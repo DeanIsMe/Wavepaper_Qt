@@ -29,7 +29,8 @@ public:
     QGraphicsItemGroup emItemGroup;
     void ListAllItems();
 
-signals:
+public slots:
+    void OnEmitterChange();
 
     // QGraphicsScene interface
 protected:
@@ -54,6 +55,8 @@ public:
 protected:
     void resizeEvent(QResizeEvent *event) override;
 
+public slots:
+    void OnBackgroundChange();
 
     // QGraphicsView interface
 protected:

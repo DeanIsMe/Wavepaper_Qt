@@ -55,13 +55,16 @@ void PreviewScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
     qDebug("Scene release event (%7.2f, %7.2f)", event-> scenePos().x(), event->scenePos().y());
     imageGen.setTargetImgPoints(backupImgPoints);
+
     imageGen.GenerateImage(imageGen.image);
-    this->invalidate(imageGen.simArea); // Forces redraw
-    //this->views()[0]->resetCachedContent(); // Delete previously cached background to force redraw
-    this->views()[0]->update();
+    emit imageGen.PreviewImageChanged();
     active = false;
 }
 
+/** ****************************************************************************
+ * @brief PreviewScene::mouseMoveEvent
+ * @param event
+ */
 void PreviewScene::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
     qDebug("Scene move    event (%7.2f, %7.2f)", event->scenePos().x(), event->scenePos().y());
@@ -70,8 +73,9 @@ void PreviewScene::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
     qreal moveDistY = event->scenePos().y() - pressPos.y();
     grpActive->arcRadius = std::max(0.0, grpBackup.arcRadius - moveDistY);
     AddEmitters(imageGen);
+
     imageGen.GenerateImage(imageGen.image);
-    this->invalidate(imageGen.simArea); // Forces redraw
+    emit imageGen.PreviewImageChanged();
 }
 
 /** ****************************************************************************
@@ -111,6 +115,7 @@ void PreviewScene::AddEmitters(ImageGen & imageGen) {
 
     this->removeItem(&emItemGroup);
     this->addItem(&emItemGroup);
+    invalidate(this->sceneRect(), QGraphicsScene::ItemLayer);
 }
 
 /** ****************************************************************************
@@ -137,13 +142,22 @@ void PreviewView::resizeEvent(QResizeEvent *event) {
 }
 
 /** ****************************************************************************
+ * @brief PreviewView::BackgroundChanged
+ */
+void PreviewView::OnBackgroundChange()
+{
+    scene()->invalidate(imageGen.simArea, QGraphicsScene::BackgroundLayer);
+    // resetCachedContent(); // Delete previously cached background to force redraw
+    update(); // Redraws, but not immediately
+}
+
+/** ****************************************************************************
  * @brief PreviewView::drawBackground
  * @param painter
  * @param rect
  */
 void PreviewView::drawBackground(QPainter *painter, const QRectF &rect)
 {
-    painter->save();
     // All painting is done in scene (simulation) coordinates!
     // rect is in scene coords
     // This function is called to draw partial backgrounds and complete backgrounds.
@@ -155,8 +169,6 @@ void PreviewView::drawBackground(QPainter *painter, const QRectF &rect)
     QRectF imgSourceRect((rect.topLeft() - sceneRect().topLeft()) * imageGen.imgPerSimUnit,
                       rect.size() * imageGen.imgPerSimUnit);
     painter->drawImage(rect, imageGen.image, imgSourceRect);
-
-    painter->restore();
 }
 
 /** ****************************************************************************
@@ -170,5 +182,13 @@ void PreviewScene::ListAllItems() {
         strList.append(QString::asprintf("(%.2f, %.2f), ", scenePos.x(), scenePos.y()));
     }
     qDebug() << strList.join("");
+}
+
+/** ****************************************************************************
+ * @brief PreviewScene::OnEmitterChange
+ */
+void PreviewScene::OnEmitterChange()
+{
+    AddEmitters(imageGen);
 }
 

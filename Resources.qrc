@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file alias="increaseCount">Resources/person_add-24px.svg</file>
+        <file alias="reduceCount">Resources/person_remove-24px.svg</file>
+    </qresource>
+</RCC>

@@ -30,5 +30,8 @@ protected:
 
     // QWidget interface
 protected:
+private slots:
+    void on_actionMore_triggered();
+    void on_actionFewer_triggered();
 };
 #endif // MAINWINDOW_H

@@ -45,6 +45,25 @@ void ImageGen::setTargetImgPoints(qint32 imgPoints) {
     }
 }
 
+void ImageGen::EmitterCountIncrease() {
+    EmArrangement * group = GetActiveArrangement();
+    group->count = std::max(group->count + 1, qRound((qreal)group->count * 1.2));
+    GenerateImage(image);
+    emit PreviewImageChanged();
+    emit EmittersChanged();
+}
+
+void ImageGen::EmitterCountDecrease() {
+    EmArrangement * group = GetActiveArrangement();
+    int prevVal = group->count;
+    group->count = std::max(1, std::min(group->count - 1, qRound((qreal)group->count * 0.8)));
+    if (group->count != prevVal) {
+        GenerateImage(image);
+        emit PreviewImageChanged();
+        emit EmittersChanged();
+    }
+}
+
 /** ****************************************************************************
  * @brief ImageDataDealloc is a small utility function to clean up mem alloc
  * @note Function is of type QImageCleanupFunction
@@ -107,6 +126,7 @@ int ImageGen::GenerateImage(QImage& imageOut) {
     // Generate a map of the phasors for each emitter, and sum together
     // Use the distance and amplitude templates
     Complex2D_C * phasorSumArr = new Complex2D_C(imgArea);
+
     for (EmitterI e : emittersImg) {
         AddPhasorArr(imgPerSimUnit, s.wavelength, e, *templateDist, *templateAmp, *phasorSumArr);
     }
@@ -168,11 +188,11 @@ void ImageGen::CalcTemplates(QRect templateRect) {
     CalcAmpArr(s.attnFactor, *templateDist, *templateAmp);
 }
 
-/**
+/** ****************************************************************************
  * @brief ImageGen::GetActiveArrangement
  * @return
  */
-EmArrangement *ImageGen::GetActiveArrangement()
+EmArrangement* ImageGen::GetActiveArrangement()
 {
     if (arngmtList.size() == 0) {
         return nullptr;
@@ -233,24 +253,6 @@ void ImageGen::CalcAmpArr(double attnFactor, const Double2D_C & distArr, Double2
 }
 
 /** ****************************************************************************
- * @brief ImageGen::CalcPhasorArr
- * @param wavelength
- * @param attnFactor is normally 1. Amplitude drops off at rate of 1/(r^attnFactor). 1/r is standard.
- * @param arr
- */
-void ImageGen::CalcPhasorArr(double wavelength, double distOffset,
-                             const Double2D_C & distArr, const Double2D_C & ampArr, Complex2D_C & phasorArr) {
-    // Calculate the complex phasor at every point
-    double radPerDist = -2 * 3.14159265359 / wavelength; // Radians per unit distance, * -1
-    for (int32_t y = 0; y < phasorArr.height; y++) {
-        for (int32_t x = 0; x < phasorArr.width; x++) {
-            phasorArr.setPoint(x, y,std::polar<fpComplex>(ampArr.getPoint(x,y), (distArr.getPoint(x, y) + distOffset) * radPerDist));
-        }
-    }
-    return;
-}
-
-/** ****************************************************************************
  * @brief ImageGen::AddPhasorArr for 1 emitter, calculates the phasor at every
  * location in the view window and add it to phasorArr
  * @param wavelength (sim units)
@@ -264,6 +266,8 @@ void ImageGen::AddPhasorArr(double imgPerSimUnit, double wavelength, EmitterI e,
                              const Double2D_C & templateDist, const Double2D_C & templateAmp,
                             Complex2D_C & phasorArr) {
     // phasorArray dimensions are that of the image. emLoc is the location we're calculating for
+    // This function is performed in a shifted coordinate system (for efficiency)
+    // The new coordinate system is 1:1 scale, but has the origin shifted such that the emitter is @ (0,0)
     QRect rect = phasorArr.getRect().translated(-e.loc); // image rect with emitter location is the center
     // Distort the phasorArr coordinates during this function, such that the emitter is at the center
     phasorArr.translate(-e.loc);
@@ -334,6 +338,7 @@ int ImageGen::EmitterArrangementToLocs(const EmArrangement & arngmt, QVector<QPo
         for (int32_t i = 0; i < emLocsOut.size(); i++) {
             // First, calc the angle from +ve x to start at
             double angle = 3 * 3.1415926/2 + arngmt.arcAng * ((double)i/(double)(arngmt.count-1) - 0.5);
+            if (arngmt.count == 1) { angle = 3 * 3.1415926/2; }
             emLocsOut[i] = QPointF(arngmt.arcRadius * cos(angle), arngmt.arcRadius * sin(angle));
         }
         break;
@@ -387,7 +392,8 @@ int ImageGen::EmitterArrangementToLocs(const EmArrangement & arngmt, QVector<QPo
 
 
 /** ****************************************************************************
- * @brief PrepareEmitters
+ * @brief GetEmitterList creates a vector holding the locations of all emitters
+ * generated from the arrangements
  * @param emittersImg
  */
 int ImageGen::GetEmitterList(QVector<EmitterF> & emitters) {

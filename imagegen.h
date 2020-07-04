@@ -1,6 +1,7 @@
 #ifndef IMAGEGEN_H
 #define IMAGEGEN_H
 
+#include <QObject>
 #include <QPoint>
 #include <QRect>
 #include <QList>
@@ -26,7 +27,7 @@ struct EmArrangement {
 
     // Circular specific
     double arcRadius = 20;
-    double arcAng = 1.5708;
+    double arcAng = 1.5708; // !@#$ rename span
     // Linear specific
     double lenTotal = 40; // The total length of the line
     QVector<QPointF> customLocs;
@@ -76,8 +77,10 @@ struct Settings {
 /** ****************************************************************************
  * @brief The ImageGen class
  */
-class ImageGen
+class ImageGen : public QObject
 {
+    Q_OBJECT
+
 private:
     QList<EmArrangement> arngmtList;
     Double2D_C * templateDist = nullptr;
@@ -100,12 +103,16 @@ public:
 public:
     ImageGen();
     int GenerateImage(QImage &imageOut);
-    EmArrangement* GetActiveArrangement();
+    EmArrangement *GetActiveArrangement();
     int InitViewAreas();
+
+signals:
+    void PreviewImageChanged();
+    void EmittersChanged();
+
 private:
     static void CalcDistArr(double simUnitPerIndex, Double2D_C &arr);
     static void CalcAmpArr(double attnFactor, const Double2D_C &distArr, Double2D_C &ampArr);
-    static void CalcPhasorArr(double wavelength, double distOffset, const Double2D_C &distArr, const Double2D_C &ampArr, Complex2D_C &phasorArr);
     static QRgb ColourAngleToQrgb(int32_t angle, uint8_t alpha = 255);
     static void AddPhasorArr(double imgPerSimUnit, double wavelength, EmitterI e, const Double2D_C &templateDist, const Double2D_C &templateAmp, Complex2D_C &phasorArr);
     static int EmitterArrangementToLocs(const EmArrangement &arngmt, QVector<QPointF> &emLocsOut);
@@ -117,6 +124,8 @@ public:
     static void DebugEmitterLocs(const QVector<EmitterF> &emittersF);
     static EmArrangement DefaultArrangement();
     void setTargetImgPoints(qint32 imgPoints);
+    void EmitterCountIncrease();
+    void EmitterCountDecrease();
 };
 
 extern ImageGen imageGen;

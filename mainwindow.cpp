@@ -55,6 +55,13 @@ MainWindow::MainWindow(QWidget *parent)
     previewView->setScene(previewScene);
 
     previewView->setSceneRect(imageGen.simArea);
+
+    QObject::connect(&imageGen, &ImageGen::PreviewImageChanged,
+                     previewView, &PreviewView::OnBackgroundChange);
+
+    QObject::connect(&imageGen, &ImageGen::EmittersChanged,
+                     previewScene, &PreviewScene::OnEmitterChange);
+
     previewScene->AddEmitters(imageGen);
 
     imageGen.GenerateImage(imageGen.image); // Stored for use later
@@ -71,6 +78,7 @@ MainWindow::MainWindow(QWidget *parent)
 //    previewScene->setBackgroundBrush(brush);
 
     previewScene->AddEmitters(imageGen);
+    emit imageGen.PreviewImageChanged();
 
     // Print test image
     TestWidget * testCanvas = new TestWidget(this);
@@ -144,4 +152,14 @@ void TestWidget::paintEvent(QPaintEvent *event)
     QPainter painter(this);
     painter.setWindow(image.rect());
     painter.drawImage(image.rect().x(), image.rect().y(), image);
+}
+
+void MainWindow::on_actionMore_triggered()
+{
+    imageGen.EmitterCountIncrease();
+}
+
+void MainWindow::on_actionFewer_triggered()
+{
+    imageGen.EmitterCountDecrease();
 }
