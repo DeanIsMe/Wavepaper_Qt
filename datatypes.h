@@ -9,6 +9,7 @@
 #include <complex>
 
 #define FP_TO_INT(fp) (fp + 0.5 - (fp<0))
+#define PI 3.1415926
 
 class ImageGen;
 class PreviewView;
@@ -101,6 +102,33 @@ inline QString RectToQString(const QRect & r) {
 inline QString RectFToQString(const QRectF & r) {
     return QString::asprintf("%.1f x %.1f @(%.1f, %.1f)", r.width(), r.height(), r.x(), r.y());
 }
+
+
+/**
+ * modulus operation, that always returns a positive number.
+ * e.g. mod(-1, 7) = 6. With %, the result would be -1.
+ */
+inline qint32 modPos(qint32 a, qint32 b) {
+   if(b < 0) //you can check for b == 0 separately and do what you want
+     return modPos(-a, -b);
+   qint32 ret = a % b;
+   if(ret < 0)
+     ret+=b;
+   return ret;
+}
+
+inline qreal modPos(qreal a, qreal b) {
+   if(b < 0) //you can check for b == 0 separately and do what you want
+     return modPos(-a, -b);
+   qreal ret = fmod(a, b);
+   if(ret < 0)
+     ret+=b;
+   return ret;
+}
+
+qreal Snap(qreal val, qreal snapInc, qreal snapWithin);
+qreal Snap(qreal val, qreal snapInc);
+qint32 Snap(qint32 val, qint32 snapInc, qint32 snapWithin);
 
 
 #endif // DATATYPES_H

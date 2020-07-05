@@ -27,7 +27,7 @@ struct EmArrangement {
 
     // Circular specific
     double arcRadius = 20;
-    double arcAng = 1.5708; // !@#$ rename span
+    double arcSpan = 1.5708; // Radians
     // Linear specific
     double lenTotal = 40; // The total length of the line
     QVector<QPointF> customLocs;

@@ -47,6 +47,7 @@ void PreviewScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
     pressPos = event->scenePos();
 }
 
+
 /** ****************************************************************************
  * @brief PreviewScene::mouseReleaseEvent
  * @param event
@@ -58,7 +59,9 @@ void PreviewScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 
     imageGen.GeneratePreview();
     active = false;
+
 }
+
 
 /** ****************************************************************************
  * @brief PreviewScene::mouseMoveEvent
@@ -70,9 +73,27 @@ void PreviewScene::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
     if (!active) {return;}
     // Determine how much the mouse has moved while clicked
     qreal moveDistY = event->scenePos().y() - pressPos.y();
-    grpActive->arcRadius = std::max(0.0, grpBackup.arcRadius - moveDistY);
-    AddEmitters(imageGen);
+    qreal moveDistX = event->scenePos().x() - pressPos.x();
 
+    switch (grpActive->type) {
+    case EmType::arc: {
+        grpActive->arcRadius = std::max(0.0, grpBackup.arcRadius - moveDistY);
+        qreal spanDelta = moveDistX / sceneRect().width() * 3.1415926 * 2;
+
+        grpActive->arcSpan = std::max(0.0, grpBackup.arcSpan + spanDelta);
+        if ((event->modifiers() & Qt::AltModifier) == 0) {
+            grpActive->arcSpan = Snap(grpActive->arcSpan, PI, PI * 0.1);
+        }
+        break;
+    }
+    case EmType::line:
+        grpActive->lenTotal = std::max(0.0, grpBackup.lenTotal - moveDistY);
+        break;
+    default:
+        return;
+    }
+
+    AddEmitters(imageGen);
     imageGen.GeneratePreview();
 }
 

@@ -352,15 +352,17 @@ int ImageGen::EmitterArrangementToLocs(const EmArrangement & arngmt, QVector<QPo
     case EmType::blank:
         emLocsOut.resize(0);
         break;
-    case EmType::arc:
+    case EmType::arc: {
         emLocsOut.resize(arngmt.count);
+        const qreal emGap = arngmt.arcSpan / (qreal)arngmt.count;
+        const qreal startAng = 3 * 3.1415926/2 + emGap * 0.5 * (1 - arngmt.count);
         for (int32_t i = 0; i < emLocsOut.size(); i++) {
-            // First, calc the angle from +ve x to start at
-            double angle = 3 * 3.1415926/2 + arngmt.arcAng * ((double)i/(double)(arngmt.count-1) - 0.5);
-            if (arngmt.count == 1) { angle = 3 * 3.1415926/2; }
+            double angle = startAng + emGap * i;
+            //if (arngmt.count == 1) { angle = 3 * 3.1415926/2; }
             emLocsOut[i] = QPointF(arngmt.arcRadius * cos(angle), arngmt.arcRadius * sin(angle));
         }
         break;
+    }
     case EmType::line:
         emLocsOut.resize(arngmt.count);
         if (arngmt.count == 1) {
@@ -475,7 +477,7 @@ EmArrangement ImageGen::DefaultArrangement() {
     EmArrangement arn;
     arn.type = EmType::arc;
     arn.arcRadius = 30;
-    arn.arcAng = 3.14159/2;
+    arn.arcSpan = 3.14159/2;
     arn.count = 5;
     arn.mirrorHor = arn.mirrorVert = false;
     arn.center = QPointF(0, 0);

@@ -82,7 +82,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     switch (event->key()) {
     case Qt::Key_1:
         imageGen.s.wavelength *= 1.5;
-        imageGen.GenerateImage(imageGen.imgPreview);
+        imageGen.GeneratePreview();
         qDebug("Image regenerated. Wavelength = %.2f", imageGen.s.wavelength);
         break;
     case Qt::Key_2:
@@ -99,12 +99,6 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     default:
         event->ignore();
     }
-
-    // !@#$
-    imageGen.setTargetImgPoints(100000 * imageGen.testVal);
-    imageGen.GenerateImage(imageGen.imgPreview);
-    previewScene->invalidate(previewView->sceneRect());
-    // !@#$
 }
 
 
@@ -128,17 +122,6 @@ void PaintTestImage(QWidget * testCanvas) {
     painter.drawImage(testArea.x(), testArea.y(), imageTest);
 }
 
-
-void TestWidget::paintEvent(QPaintEvent *event)
-{
-    Q_UNUSED(event);
-    //PaintTestImage(this);
-
-    QPainter painter(this);
-    painter.setWindow(image.rect());
-    painter.drawImage(image.rect().x(), image.rect().y(), image);
-}
-
 void MainWindow::on_actionMore_triggered()
 {
     imageGen.EmitterCountIncrease();
@@ -148,3 +131,4 @@ void MainWindow::on_actionFewer_triggered()
 {
     imageGen.EmitterCountDecrease();
 }
+
