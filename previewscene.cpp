@@ -41,6 +41,7 @@ void PreviewScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
         return;
     }
     active = true;
+    ctrlPressed = (event->modifiers() & Qt::ControlModifier);
     backupImgPoints = imageGen.targetImgPoints;
     imageGen.setTargetImgPoints(imageGen.imgPointsQuick);
     grpBackup = *grpActive; // Save, so that it can be reverted
@@ -55,10 +56,11 @@ void PreviewScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
 void PreviewScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
     qDebug("Scene release event (%7.2f, %7.2f)", event-> scenePos().x(), event->scenePos().y());
+    active = false;
     imageGen.setTargetImgPoints(backupImgPoints);
+    AddAxesLines(imageGen);
 
     imageGen.GeneratePreview();
-    active = false;
 
 }
 
@@ -72,25 +74,37 @@ void PreviewScene::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
     qDebug("Scene move    event (%7.2f, %7.2f)", event->scenePos().x(), event->scenePos().y());
     if (!active) {return;}
     // Determine how much the mouse has moved while clicked
-    qreal moveDistY = event->scenePos().y() - pressPos.y();
-    qreal moveDistX = event->scenePos().x() - pressPos.x();
+    QPointF delta = event->scenePos() - pressPos;
 
-    switch (grpActive->type) {
-    case EmType::arc: {
-        grpActive->arcRadius = std::max(0.0, grpBackup.arcRadius - moveDistY);
-        qreal spanDelta = moveDistX / sceneRect().width() * 3.1415926 * 2;
+    // Alt disables snapping
+    bool snapEn = (event->modifiers() & Qt::AltModifier) == 0;
 
-        grpActive->arcSpan = std::max(0.0, grpBackup.arcSpan + spanDelta);
-        if ((event->modifiers() & Qt::AltModifier) == 0) {
-            grpActive->arcSpan = Snap(grpActive->arcSpan, PI, PI * 0.1);
+    if (ctrlPressed) {
+        // Change location
+        grpActive->center = grpBackup.center + delta;
+        if (snapEn) {
+            grpActive->center.setX(Snap(grpActive->center.x(), 9e9, sceneRect().width() * 0.05));
+            grpActive->center.setY(Snap(grpActive->center.y(), 9e9, sceneRect().width() * 0.05));
         }
-        break;
     }
-    case EmType::line:
-        grpActive->lenTotal = std::max(0.0, grpBackup.lenTotal - moveDistY);
-        break;
-    default:
-        return;
+    else {
+        switch (grpActive->type) {
+        case EmType::arc: {
+            grpActive->arcRadius = std::max(0.0, grpBackup.arcRadius - delta.y());
+            qreal spanDelta = delta.x() / sceneRect().width() * 3.1415926 * 2;
+
+            grpActive->arcSpan = std::max(0.0, grpBackup.arcSpan + spanDelta);
+            if (snapEn) {
+                grpActive->arcSpan = Snap(grpActive->arcSpan, PI, PI * 0.1);
+            }
+            break;
+        }
+        case EmType::line:
+            grpActive->lenTotal = std::max(0.0, grpBackup.lenTotal - delta.y());
+            break;
+        default:
+            return;
+        }
     }
 
     AddEmitters(imageGen);
@@ -132,10 +146,34 @@ void PreviewScene::AddEmitters(ImageGen & imageGen) {
         item->setBrush(brush);
     }
 
+    AddAxesLines(imageGen);
+
     this->removeItem(&emItemGroup);
     this->addItem(&emItemGroup);
     invalidate(this->sceneRect(), QGraphicsScene::ItemLayer);
 }
+
+/** ****************************************************************************
+ * @brief PreviewScene::AddAxesLines
+ * @param imageGen
+ */
+void PreviewScene::AddAxesLines(ImageGen & imageGen) {
+    this->removeItem(&yAxisItem);
+    this->removeItem(&xAxisItem);
+    if (imageGen.GetActiveArrangement() && active) {
+        EmArrangement* group = imageGen.GetActiveArrangement();
+        if (group->mirrorHor) {
+            yAxisItem.setLine(QLineF(0, sceneRect().top(), 0, sceneRect().bottom()));
+            this->addItem(&yAxisItem);
+        }
+        if (group->mirrorVert) {
+            xAxisItem.setLine(QLineF(sceneRect().left(), 0, sceneRect().right(), 0));
+            this->addItem(&xAxisItem);
+        }
+    }
+}
+
+
 
 /** ****************************************************************************
  * @brief PreviewView::PreviewView constructor

@@ -22,6 +22,9 @@ private:
     EmArrangement * grpActive;
     QPointF pressPos;
     qint32 backupImgPoints;
+    bool ctrlPressed;
+    QGraphicsLineItem yAxisItem;
+    QGraphicsLineItem xAxisItem;
     void Cancel();
 
 public:
@@ -41,6 +44,7 @@ protected:
     // Custom
 public:
     void AddEmitters(ImageGen &imageGen);
+    void AddAxesLines(ImageGen &imageGen);
 
 };
 

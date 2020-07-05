@@ -33,5 +33,7 @@ protected:
 private slots:
     void on_actionMore_triggered();
     void on_actionFewer_triggered();
+    void on_actionMirrorHor_triggered(bool checked);
+    void on_actionMirrorVert_triggered(bool checked);
 };
 #endif // MAINWINDOW_H

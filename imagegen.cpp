@@ -353,12 +353,16 @@ int ImageGen::EmitterArrangementToLocs(const EmArrangement & arngmt, QVector<QPo
         emLocsOut.resize(0);
         break;
     case EmType::arc: {
+        // Think of each emitter as occupying an angle 'emGap', with the emitter
+        // at the center. The total angle span occupied by all will be arcSpan.
+        // This means the outer 2 emitters are NOT at teh 2 edges of arcSpan.
+        // E.g. 3 emitters across a span of 1.2. will result in locations of -0.4, 0.0, and +0.4.
+        // (not -0.6, 0.0, and +0.6).
         emLocsOut.resize(arngmt.count);
         const qreal emGap = arngmt.arcSpan / (qreal)arngmt.count;
         const qreal startAng = 3 * 3.1415926/2 + emGap * 0.5 * (1 - arngmt.count);
         for (int32_t i = 0; i < emLocsOut.size(); i++) {
             double angle = startAng + emGap * i;
-            //if (arngmt.count == 1) { angle = 3 * 3.1415926/2; }
             emLocsOut[i] = QPointF(arngmt.arcRadius * cos(angle), arngmt.arcRadius * sin(angle));
         }
         break;
@@ -395,17 +399,24 @@ int ImageGen::EmitterArrangementToLocs(const EmArrangement & arngmt, QVector<QPo
     if (arngmt.mirrorHor) {
         int32_t len = emLocsOut.size();
         emLocsOut.resize(len * 2);
-        QTransform mirror(-1., 0., 0., 1., 0, 0);
-        for (int32_t i = 0; i < len/2; i++) {
-            emLocsOut[len + i] = mirror.map(emLocsOut[i]);
+//        QTransform mirror(-1., 0., 0., 1., 0, 0);
+//        for (int32_t i = 0; i < len; i++) {
+//            emLocsOut[len + i] = mirror.map(emLocsOut[i]);
+//        }
+        for (int32_t i = 0; i < len; i++) {
+            emLocsOut[len + i] = QPointF(-emLocsOut[i].x(), emLocsOut[i].y());
         }
     }
     if (arngmt.mirrorVert) {
         int32_t len = emLocsOut.size();
         emLocsOut.resize(len * 2);
-        QTransform mirror(1., 0., 0., -1., 0, 0);
-        for (int32_t i = 0; i < len/2; i++) {
-            emLocsOut[len + i] = mirror.map(emLocsOut[i]);
+//        QTransform mirror(1., 0., 0., -1., 0, 0);
+//        for (int32_t i = 0; i < len; i++) {
+//            emLocsOut[len + i] = mirror.map(emLocsOut[i]);
+//        }
+
+        for (int32_t i = 0; i < len; i++) {
+            emLocsOut[len + i] = QPointF(emLocsOut[i].x(), -emLocsOut[i].y());
         }
     }
     return 0;

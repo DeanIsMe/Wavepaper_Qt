@@ -132,3 +132,17 @@ void MainWindow::on_actionFewer_triggered()
     imageGen.EmitterCountDecrease();
 }
 
+
+void MainWindow::on_actionMirrorHor_triggered(bool checked)
+{
+    imageGen.GetActiveArrangement()->mirrorHor = checked;
+    previewScene->AddEmitters(imageGen);
+    imageGen.GeneratePreview();
+}
+
+void MainWindow::on_actionMirrorVert_triggered(bool checked)
+{
+    imageGen.GetActiveArrangement()->mirrorVert = checked;
+    previewScene->AddEmitters(imageGen);
+    imageGen.GeneratePreview();
+}
