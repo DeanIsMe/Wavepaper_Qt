@@ -20,7 +20,7 @@ void ImageGen::GeneratePreview()
     emit imageGen.PreviewImageChanged();
 }
 
-/**
+/** ****************************************************************************
  * @brief ImageGen::InitViewAreas
  * @return
  */
@@ -42,7 +42,7 @@ int ImageGen::InitViewAreas() {
     return 0;
 }
 
-/**
+/** ****************************************************************************
  * @brief ImageGen::setTargetImgPoints
  * @param imgPoints
  */
@@ -58,7 +58,7 @@ void ImageGen::setTargetImgPoints(qint32 imgPoints) {
     }
 }
 
-/**
+/** ****************************************************************************
  * @brief ImageGen::EmitterCountIncrease
  */
 void ImageGen::EmitterCountIncrease() {
@@ -69,7 +69,7 @@ void ImageGen::EmitterCountIncrease() {
     emit EmittersChanged();
 }
 
-/**
+/** ****************************************************************************
  * @brief ImageGen::EmitterCountDecrease
  */
 void ImageGen::EmitterCountDecrease() {
@@ -124,6 +124,8 @@ int ImageGen::GenerateImage(QImage& imageOut) {
     qDebug() << "   Image size " << RectToQString(imgArea) << "[img units]";
     qDebug("imgPerSimUnit = %.2f. numpoints", imgPerSimUnit);
 
+    // TEMPLATES
+
     // Determine the range of the offset template
     QRect templateRect(0,0,0,0);
     for (EmitterI e : emittersImg) {
@@ -131,26 +133,32 @@ int ImageGen::GenerateImage(QImage& imageOut) {
         // !@# need to upgrade the use of this template function to avoid crazy big arrays
     }
 
-    if (!templateDist || !templateDist->getRect().contains(templateRect)) {
+    if (!templateDist || !templateDist->rect().contains(templateRect)) {
         // Must recalculate templates!
-        // Make the template size 20% bigger (to prevent very frequent calculation)
-        QPoint center = templateRect.center();
-        templateRect.setSize(templateRect.size() * 1.2);
-        templateRect.moveCenter(center);
-        CalcTemplates(templateRect);
+        CalcDistAmpTemplates(templateRect);
+    }
+
+    if (!templatePhasor ||
+            imgPerSimUnit != templatePhasorImgPerSimUnit ||
+            s.wavelength != templatePhasorWavelength ||
+            !templatePhasor->rect().contains(templateRect)) {
+        CalcPhasorTemplate(templateRect);
     }
 
     auto timePostTemplates = fnTimer.elapsed();
 
+    // CALC PHASOR SUM
+
     // Generate a map of the phasors for each emitter, and sum together
     // Use the distance and amplitude templates
     Complex2D_C * phasorSumArr = new Complex2D_C(imgArea);
-
     for (EmitterI e : emittersImg) {
-        AddPhasorArr(imgPerSimUnit, s.wavelength, e, *templateDist, *templateAmp, *phasorSumArr);
+        AddPhasorArr(e, *templateDist, *templateAmp, *templatePhasor, *phasorSumArr);
     }
 
     auto timePostPhasors = fnTimer.elapsed();
+
+    // COLOUR MAP
 
     // Scaler will be 1/[emitter amplitude at half the simulation width]
     double scaler = 1/templateAmp->getPoint(imgArea.width() / 2, 0);
@@ -189,11 +197,16 @@ int ImageGen::GenerateImage(QImage& imageOut) {
 }
 
 /** ****************************************************************************
- * @brief ImageGen::CalcTemplates
+ * @brief ImageGen::CalcDistAmpTemplates
  * @param templateRect
  */
-void ImageGen::CalcTemplates(QRect templateRect) {
-    qDebug() << "Recalculating templates";
+void ImageGen::CalcDistAmpTemplates(QRect templateRect) {
+    // Make the template size 20% bigger (to prevent very frequent calculation)
+    QPoint center = templateRect.center();
+    templateRect.setSize(templateRect.size() * templateOversizeFactor);
+    templateRect.moveCenter(center);
+
+    qDebug() << "Recalculating dist + amp templates";
     qDebug() << "Template range is " << RectToQString(templateRect);
     // Generate a template array of distance (image units)
     if (templateDist) {delete templateDist;}
@@ -205,6 +218,25 @@ void ImageGen::CalcTemplates(QRect templateRect) {
     if (templateAmp) {delete templateAmp;}
     templateAmp = new Double2D_C(templateRect);
     CalcAmpArr(s.attnFactor, *templateDist, *templateAmp);
+}
+
+/** ****************************************************************************
+ * @brief ImageGen::CalcPhasorTemplate
+ * @param templateRect
+ */
+void ImageGen::CalcPhasorTemplate(QRect templateRect) {
+    // Make the template size 20% bigger (to prevent very frequent calculation)
+    QPoint center = templateRect.center();
+    templateRect.setSize(templateRect.size() * templateOversizeFactor);
+    templateRect.moveCenter(center);
+
+    qDebug() << "Recalculating phasor template";
+    // Template array of phasors
+    if (templatePhasor) { delete templatePhasor; }
+    templatePhasor = new Complex2D_C(templateRect);
+    templatePhasorWavelength = s.wavelength;
+    templatePhasorImgPerSimUnit = imgPerSimUnit;
+    CalcPhasorArr(imgPerSimUnit, s.wavelength, *templateDist, *templateAmp, *templatePhasor);
 }
 
 /** ****************************************************************************
@@ -243,7 +275,7 @@ void ImageGen::CalcDistArr(double simUnitPerIndex, Double2D_C & arr) {
  */
 void ImageGen::CalcAmpArr(double attnFactor, const Double2D_C & distArr, Double2D_C & ampArr) {
     // Calculate the complex phasor at every point
-    if (distArr.getRect() != ampArr.getRect()) {
+    if (distArr.rect() != ampArr.rect()) {
         qFatal("calcAmpArr distArr != ampArr! (not supported, but it could be)");
         return;
     }
@@ -272,6 +304,44 @@ void ImageGen::CalcAmpArr(double attnFactor, const Double2D_C & distArr, Double2
 }
 
 /** ****************************************************************************
+ * @brief ImageGen::CalcPhasorArr calculates a phasor template over the same
+ * range as the distance and amplitude templates
+ * @param imgPerSimUnit
+ * @param wavelength
+ * @param templateDist
+ * @param templateAmp
+ * @param templatePhasor
+ */
+void ImageGen::CalcPhasorArr(double imgPerSimUnit, double wavelength,
+                             const Double2D_C & templateDist, const Double2D_C & templateAmp,
+                            Complex2D_C & templatePhasor) {
+    // Checks
+    if (!templateDist.rect().contains(templatePhasor.rect())) {
+        qFatal("CalcPhasorArr templateDist != templatePhasor! (not supported, but it could be)");
+        return;
+    }
+    if (!templateAmp.rect().contains(templatePhasor.rect())) {
+        qFatal("CalcPhasorArr templateAmp != templatePhasor! (not supported, but it could be)");
+        return;
+    }
+
+    // templateDist is in image units (pixels)
+    double radPerImg = -2 * PI / (wavelength * imgPerSimUnit); // Radians per unit distance, * -1
+
+
+    for (int32_t y = templatePhasor.yTop; y < templatePhasor.yTop + templatePhasor.height; y++) {
+        for (int32_t x = templatePhasor.xLeft; x < templatePhasor.xLeft + templatePhasor.width; x++) {
+            templatePhasor.setPoint(x, y, std::polar<fpComplex>(templateAmp.getPoint(x,y),
+                                                          (templateDist.getPoint(x, y)) * radPerImg));
+            //            fpComplex amp = templateAmp.getPoint(x,y);
+            //            qreal angle = (templateDist.getPoint(x, y) + distOffsetImg) * radPerImg;
+            //            phasorArr.addPoint(x, y, complex(amp * cos(angle), amp * sin(angle)));
+        }
+    }
+    return;
+}
+
+/** ****************************************************************************
  * @brief ImageGen::AddPhasorArr for 1 emitter, calculates the phasor at every
  * location in the view window and add it to phasorArr
  * @param wavelength (sim units)
@@ -287,27 +357,65 @@ void ImageGen::AddPhasorArr(double imgPerSimUnit, double wavelength, EmitterI e,
     // phasorArray dimensions are that of the image. emLoc is the location we're calculating for
     // This function is performed in a shifted coordinate system (for efficiency)
     // The new coordinate system is 1:1 scale, but has the origin shifted such that the emitter is @ (0,0)
-    QRect rect = phasorArr.getRect().translated(-e.loc); // image rect with emitter location is the center
+    QRect rect = phasorArr.rect().translated(-e.loc); // image rect with emitter location is the center
     // Distort the phasorArr coordinates during this function, such that the emitter is at the center
     phasorArr.translate(-e.loc);
 
     // Checks
-    if (!templateDist.getRect().contains(phasorArr.getRect())) {
+    if (!templateDist.rect().contains(phasorArr.rect())) {
         qFatal("addPhasorArr - templateDist doesn't contain required offsets!");
         return;
     }
-    if (!templateAmp.getRect().contains(phasorArr.getRect())) {
+    if (!templateAmp.rect().contains(phasorArr.rect())) {
         qFatal("addPhasorArr - templateAmp doesn't contain required offsets!");
         return;
     }
 
     // templateDist is in image units (pixels)
     qreal distOffsetImg = e.distOffset * imgPerSimUnit;
-    double radPerImg = -2 * 3.14159265359 / (wavelength * imgPerSimUnit); // Radians per unit distance, * -1
+    double radPerImg = -2 * PI / (wavelength * imgPerSimUnit); // Radians per unit distance, * -1
     for (int32_t y = rect.top(); y < rect.top() + rect.height(); y++) {
         for (int32_t x = rect.x(); x < rect.x() + rect.width(); x++) {
             phasorArr.addPoint(x, y,std::polar<fpComplex>(templateAmp.getPoint(x,y),
                                                           (templateDist.getPoint(x, y) + distOffsetImg) * radPerImg));
+//            fpComplex amp = templateAmp.getPoint(x,y);
+//            qreal angle = (templateDist.getPoint(x, y) + distOffsetImg) * radPerImg;
+//            phasorArr.addPoint(x, y, complex(amp * cos(angle), amp * sin(angle)));
+        }
+    }
+    // Restore the phasorArr coordinates
+    phasorArr.translate(e.loc);
+    return;
+}
+
+void ImageGen::AddPhasorArr(EmitterI e, const Double2D_C & templateDist,
+                            const Double2D_C & templateAmp, const Complex2D_C & templatePhasor,
+                            Complex2D_C & phasorArr) {
+    // phasorArray dimensions are that of the image. emLoc is the location we're calculating for
+    // This function is performed in a shifted coordinate system (for efficiency)
+    // The new coordinate system is 1:1 scale, but has the origin shifted such that the emitter is @ (0,0)
+    QRect rect = phasorArr.rect().translated(-e.loc); // image rect with emitter location is the center
+    // Distort the phasorArr coordinates during this function, such that the emitter is at the center
+    phasorArr.translate(-e.loc);
+
+    // Checks
+    if (!templateDist.rect().contains(phasorArr.rect())) {
+        qFatal("addPhasorArr - templateDist doesn't contain required offsets!");
+        return;
+    }
+    if (!templateAmp.rect().contains(phasorArr.rect())) {
+        qFatal("addPhasorArr - templateAmp doesn't contain required offsets!");
+        return;
+    }
+    if (!templatePhasor.rect().contains(phasorArr.rect())) {
+        qFatal("addPhasorArr - templateAmp doesn't contain required offsets!");
+        return;
+    }
+
+    // templateDist is in image units (pixels)
+    for (int32_t y = rect.top(); y < rect.top() + rect.height(); y++) {
+        for (int32_t x = rect.x(); x < rect.x() + rect.width(); x++) {
+            phasorArr.addPoint(x, y, templatePhasor.getPoint(x, y));
 //            fpComplex amp = templateAmp.getPoint(x,y);
 //            qreal angle = (templateDist.getPoint(x, y) + distOffsetImg) * radPerImg;
 //            phasorArr.addPoint(x, y, complex(amp * cos(angle), amp * sin(angle)));
@@ -480,7 +588,7 @@ void ImageGen::DebugEmitterLocs(const QVector<EmitterF> &emittersF) {
     qDebug("\n");
 }
 
-/**
+/** ****************************************************************************
  * @brief ImageGen::DefaultArrangement
  * @return
  */

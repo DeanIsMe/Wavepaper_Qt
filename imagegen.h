@@ -35,7 +35,7 @@ struct EmArrangement {
 
 struct EmitterF { // Emitter, floating point coords
     QPointF loc; // Simulation coordinates
-    double distOffset; // determines the phase. default 0
+    double distOffset; // determines the phase. default 0. NOT SUPPORTED (for efficiency)!
     double amplitude; // default of 1
     EmitterF() : loc(0,0), distOffset(0), amplitude(1) {}
     EmitterF(QPointF p) : loc(p), distOffset(0), amplitude(1) {}
@@ -46,7 +46,7 @@ struct EmitterF { // Emitter, floating point coords
 
 struct EmitterI { // Emitter, integer coords
     QPoint loc; // Image coordinates (integers)
-    double distOffset; // determines the phase
+    double distOffset; // determines the phase. NOT SUPPORTED!
     double amplitude; // default of 1
     EmitterI() : loc(0,0), distOffset(0), amplitude(1) {}
     EmitterI(QPoint p) : loc(p), distOffset(0), amplitude(1) {}
@@ -83,12 +83,16 @@ class ImageGen : public QObject
 public:
     static constexpr qint32 imgPointsQuick = 40000;
     static constexpr qint32 imgPointsPreview = 200000;
+    static constexpr qreal templateOversizeFactor = 1.2; // The amount of extra length that the templates are calculated for
 
 
 private:
     QList<EmArrangement> arngmtList;
-    Double2D_C * templateDist = nullptr;
-    Double2D_C * templateAmp = nullptr;
+    Double2D_C * templateDist = nullptr; // Image units
+    Double2D_C * templateAmp = nullptr; // Image units - agnostic of imgPerSimUnit or wavelength.
+    Complex2D_C * templatePhasor = nullptr; // Simulation units. Depends on imgPerSimUnit or wavelength.
+    qreal templatePhasorWavelength;
+    qreal templatePhasorImgPerSimUnit;
 
 public:
     Settings s;
@@ -126,11 +130,14 @@ signals:
 private:
     static void CalcDistArr(double simUnitPerIndex, Double2D_C &arr);
     static void CalcAmpArr(double attnFactor, const Double2D_C &distArr, Double2D_C &ampArr);
+    static void CalcPhasorArr(double imgPerSimUnit, double wavelength, const Double2D_C &templateDist, const Double2D_C &templateAmp, Complex2D_C &templatePhasor);
     static QRgb ColourAngleToQrgb(int32_t angle, uint8_t alpha = 255);
-    static void AddPhasorArr(double imgPerSimUnit, double wavelength, EmitterI e, const Double2D_C &templateDist, const Double2D_C &templateAmp, Complex2D_C &phasorArr);
+    void AddPhasorArr(double imgPerSimUnit, double wavelength, EmitterI e,                                const Double2D_C & templateDist, const Double2D_C & templateAmp,
+                                Complex2D_C & phasorArr);
+    static void AddPhasorArr(EmitterI e, const Double2D_C &templateDist, const Double2D_C &templateAmp, const Complex2D_C &templatePhasor, Complex2D_C &phasorArr);
     static int EmitterArrangementToLocs(const EmArrangement &arngmt, QVector<QPointF> &emLocsOut);
-    void CalcTemplates(QRect templateRect);
-
+    void CalcDistAmpTemplates(QRect templateRect);
+    void CalcPhasorTemplate(QRect templateRect);
 public:
 
 };

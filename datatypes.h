@@ -9,7 +9,7 @@
 #include <complex>
 
 #define FP_TO_INT(fp) (fp + 0.5 - (fp<0))
-#define PI 3.1415926
+#define PI (3.14159265359)
 
 class ImageGen;
 class PreviewView;
@@ -76,7 +76,7 @@ public:
     inline void addPoint(QPoint p, const T& val) const {
         dataZero[p.x() + p.y() * width] += val;
     }
-    QRect getRect() const {return QRect(xLeft, yTop, width, height);}
+    QRect rect() const {return QRect(xLeft, yTop, width, height);}
 };
 
 typedef qreal fpComplex; // Float or double
