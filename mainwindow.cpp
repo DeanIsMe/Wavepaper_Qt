@@ -41,20 +41,18 @@ MainWindow::MainWindow(QWidget *parent)
     layoutCentral->addWidget(previewView);
 
     previewScene = new PreviewScene(previewView);
-    previewScene->setSceneRect(imageGen.simArea);
+    previewScene->setSceneRect(imageGen.areaSim);
     previewView->setScene(previewScene);
 
-    previewView->setSceneRect(imageGen.simArea);
+    previewView->setSceneRect(imageGen.areaSim);
 
-    QObject::connect(&imageGen, &ImageGen::PreviewImageChanged,
+    QObject::connect(&imageGen, &ImageGen::ImageChanged,
                      previewView, &PreviewView::OnBackgroundChange);
 
     QObject::connect(&imageGen, &ImageGen::EmittersChanged,
                      previewScene, &PreviewScene::OnEmitterChange);
 
     previewScene->AddEmitters(imageGen);
-
-    imageGen.GeneratePreview();
 
     qDebug() << "Preview view rect " << RectToQString(previewView->rect());
     qDebug() << "Preview view frameRect " << RectToQString(previewView->frameRect());
@@ -68,7 +66,7 @@ MainWindow::MainWindow(QWidget *parent)
 //    previewScene->setBackgroundBrush(brush);
 
     previewScene->AddEmitters(imageGen);
-    emit imageGen.PreviewImageChanged();
+    imageGen.GeneratePreviewImage();
 }
 
 MainWindow::~MainWindow()
@@ -82,7 +80,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     switch (event->key()) {
     case Qt::Key_1:
         imageGen.s.wavelength *= 1.5;
-        imageGen.GeneratePreview();
+        imageGen.GeneratePreviewImage();
         qDebug("Image regenerated. Wavelength = %.2f", imageGen.s.wavelength);
         break;
     case Qt::Key_2:
@@ -137,12 +135,12 @@ void MainWindow::on_actionMirrorHor_triggered(bool checked)
 {
     imageGen.GetActiveArrangement()->mirrorHor = checked;
     previewScene->AddEmitters(imageGen);
-    imageGen.GeneratePreview();
+    imageGen.GeneratePreviewImage();
 }
 
 void MainWindow::on_actionMirrorVert_triggered(bool checked)
 {
     imageGen.GetActiveArrangement()->mirrorVert = checked;
     previewScene->AddEmitters(imageGen);
-    imageGen.GeneratePreview();
+    imageGen.GeneratePreviewImage();
 }

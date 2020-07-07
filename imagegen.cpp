@@ -3,21 +3,26 @@
 #include <QElapsedTimer>
 #include <QImage>
 #include <QWidget>
+#include <QGraphicsSceneMouseEvent>
+#include <previewscene.h>
 
 ImageGen imageGen;
 
 /** ****************************************************************************
  * @brief ImageGen::ImageGen
  */
-ImageGen::ImageGen()
-{
+ImageGen::ImageGen() : i(this) {
     InitViewAreas();
 }
 
-void ImageGen::GeneratePreview()
-{
-    imageGen.GenerateImage(imageGen.imgPreview);
-    emit imageGen.PreviewImageChanged();
+void ImageGen::GeneratePreviewImage() {
+    imageGen.GenerateImage(imageGen.imgPreview, genPreview);
+    emit imageGen.ImageChanged(imageGen.imgPreview, genPreview.imgPerSimUnit);
+}
+
+void ImageGen::GenerateQuickImage() {
+    imageGen.GenerateImage(imageGen.imgQuick, genQuick);
+    emit imageGen.ImageChanged(imageGen.imgQuick, genQuick.imgPerSimUnit);
 }
 
 /** ****************************************************************************
@@ -26,19 +31,11 @@ void ImageGen::GeneratePreview()
  */
 int ImageGen::InitViewAreas() {
     outResolution = QSize(1080, 1920);
-    simArea = QRectF(0, 0, 100, 100. / aspectRatio());
-    simArea.moveCenter(QPoint(0,0));
+    areaSim = QRectF(0, 0, 100, 100. / aspectRatio());
+    areaSim.moveCenter(QPoint(0,0));
 
-    // Determine the viewing window in image coordinates
-    targetImgPoints = 200000;
-    imgPerSimUnit = sqrt(targetImgPoints / simArea.width() / simArea.height());
-    QRectF imgAreaF(simArea.topLeft() * imgPerSimUnit, simArea.bottomRight() * imgPerSimUnit);
-    imgArea = imgAreaF.toRect();
-
-    if (abs(simArea.width() / simArea.height() / (qreal)imgArea.width() * (qreal)imgArea.height() - 1) > 0.02) {
-        qFatal("InitViewAreas: viewWindow and simWindow are different ratios!");
-        return -1;
-    }
+    setTargetImgPoints(imgPointsPreview, genPreview);
+    setTargetImgPoints(imgPointsQuick, genQuick);
     return 0;
 }
 
@@ -46,14 +43,15 @@ int ImageGen::InitViewAreas() {
  * @brief ImageGen::setTargetImgPoints
  * @param imgPoints
  */
-void ImageGen::setTargetImgPoints(qint32 imgPoints) {
+void ImageGen::setTargetImgPoints(qint32 imgPoints, GenSettings & genSet) {
     // Determine the viewing window in image coordinates
-    targetImgPoints = imgPoints;
-    imgPerSimUnit = sqrt(targetImgPoints / simArea.width() / simArea.height());
-    QRectF imgAreaF(simArea.topLeft() * imgPerSimUnit, simArea.bottomRight() * imgPerSimUnit);
-    imgArea = imgAreaF.toRect();
+    genSet.targetImgPoints = imgPoints;
+    genSet.imgPerSimUnit = sqrt(genSet.targetImgPoints / areaSim.width() / areaSim.height());
+    QRectF areaImgF(areaSim.topLeft() * genSet.imgPerSimUnit, areaSim.bottomRight() * genSet.imgPerSimUnit);
+    genSet.areaImg = areaImgF.toRect();
 
-    if (abs(simArea.width() / simArea.height() / (qreal)imgArea.width() * (qreal)imgArea.height() - 1) > 0.02) {
+    if (abs(areaSim.width() / areaSim.height() /
+            (qreal)genSet.areaImg.width() * (qreal)genSet.areaImg.height() - 1) > 0.02) {
         qFatal("setTargetImgPoints: viewWindow and simWindow are different ratios!");
     }
 }
@@ -64,8 +62,8 @@ void ImageGen::setTargetImgPoints(qint32 imgPoints) {
 void ImageGen::EmitterCountIncrease() {
     EmArrangement * group = GetActiveArrangement();
     group->count = std::max(group->count + 1, qRound((qreal)group->count * 1.2));
-    GenerateImage(imgPreview);
-    emit PreviewImageChanged();
+    GenerateImage(imgPreview, genPreview);
+    emit ImageChanged(imgPreview, genPreview.imgPerSimUnit);
     emit EmittersChanged();
 }
 
@@ -77,8 +75,8 @@ void ImageGen::EmitterCountDecrease() {
     int prevVal = group->count;
     group->count = std::max(1, std::min(group->count - 1, qRound((qreal)group->count * 0.8)));
     if (group->count != prevVal) {
-        GenerateImage(imgPreview);
-        emit PreviewImageChanged();
+        GenerateImage(imgPreview, genPreview);
+        emit ImageChanged(imgPreview, genPreview.imgPerSimUnit);
         emit EmittersChanged();
     }
 }
@@ -101,7 +99,7 @@ void ImageDataDealloc(void * info) {
  * @param imageOut is the output
  * @return
  */
-int ImageGen::GenerateImage(QImage& imageOut) {
+int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
     QElapsedTimer fnTimer;
     fnTimer.start();
     // This function works in image logical coordinates, which are integers
@@ -117,19 +115,19 @@ int ImageGen::GenerateImage(QImage& imageOut) {
     // Convert emLocs to image coordinates
     QVector<EmitterI> emittersImg(emittersF.size());
     for (int32_t i = 0; i < emittersF.size(); i++) {
-        emittersImg[i] = EmitterI(emittersF[i], imgPerSimUnit);
+        emittersImg[i] = EmitterI(emittersF[i], genSet.imgPerSimUnit);
     }
 
-    qDebug() << "Simulation window " << RectFToQString(simArea) << "[sim units]";
-    qDebug() << "   Image size " << RectToQString(imgArea) << "[img units]";
-    qDebug("imgPerSimUnit = %.2f. numpoints", imgPerSimUnit);
+    qDebug() << "Simulation window " << RectFToQString(areaSim) << "[sim units]";
+    qDebug() << "   Image size " << RectToQString(genSet.areaImg) << "[img units]";
+    qDebug("imgPerSimUnit = %.2f. numpoints", genSet.imgPerSimUnit);
 
     // TEMPLATES
 
     // Determine the range of the offset template
     QRect templateRect(0,0,0,0);
     for (EmitterI e : emittersImg) {
-        templateRect |= imgArea.translated(-e.loc);
+        templateRect |= genSet.areaImg.translated(-e.loc);
         // !@# need to upgrade the use of this template function to avoid crazy big arrays
     }
 
@@ -138,11 +136,11 @@ int ImageGen::GenerateImage(QImage& imageOut) {
         CalcDistAmpTemplates(templateRect);
     }
 
-    if (!templatePhasor ||
-            imgPerSimUnit != templatePhasorImgPerSimUnit ||
-            s.wavelength != templatePhasorWavelength ||
-            !templatePhasor->rect().contains(templateRect)) {
-        CalcPhasorTemplate(templateRect);
+    if (!genSet.templatePhasor.arr ||
+            genSet.imgPerSimUnit != genSet.templatePhasor.imgPerSimUnit ||
+            s.wavelength != genSet.templatePhasor.wavelength ||
+            !genSet.templatePhasor.arr->rect().contains(templateRect)) {
+        CalcPhasorTemplate(templateRect, genSet);
     }
 
     auto timePostTemplates = fnTimer.elapsed();
@@ -151,9 +149,9 @@ int ImageGen::GenerateImage(QImage& imageOut) {
 
     // Generate a map of the phasors for each emitter, and sum together
     // Use the distance and amplitude templates
-    Complex2D_C * phasorSumArr = new Complex2D_C(imgArea);
+    Complex2D_C * phasorSumArr = new Complex2D_C(genSet.areaImg);
     for (EmitterI e : emittersImg) {
-        AddPhasorArr(e, *templateDist, *templateAmp, *templatePhasor, *phasorSumArr);
+        AddPhasorArr(e, *templateDist, *templateAmp, *genSet.templatePhasor.arr, *phasorSumArr);
     }
 
     auto timePostPhasors = fnTimer.elapsed();
@@ -161,10 +159,10 @@ int ImageGen::GenerateImage(QImage& imageOut) {
     // COLOUR MAP
 
     // Scaler will be 1/[emitter amplitude at half the simulation width]
-    double scaler = 1/templateAmp->getPoint(imgArea.width() / 2, 0);
+    double scaler = 1/templateAmp->getPoint(genSet.areaImg.width() / 2, 0);
 
     // Use the resultant amplitude to fill in the pixel data
-    Rgb2D_C* pixArr = new Rgb2D_C(imgArea);
+    Rgb2D_C* pixArr = new Rgb2D_C(genSet.areaImg);
     for (int y = pixArr->yTop; y < pixArr->yTop + pixArr->height; y++) {
         for (int x = pixArr->xLeft; x < pixArr->xLeft + pixArr->width; x++) {
             pixArr->setPoint(x, y, ColourAngleToQrgb(std::abs(phasorSumArr->getPoint(x, y)) * scaler * 1530 * 0.2, 255));
@@ -224,19 +222,20 @@ void ImageGen::CalcDistAmpTemplates(QRect templateRect) {
  * @brief ImageGen::CalcPhasorTemplate
  * @param templateRect
  */
-void ImageGen::CalcPhasorTemplate(QRect templateRect) {
+void ImageGen::CalcPhasorTemplate(QRect templateRect, GenSettings & genSet) {
     // Make the template size 20% bigger (to prevent very frequent calculation)
     QPoint center = templateRect.center();
     templateRect.setSize(templateRect.size() * templateOversizeFactor);
     templateRect.moveCenter(center);
+    // Prevent the phasor template from being larger than the distance and amplitude
+    if (!templateDist->rect().contains(templateRect)) {
+        templateRect = templateDist->rect();
+    }
 
     qDebug() << "Recalculating phasor template";
     // Template array of phasors
-    if (templatePhasor) { delete templatePhasor; }
-    templatePhasor = new Complex2D_C(templateRect);
-    templatePhasorWavelength = s.wavelength;
-    templatePhasorImgPerSimUnit = imgPerSimUnit;
-    CalcPhasorArr(imgPerSimUnit, s.wavelength, *templateDist, *templateAmp, *templatePhasor);
+    genSet.templatePhasor.MakeNew(templateRect, s.wavelength, genSet.imgPerSimUnit);
+    CalcPhasorArr(genSet.templatePhasor, *templateDist, *templateAmp);
 }
 
 /** ****************************************************************************
@@ -306,32 +305,29 @@ void ImageGen::CalcAmpArr(double attnFactor, const Double2D_C & distArr, Double2
 /** ****************************************************************************
  * @brief ImageGen::CalcPhasorArr calculates a phasor template over the same
  * range as the distance and amplitude templates
- * @param imgPerSimUnit
- * @param wavelength
+ * @param templatePhasor
  * @param templateDist
  * @param templateAmp
- * @param templatePhasor
  */
-void ImageGen::CalcPhasorArr(double imgPerSimUnit, double wavelength,
-                             const Double2D_C & templateDist, const Double2D_C & templateAmp,
-                            Complex2D_C & templatePhasor) {
+void ImageGen::CalcPhasorArr(TemplatePhasor& templatePhasor,
+                             const Double2D_C & templateDist, const Double2D_C & templateAmp) {
+    Complex2D_C& arr = *templatePhasor.arr; // Output phasor array
     // Checks
-    if (!templateDist.rect().contains(templatePhasor.rect())) {
+    if (!templateDist.rect().contains(arr.rect())) {
         qFatal("CalcPhasorArr templateDist != templatePhasor! (not supported, but it could be)");
         return;
     }
-    if (!templateAmp.rect().contains(templatePhasor.rect())) {
+    if (!templateAmp.rect().contains(arr.rect())) {
         qFatal("CalcPhasorArr templateAmp != templatePhasor! (not supported, but it could be)");
         return;
     }
 
     // templateDist is in image units (pixels)
-    double radPerImg = -2 * PI / (wavelength * imgPerSimUnit); // Radians per unit distance, * -1
+    double radPerImg = -2 * PI / (templatePhasor.wavelength * templatePhasor.imgPerSimUnit); // Radians per unit distance, * -1
 
-
-    for (int32_t y = templatePhasor.yTop; y < templatePhasor.yTop + templatePhasor.height; y++) {
-        for (int32_t x = templatePhasor.xLeft; x < templatePhasor.xLeft + templatePhasor.width; x++) {
-            templatePhasor.setPoint(x, y, std::polar<fpComplex>(templateAmp.getPoint(x,y),
+    for (int32_t y = arr.yTop; y < arr.yTop + arr.height; y++) {
+        for (int32_t x = arr.xLeft; x < arr.xLeft + arr.width; x++) {
+            arr.setPoint(x, y, std::polar<fpComplex>(templateAmp.getPoint(x,y),
                                                           (templateDist.getPoint(x, y)) * radPerImg));
             //            fpComplex amp = templateAmp.getPoint(x,y);
             //            qreal angle = (templateDist.getPoint(x, y) + distOffsetImg) * radPerImg;
@@ -602,4 +598,101 @@ EmArrangement ImageGen::DefaultArrangement() {
     arn.center = QPointF(0, 0);
     arn.count = 5;
     return arn;
+}
+
+/** ****************************************************************************
+ * @brief ImageGen::Interact::mousePressEvent
+ * @param event
+ */
+void ImageGen::Interact::mousePressEvent(QGraphicsSceneMouseEvent *event, PreviewScene *scene)
+{
+    Q_UNUSED(scene);
+    qDebug("Scene press   event (%7.2f, %7.2f)", event->scenePos().x(), event->scenePos().y());
+    Cancel();
+    grpActive = parent->GetActiveArrangement();
+    if (!grpActive) {
+        // No active groups
+        return;
+    }
+    active = true;
+    ctrlPressed = (event->modifiers() & Qt::ControlModifier);
+    grpBackup = *grpActive; // Save, so that it can be reverted
+    pressPos = event->scenePos();
+}
+
+void ImageGen::Interact::mouseReleaseEvent(QGraphicsSceneMouseEvent *event, PreviewScene *scene)
+{
+    Q_UNUSED(scene);
+    qDebug("Scene release event (%7.2f, %7.2f)", event-> scenePos().x(), event->scenePos().y());
+    active = false;
+
+    emit parent->EmittersChanged(); // Just need to redraw the axes lines when mirroring
+
+    parent->GeneratePreviewImage();
+}
+
+void ImageGen::Interact::mouseMoveEvent(QGraphicsSceneMouseEvent *event, PreviewScene *scene)
+{
+    Q_UNUSED(scene);
+    qDebug("Scene move    event (%7.2f, %7.2f)", event->scenePos().x(), event->scenePos().y());
+    if (!active) {return;}
+    // Determine how much the mouse has moved while clicked
+    QPointF delta = event->scenePos() - pressPos;
+
+    // Alt disables snapping
+    bool snapEn = (event->modifiers() & Qt::AltModifier) == 0;
+
+    if (ctrlPressed) {
+        // Change location
+        grpActive->center = grpBackup.center + delta;
+        if (snapEn) {
+            grpActive->center.setX(Snap(grpActive->center.x(), 9e9, parent->areaSim.width() * 0.05));
+            grpActive->center.setY(Snap(grpActive->center.y(), 9e9, parent->areaSim.width() * 0.05));
+        }
+    }
+    else {
+        switch (grpActive->type) {
+        case EmType::arc: {
+            grpActive->arcRadius = std::max(0.0, grpBackup.arcRadius - delta.y());
+            qreal spanDelta = delta.x() / parent->areaSim.width() * 3.1415926 * 2;
+
+            grpActive->arcSpan = std::max(0.0, grpBackup.arcSpan + spanDelta);
+            if (snapEn) {
+                grpActive->arcSpan = Snap(grpActive->arcSpan, PI, PI * 0.1);
+            }
+            break;
+        }
+        case EmType::line:
+            grpActive->lenTotal = std::max(0.0, grpBackup.lenTotal - delta.y());
+            break;
+        default:
+            return;
+        }
+    }
+
+    emit parent->EmittersChanged();
+    parent->GenerateQuickImage();
+}
+
+void ImageGen::Interact::Cancel() {
+    // Restore the backup
+    if (active) {
+        if (grpActive) {
+            *grpActive = grpBackup;
+        }
+    }
+    active = false;
+}
+
+/**
+ * @brief ImageGen::TemplatePhasor::MakeNew
+ * @param size
+ * @param wavelengthIn
+ * @param imgPerSimUnitIn
+ */
+void ImageGen::TemplatePhasor::MakeNew(QRect size, qreal wavelengthIn, qreal imgPerSimUnitIn) {
+    if (this->arr) { delete this->arr; }
+    this->arr = new Complex2D_C(size);
+    this->wavelength = wavelengthIn;
+    this->imgPerSimUnit = imgPerSimUnitIn;
 }

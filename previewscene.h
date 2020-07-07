@@ -3,7 +3,6 @@
 
 #include <QGraphicsScene>
 #include <QGraphicsView>
-#include <QGraphicsSceneMouseEvent>
 #include <QGraphicsItemGroup>
 #include "imagegen.h"
 
@@ -16,17 +15,9 @@ class PreviewScene : public QGraphicsScene
 {
     Q_OBJECT
 private:
-    // Interaction:
-    bool active = false;
-    EmArrangement grpBackup;
-    EmArrangement * grpActive;
-    QPointF pressPos;
-    qint32 backupImgPoints;
-    bool ctrlPressed;
     QGraphicsLineItem yAxisItem;
     QGraphicsLineItem xAxisItem;
     void Cancel();
-
 public:
     explicit PreviewScene(QObject *parent = nullptr);
     QGraphicsItemGroup emItemGroup;
@@ -37,9 +28,12 @@ public slots:
 
     // QGraphicsScene interface
 protected:
-    void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
-    void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
-    void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
+    void mousePressEvent(QGraphicsSceneMouseEvent *event) override {
+        imageGen.i.mousePressEvent(event, this);}
+    void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override {
+        imageGen.i.mouseReleaseEvent(event, this);}
+    void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override {
+        imageGen.i.mouseMoveEvent(event, this);}
 
     // Custom
 public:
@@ -60,14 +54,15 @@ protected:
     void resizeEvent(QResizeEvent *event) override;
 
 public slots:
-    void OnBackgroundChange();
+    void OnBackgroundChange(QImage &image, qreal imgPerSimUnit);
 
     // QGraphicsView interface
 protected:
     void drawBackground(QPainter *painter, const QRectF &rect);
 
-    // QWidget interface
 protected:
+    QImage * backgroundImage = nullptr;
+    qreal backgroundImgPerSimUnit; // Saved for the background
 };
 
 #endif // PREVIEWSCENE_H

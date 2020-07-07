@@ -12,104 +12,6 @@ PreviewScene::PreviewScene(QObject *parent) :
 
 }
 
-/** ****************************************************************************
- * @brief PreviewScene::Cancel
- */
-void PreviewScene::Cancel()
-{
-    // Restore the backup
-    if (active) {
-        if (grpActive) {
-            *grpActive = grpBackup;
-        }
-        imageGen.setTargetImgPoints(backupImgPoints);
-    }
-    active = false;
-}
-
-/** ****************************************************************************
- * @brief PreviewScene::mousePressEvent
- * @param event
- */
-void PreviewScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
-{
-    qDebug("Scene press   event (%7.2f, %7.2f)", event->scenePos().x(), event->scenePos().y());
-    Cancel();
-    grpActive = imageGen.GetActiveArrangement();
-    if (!grpActive) {
-        // No active groups
-        return;
-    }
-    active = true;
-    ctrlPressed = (event->modifiers() & Qt::ControlModifier);
-    backupImgPoints = imageGen.targetImgPoints;
-    imageGen.setTargetImgPoints(imageGen.imgPointsQuick);
-    grpBackup = *grpActive; // Save, so that it can be reverted
-    pressPos = event->scenePos();
-}
-
-
-/** ****************************************************************************
- * @brief PreviewScene::mouseReleaseEvent
- * @param event
- */
-void PreviewScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
-{
-    qDebug("Scene release event (%7.2f, %7.2f)", event-> scenePos().x(), event->scenePos().y());
-    active = false;
-    imageGen.setTargetImgPoints(backupImgPoints);
-    AddAxesLines(imageGen);
-
-    imageGen.GeneratePreview();
-
-}
-
-
-/** ****************************************************************************
- * @brief PreviewScene::mouseMoveEvent
- * @param event
- */
-void PreviewScene::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
-{
-    qDebug("Scene move    event (%7.2f, %7.2f)", event->scenePos().x(), event->scenePos().y());
-    if (!active) {return;}
-    // Determine how much the mouse has moved while clicked
-    QPointF delta = event->scenePos() - pressPos;
-
-    // Alt disables snapping
-    bool snapEn = (event->modifiers() & Qt::AltModifier) == 0;
-
-    if (ctrlPressed) {
-        // Change location
-        grpActive->center = grpBackup.center + delta;
-        if (snapEn) {
-            grpActive->center.setX(Snap(grpActive->center.x(), 9e9, sceneRect().width() * 0.05));
-            grpActive->center.setY(Snap(grpActive->center.y(), 9e9, sceneRect().width() * 0.05));
-        }
-    }
-    else {
-        switch (grpActive->type) {
-        case EmType::arc: {
-            grpActive->arcRadius = std::max(0.0, grpBackup.arcRadius - delta.y());
-            qreal spanDelta = delta.x() / sceneRect().width() * 3.1415926 * 2;
-
-            grpActive->arcSpan = std::max(0.0, grpBackup.arcSpan + spanDelta);
-            if (snapEn) {
-                grpActive->arcSpan = Snap(grpActive->arcSpan, PI, PI * 0.1);
-            }
-            break;
-        }
-        case EmType::line:
-            grpActive->lenTotal = std::max(0.0, grpBackup.lenTotal - delta.y());
-            break;
-        default:
-            return;
-        }
-    }
-
-    AddEmitters(imageGen);
-    imageGen.GeneratePreview();
-}
 
 /** ****************************************************************************
  * @brief PreviewScene::AddEmitters
@@ -160,8 +62,9 @@ void PreviewScene::AddEmitters(ImageGen & imageGen) {
 void PreviewScene::AddAxesLines(ImageGen & imageGen) {
     this->removeItem(&yAxisItem);
     this->removeItem(&xAxisItem);
-    if (imageGen.GetActiveArrangement() && active) {
-        EmArrangement* group = imageGen.GetActiveArrangement();
+    // Axes are drawn only when interacting with an arrangement that's mirrored
+    if (imageGen.i.IsActive() && imageGen.i.GetActiveGroup()) {
+        EmArrangement* group = imageGen.i.GetActiveGroup();
         if (group->mirrorHor) {
             yAxisItem.setLine(QLineF(0, sceneRect().top(), 0, sceneRect().bottom()));
             this->addItem(&yAxisItem);
@@ -195,17 +98,19 @@ void PreviewView::resizeEvent(QResizeEvent *event) {
     qreal newWidth = std::min((qreal)event->size().height() * imageGen.aspectRatio(), (qreal)event->size().width());
     this->resize(newWidth, newWidth / imageGen.aspectRatio());
     // Ensure that the viewable section of the screen stays the same
-    this->fitInView(imageGen.simArea, Qt::KeepAspectRatio);
+    this->fitInView(imageGen.areaSim, Qt::KeepAspectRatio);
     // Background redraw will be triggered
 }
 
 /** ****************************************************************************
  * @brief PreviewView::BackgroundChanged
  */
-void PreviewView::OnBackgroundChange()
+void PreviewView::OnBackgroundChange(QImage & image, qreal imgPerSimUnit)
 {
-    scene()->invalidate(imageGen.simArea, QGraphicsScene::BackgroundLayer);
+    scene()->invalidate(imageGen.areaSim, QGraphicsScene::BackgroundLayer);
     // resetCachedContent(); // Delete previously cached background to force redraw
+    backgroundImage = &image;
+    backgroundImgPerSimUnit = imgPerSimUnit;
     update(); // Redraws, but not immediately
 }
 
@@ -224,9 +129,9 @@ void PreviewView::drawBackground(QPainter *painter, const QRectF &rect)
     // Image coordinates map to the scene / simulation coordinates with
     // a factor of imgPerSimUnit. The image itself has dimensions that start at 0,0,
     // whilst the scene can start at any point.
-    QRectF imgSourceRect((rect.topLeft() - sceneRect().topLeft()) * imageGen.imgPerSimUnit,
-                      rect.size() * imageGen.imgPerSimUnit);
-    painter->drawImage(rect, imageGen.imgPreview, imgSourceRect);
+    QRectF imgSourceRect((rect.topLeft() - sceneRect().topLeft()) * backgroundImgPerSimUnit,
+                      rect.size() * backgroundImgPerSimUnit);
+    painter->drawImage(rect, *backgroundImage, imgSourceRect);
 }
 
 /** ****************************************************************************
