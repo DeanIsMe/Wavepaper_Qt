@@ -94,6 +94,16 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     case Qt::Key_4:
         previewScene->ListAllItems();
         break;
+    case Qt::Key_Plus: // !@# temp
+        imageGen.s.distOffsetF *= 1.2;
+        qDebug("distOffsetF = %.2f", imageGen.s.distOffsetF);
+        imageGen.GeneratePreviewImage();
+        break;
+    case Qt::Key_Minus: // !@# temp
+        imageGen.s.distOffsetF *= (1./1.2);
+        qDebug("distOffsetF = %.2f", imageGen.s.distOffsetF);
+        imageGen.GeneratePreviewImage();
+        break;
     default:
         event->ignore();
     }

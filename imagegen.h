@@ -60,7 +60,8 @@ struct EmitterI { // Emitter, integer coords
 
 struct Settings {
     double wavelength = 40; // Wavelength. Simulation units
-    double attnFactor = 1; // Normally 1. Amplitude drops off at rate of 1/(r^attnFactor). 1/r is standard.
+    double distOffsetF = 0.1; // controls linearity. Range 0 to 1+, normally 0.1. Amplitude drops off at rate of 1/(r + sceneLength * distOffsetF).
+    // as distOffsetF approaches 0, the amplitude at each emitter approaches infinity.
     bool emittersInSync; // If true then all emitters are in phase with the same amplitude. If false, then the energizer determines phase & amplitude
     QPointF energizerLoc; // The location of the energizer that determines amplitude and phase by the distance to each emitter
     QList<EmArrangement> emArrangements;
@@ -109,8 +110,14 @@ public:
 
 private:
     QList<EmArrangement> arngmtList;
-    Double2D_C * templateDist = nullptr; // Image units
-    Double2D_C * templateAmp = nullptr; // Image units - agnostic of imgPerSimUnit or wavelength.
+    struct TemplateDist {
+        Double2D_C * arr = nullptr; // Index is image units. Values are scene units
+        qreal imgPerSimUnit; // The imgPerSimUnit that this template was generated with
+    };
+    struct TemplateAmp {
+        Double2D_C * arr = nullptr; // Index is image units
+        qreal distOffset; // the distOffset used in the template amp calculation
+    };
     struct TemplatePhasor {
         Complex2D_C * arr = nullptr; // Simulation units. Depends on imgPerSimUnit or wavelength.
         qreal wavelength; // The wavelength that this template was generated with
@@ -121,11 +128,12 @@ private:
 public:
     Settings s;
 
-
     struct GenSettings {
         double targetImgPoints = imgPointsPreview; // Total number of points in the preview
         double imgPerSimUnit;
         QRect areaImg; // The rectangle of the image view area (image coordinates)
+        TemplateDist templateDist;
+        TemplateAmp templateAmp;
         TemplatePhasor templatePhasor;
     };
     // The block below must be kept in sync
@@ -155,21 +163,25 @@ public:
     void EmitterCountIncrease();
     void EmitterCountDecrease();
 
+    void setDistOffsetF(qreal in) {s.distOffsetF = in;}
+    qreal getDistOffsetF() const {return s.distOffsetF;}
+
 signals:
     void ImageChanged(QImage & image, qreal imgPerSimUnitOut);
-    void EmittersChanged();
+    void EmittersChanged(); // Emitted when the emitter locations change
 
 private:
     static void CalcDistArr(double simUnitPerIndex, Double2D_C &arr);
-    static void CalcAmpArr(double attnFactor, const Double2D_C &distArr, Double2D_C &ampArr);
+    static void CalcAmpArr(double distOffset, const Double2D_C &distArr, Double2D_C &ampArr);
     static void CalcPhasorArr(TemplatePhasor& templatePhasor,
                               const Double2D_C & templateDist, const Double2D_C & templateAmp);
     static QRgb ColourAngleToQrgb(int32_t angle, uint8_t alpha = 255);
-    void AddPhasorArr(double imgPerSimUnit, double wavelength, EmitterI e,                                const Double2D_C & templateDist, const Double2D_C & templateAmp,
-                                Complex2D_C & phasorArr);
+    void AddPhasorArr(double imgPerSimUnit, double wavelength, EmitterI e, const Double2D_C & templateDist,
+                      const Double2D_C & templateAmp, Complex2D_C & phasorArr);
     static void AddPhasorArr(EmitterI e, const Double2D_C &templateDist, const Double2D_C &templateAmp, const Complex2D_C &templatePhasor, Complex2D_C &phasorArr);
     static int EmitterArrangementToLocs(const EmArrangement &arngmt, QVector<QPointF> &emLocsOut);
-    void CalcDistAmpTemplates(QRect templateRect);
+    void CalcDistTemplate(QRect templateRect, GenSettings &genSet);
+    void CalcAmpTemplate(qreal distOffset, GenSettings &genSet);
     void CalcPhasorTemplate(QRect templateRect, GenSettings &genSet);
 public:
 
