@@ -1,4 +1,5 @@
 #include "imagegen.h"
+#include "colourmap.h"
 #include <QList>
 #include <QElapsedTimer>
 #include <QImage>
@@ -161,15 +162,6 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
 
     auto timePostTemplates = fnTimer.elapsed();
 
-    qDebug("@(10,0) dist=%.2f, amp=%.4f, phasor=%.4f, %.4f i", genSet.templateDist.arr->getPoint(10, 0),
-           genSet.templateAmp.arr->getPoint(10, 0),
-           genSet.templatePhasor.arr->getPoint(10,0).real(),
-           genSet.templatePhasor.arr->getPoint(10,0).imag());
-    qDebug("@(50,0) dist=%.2f, amp=%.4f, phasor=%.4f, %.4f i", genSet.templateDist.arr->getPoint(50, 0),
-           genSet.templateAmp.arr->getPoint(50, 0),
-           genSet.templatePhasor.arr->getPoint(50,0).real(),
-           genSet.templatePhasor.arr->getPoint(50,0).imag());
-
     // CALC PHASOR SUM
 
     // Generate a map of the phasors for each emitter, and sum together
@@ -188,16 +180,45 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
 
     // Use the resultant amplitude to fill in the pixel data
     Rgb2D_C* pixArr = new Rgb2D_C(genSet.areaImg);
-    for (int y = pixArr->yTop; y < pixArr->yTop + pixArr->height; y++) {
-        for (int x = pixArr->xLeft; x < pixArr->xLeft + pixArr->width; x++) {
-            pixArr->setPoint(x, y, ColourAngleToQrgb(std::abs(phasorSumArr->getPoint(x, y)) * scaler * 1530 * 0.2, 255));
+    if (0) {
+        // Colour angle (basic)
+        for (int y = pixArr->yTop; y < pixArr->yTop + pixArr->height; y++) {
+            for (int x = pixArr->xLeft; x < pixArr->xLeft + pixArr->width; x++) {
+                pixArr->setPoint(x, y, ColourAngleToQrgb(std::abs(phasorSumArr->getPoint(x, y)) * scaler * 1530 * 0.2, 255));
+            }
+        }
+    }
+    else {
+        // Colour map
+        colourMap.CreateIndexed(); // !@# remove
+
+        // Find max and min values
+        Double2D_C amplitude(phasorSumArr->rect());
+        qreal maxAmp = 0;
+        qreal minAmp = genSet.templateAmp.arr->getPoint(1,1);
+        for (int y = pixArr->yTop; y < pixArr->yTop + pixArr->height; y++) {
+            for (int x = pixArr->xLeft; x < pixArr->xLeft + pixArr->width; x++) {
+                qreal amp = std::abs(phasorSumArr->getPoint(x, y));
+                amplitude.setPoint(x, y, amp);
+                minAmp = std::min(minAmp, amp);
+                maxAmp = std::max(maxAmp, amp);
+            }
+        }
+
+        qreal mult = 100. / (maxAmp - minAmp);
+        for (int y = pixArr->yTop; y < pixArr->yTop + pixArr->height; y++) {
+            for (int x = pixArr->xLeft; x < pixArr->xLeft + pixArr->width; x++) {
+                // Calculate location in range 0 to 100;
+                qreal loc = (amplitude.getPoint(x, y) - minAmp) * mult;
+                pixArr->setPoint(x, y, colourMap.GetColourValue(loc));
+            }
         }
     }
 
     auto timePostClrMap = fnTimer.elapsed();
 
     if (0) {
-        // Test gradient pattern
+        // Test pattern, depends only on location
         for (int y = pixArr->yTop; y < pixArr->yTop + pixArr->height; y++) {
             for (int x = pixArr->xLeft; x < pixArr->xLeft + pixArr->width; x++) {
                 pixArr->setPoint(x, y,
@@ -354,7 +375,6 @@ void ImageGen::CalcPhasorArr(TemplatePhasor& templatePhasor,
     }
 
     // templateDist is in image units (pixels)
-    double radPerImg = -2 * PI / (templatePhasor.wavelength * templatePhasor.imgPerSimUnit); // Radians per unit distance, * -1
     double radPerSim = -2 * PI / templatePhasor.wavelength; // Radians per unit distance, * -1
 
     for (int32_t y = arr.yTop; y < arr.yTop + arr.height; y++) {

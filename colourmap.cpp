@@ -1,5 +1,7 @@
 #include "colourmap.h"
 
+ColourMap colourMap;
+
 ColourMap::ColourMap()
 {
     // !@# temporary data
@@ -9,11 +11,25 @@ ColourMap::ColourMap()
     clrList.append(ClrFix(Qt::red,  50));
     clrList.append(ClrFix(Qt::black,  75));
     clrList.append(ClrFix(Qt::blue, 100));
+    CreateIndexed();
 }
 
 void ColourMap::AddColour(ClrFix clrFix)
 {
     clrList.append(clrFix);
+}
+
+// loc is a number from 0 (min) to 100 (max)
+// Retrieves the colour, using the index and interpolation
+QRgb ColourMap::GetColourValue(qreal loc) {
+    int locBefore = std::min(99, std::max(0,(int)loc));
+    qreal f = (loc - locBefore);
+    qreal f2 = 1. - f;
+    QColor& before = clrIndexed[locBefore];
+    QColor& after = clrIndexed[locBefore + 1];
+    return qRgb(f2 * before.red() + f * after.red(),
+             f2 * before.green() + f * after.green(),
+             f2 * before.blue() + f * after.blue());
 }
 
 void ColourMap::AddColour(QColor clr, qreal loc)
@@ -53,7 +69,7 @@ void ColourMap::CreateIndexed()
 QColor ColourMap::Interpolate(qreal loc, const ClrFix &before, const ClrFix &after) {
     qreal f = (loc - before.loc) / (after.loc - before.loc);
     qreal f2 = 1 - f;
-    return QColor(f * before.clr.redF() + f2 * after.clr.redF(),
-             f * before.clr.greenF() + f2 * after.clr.greenF(),
-             f * before.clr.blueF() + f2 * after.clr.blueF());
+    return QColor(f2 * before.clr.red() + f * after.clr.red(),
+                  f2 * before.clr.green() + f * after.clr.green(),
+                  f2 * before.clr.blue() + f * after.clr.blue());
 }
