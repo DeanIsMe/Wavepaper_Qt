@@ -13,6 +13,7 @@ ImageGen imageGen;
  * @brief ImageGen::ImageGen
  */
 ImageGen::ImageGen() : i(this) {
+ImageGen::ImageGen() : act(this) {
     InitViewAreas();
 }
 

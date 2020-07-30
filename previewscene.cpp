@@ -63,8 +63,8 @@ void PreviewScene::AddAxesLines(ImageGen & imageGen) {
     this->removeItem(&yAxisItem);
     this->removeItem(&xAxisItem);
     // Axes are drawn only when interacting with an arrangement that's mirrored
-    if (imageGen.i.IsActive() && imageGen.i.GetActiveGroup()) {
-        EmArrangement* group = imageGen.i.GetActiveGroup();
+    if (imageGen.act.IsActive() && imageGen.act.GetActiveGroup()) {
+        EmArrangement* group = imageGen.act.GetActiveGroup();
         if (group->mirrorHor) {
             yAxisItem.setLine(QLineF(0, sceneRect().top(), 0, sceneRect().bottom()));
             this->addItem(&yAxisItem);

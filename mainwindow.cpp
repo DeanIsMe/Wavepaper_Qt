@@ -18,6 +18,11 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    // Add a text window for debugging info
+    textWindow = new QPlainTextEdit;
+
+    imageGen.SetMainWindow(this);
+
     imageGen.s.emitterRadius = 2.0;
 
     QWidget * central = new QWidget;
@@ -67,6 +72,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     previewScene->AddEmitters(imageGen);
     imageGen.GeneratePreviewImage();
+
+    layoutCentral->addWidget(textWindow);
 }
 
 MainWindow::~MainWindow()

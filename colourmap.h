@@ -34,8 +34,9 @@ public:
     void CreateIndexed();
 protected:
     QList<ClrFix> clrList;
-    QVector<QColor> clrIndexed; // All colours from 0 to 100
+    QVector<QColor> clrIndexed; // All colours from 0 to 100. !@#$ delete
     static QColor Interpolate(qreal loc, const ClrFix& before, const ClrFix& after);
+    static QRgb RgbInterpolate(qreal loc, const ClrFix &before, const ClrFix &after);
 };
 
 extern ColourMap colourMap;

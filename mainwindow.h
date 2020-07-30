@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QDebug>
+#include <QPlainTextEdit>
 #include "datatypes.h"
 
 QT_BEGIN_NAMESPACE
@@ -19,6 +20,8 @@ public:
 
     PreviewView * previewView;
     PreviewScene * previewScene;
+    QPlainTextEdit * textWindow;
+
 
 private:
     Ui::MainWindow *ui;

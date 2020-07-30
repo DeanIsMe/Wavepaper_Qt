@@ -11,6 +11,7 @@
 #define FP_TO_INT(fp) (fp + 0.5 - (fp<0))
 #define PI (3.14159265359)
 
+class MainWindow;
 class ImageGen;
 class PreviewView;
 class PreviewScene;

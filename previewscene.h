@@ -29,11 +29,11 @@ public slots:
     // QGraphicsScene interface
 protected:
     void mousePressEvent(QGraphicsSceneMouseEvent *event) override {
-        imageGen.i.mousePressEvent(event, this);}
+        imageGen.act.mousePressEvent(event, this);}
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override {
-        imageGen.i.mouseReleaseEvent(event, this);}
+        imageGen.act.mouseReleaseEvent(event, this);}
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override {
-        imageGen.i.mouseMoveEvent(event, this);}
+        imageGen.act.mouseMoveEvent(event, this);}
 
     // Custom
 public:

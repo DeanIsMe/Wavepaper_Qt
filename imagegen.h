@@ -105,10 +105,11 @@ public:
         EmArrangement * grpActive;
         QPointF pressPos;
         bool ctrlPressed;
-    } i;
+    } act;
 
 
 private:
+    MainWindow * mainWindow = nullptr;
     QList<EmArrangement> arngmtList;
     struct TemplateDist {
         Double2D_C * arr = nullptr; // Index is image units. Values are scene units
@@ -149,6 +150,7 @@ public:
 
 public:
     ImageGen();
+    void SetMainWindow(MainWindow * mainWindowIn) {mainWindow = mainWindowIn;}
     void GeneratePreviewImage();
     void GenerateQuickImage();
     int GenerateImage(QImage &imageOut, GenSettings &genSet);

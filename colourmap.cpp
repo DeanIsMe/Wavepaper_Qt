@@ -23,13 +23,14 @@ void ColourMap::AddColour(ClrFix clrFix)
 // Retrieves the colour, using the index and interpolation
 QRgb ColourMap::GetColourValue(qreal loc) {
     int locBefore = std::min(99, std::max(0,(int)loc));
-    qreal f = (loc - locBefore);
-    qreal f2 = 1. - f;
+    const qreal fb = (loc - locBefore);
+    const qreal fa = 1. - fb;
+
     QColor& before = clrIndexed[locBefore];
     QColor& after = clrIndexed[locBefore + 1];
-    return qRgb(f2 * before.red() + f * after.red(),
-             f2 * before.green() + f * after.green(),
-             f2 * before.blue() + f * after.blue());
+    return qRgb(fa * before.redF() + fb * after.redF(),
+             fa * before.greenF() + fb * after.greenF(),
+             fa * before.blueF() + fb * after.blueF());
 }
 
 void ColourMap::AddColour(QColor clr, qreal loc)
@@ -69,7 +70,17 @@ void ColourMap::CreateIndexed()
 QColor ColourMap::Interpolate(qreal loc, const ClrFix &before, const ClrFix &after) {
     qreal f = (loc - before.loc) / (after.loc - before.loc);
     qreal f2 = 1 - f;
-    return QColor(f2 * before.clr.red() + f * after.clr.red(),
+    QColor ret;
+    ret.setRgbF(f2 * before.clr.red() + f * after.clr.red(),
+                f2 * before.clr.green() + f * after.clr.green(),
+                f2 * before.clr.blue() + f * after.clr.blue());
+    return ret;
+}
+
+QRgb ColourMap::RgbInterpolate(qreal loc, const ClrFix &before, const ClrFix &after) {
+    qreal f = (loc - before.loc) / (after.loc - before.loc);
+    qreal f2 = 1 - f;
+    return qRgb(f2 * before.clr.red() + f * after.clr.red(),
                   f2 * before.clr.green() + f * after.clr.green(),
                   f2 * before.clr.blue() + f * after.clr.blue());
 }
