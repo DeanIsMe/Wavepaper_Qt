@@ -1,4 +1,8 @@
 #include "colourmap.h"
+#include "imagegen.h"
+#include <QLayout>
+#include <QPixmap>
+#include <QPlainTextEdit>
 
 ColourMap colourMap;
 
@@ -89,18 +93,84 @@ QRgb ColourMap::RgbInterpolate(qreal loc, const ClrFix &before, const ClrFix &af
 /** ************************************************************************ **/
 /** ************************************************************************ **/
 
+
+ClrFixModel::ClrFixModel(ColourMap * clrMapIn) : clrMap(clrMapIn)
+{
+
+}
+
+int ClrFixModel::rowCount(const QModelIndex &parent) const
+{
+    Q_UNUSED(parent);
+    return clrMap->clrList.length();
+}
+
+int ClrFixModel::columnCount(const QModelIndex &parent) const
+{
+    Q_UNUSED(parent);
+    return 3;
+}
+
+QVariant ClrFixModel::data(const QModelIndex &index, int role) const
+{
+    if (index.row() >= clrMap->clrList.length()) {
+        return QVariant();
+    }
+    switch (role) {
+    case Qt::DisplayRole:
+        if (index.column() == 1) {
+            return QString::asprintf("0x%06X", clrMap->clrList[index.row()].clr.value());
+        }
+        else if (index.column() == 2) {
+            return QString::asprintf("%.1f", clrMap->clrList[index.row()].loc);
+        }
+        break;
+    case Qt::BackgroundRole:
+        if (index.column() == 0) {
+            return QBrush(clrMap->clrList[index.row()].clr);
+        }
+        break;
+    }
+
+    return QVariant();
+}
+
 /** ****************************************************************************
  * @brief ColourMapWidget::ColourMapWidget
  * @param parent
  */
-ColourMapWidget::ColourMapWidget(QWidget *parent)
+ColourMapWidget::ColourMapWidget(QWidget *parent) : modelClrFix(&colourMap)
 {
     Q_UNUSED(parent);
     // Create the widget
     // Sliders, then colour map display
+    QVBoxLayout clrMapLayout;
+    this->setLayout(&clrMapLayout);
+
+    // Colour bar
+    QSize sizeClrBar(200, 20);
+    Rgb2D_C* dataClrBar = new Rgb2D_C(QPoint(0,0), sizeClrBar);
+    for (int x = dataClrBar->xLeft; x < dataClrBar->xLeft + dataClrBar->width; x++) {
+        QRgb clr = colourMap.GetColourValue(100. * (qreal)x / (qreal)sizeClrBar.width());
+        for (int y = dataClrBar->yTop; y < dataClrBar->yTop + dataClrBar->height; y++) {
+            dataClrBar->setPoint(x, y,  clr);
+        }
+    }
+    imgClrBar = QImage((uchar*)dataClrBar->getDataPtr(), sizeClrBar.width(), sizeClrBar.height(), QImage::Format_ARGB32,
+                       ImageDataDealloc, dataClrBar);
+
+    lblClrBar.setPixmap(QPixmap::fromImage(imgClrBar));
+    clrMapLayout.addWidget(&lblClrBar);
+
+    // Table
+    tableClrFix.setModel(&modelClrFix);
+    clrMapLayout.addWidget(&tableClrFix);
+
+    this->show();
 }
 
 ColourMapWidget::~ColourMapWidget()
 {
 
 }
+

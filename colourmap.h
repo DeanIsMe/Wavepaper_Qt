@@ -5,6 +5,10 @@
 #include <QList>
 #include <QColor>
 #include <QWidget>
+#include <QImage>
+#include <QAbstractTableModel>
+#include <QLabel>
+#include <QTableView>
 
 struct ClrFix {
     QColor clr; // Colour at this location
@@ -21,8 +25,15 @@ struct ClrFix {
     }
 };
 
+/** ****************************************************************************
+ * @brief The ColourMap class performs that actual mapping from value to colour
+ * for generating the images and previews.
+ */
 class ColourMap
 {
+    friend class ClrFixModel;
+    // ColourMap class performs that actual mapping from value to colour
+    // for generating the images and previews
 public:
     ColourMap();
     void AddColour(QColor clr, qreal loc);
@@ -39,12 +50,38 @@ protected:
     static QRgb RgbInterpolate(qreal loc, const ClrFix &before, const ClrFix &after);
 };
 
+
 /** ****************************************************************************
- * @brief The ColourMapWidget class allows the user to create the colour map
+ * @brief The ClrFixModel class is a model (see Qt Model/View structures)
+ * that tells the view what to display
+ */
+class ClrFixModel : public QAbstractTableModel
+{
+    Q_OBJECT;
+public:
+    ClrFixModel(ColourMap *clrMapIn);
+    int rowCount(const QModelIndex &parent = QModelIndex()) const override;
+    int columnCount(const QModelIndex &parent = QModelIndex()) const override;
+    QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+private:
+    ColourMap * clrMap;
+};
+
+
+/** ****************************************************************************
+ * @brief The ColourMapWidget class creates a user interface to allow the user
+ * to customise a colour map.
  */
 class ColourMapWidget : public QWidget {
+public:
     ColourMapWidget(QWidget *parent = nullptr);
     ~ColourMapWidget();
+
+private:
+    QImage imgClrBar; // Image for the colour bar that represents the map
+    ClrFixModel modelClrFix;
+    QLabel lblClrBar;
+    QTableView tableClrFix;
 };
 
 extern ColourMap colourMap;

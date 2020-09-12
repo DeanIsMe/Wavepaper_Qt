@@ -84,7 +84,7 @@ class ImageGen : public QObject
 public:
     // PROGRAM SETTINGS
     static constexpr qint32 imgPointsQuick = 40000;
-    static constexpr qint32 imgPointsPreview = 200000;
+    static constexpr qint32 imgPointsPreview = 1000000; // !@#$ 200000;
     static constexpr qreal templateOversizeFactor = 1.2; // The amount of extra length that the templates are calculated for
 
     class Interact {

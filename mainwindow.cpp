@@ -7,6 +7,7 @@
 #include <QKeyEvent>
 #include "previewscene.h"
 #include "imagegen.h"
+#include "colourmap.h"
 
 /** ****************************************************************************
  * @brief MainWindow::MainWindow
@@ -74,6 +75,10 @@ MainWindow::MainWindow(QWidget *parent)
     imageGen.GeneratePreviewImage();
 
     layoutCentral->addWidget(textWindow);
+
+    // Add colour map UI
+    ColourMapWidget* colourMapWidget = new ColourMapWidget();
+    layoutCentral->addWidget(colourMapWidget);
 }
 
 MainWindow::~MainWindow()

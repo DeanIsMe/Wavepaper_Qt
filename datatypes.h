@@ -25,7 +25,7 @@ class Array2D_C {
 
 private:
     T* data = nullptr;
-    T* dataZero; // Pointer that corresponds to the index [0,0]. It may not be a valid address
+    T* dataZero = nullptr; // Pointer that corresponds to the index [0,0]. It may not be a valid address
 public:
     int32_t xLeft; // Usually negative
     int32_t yTop; // Usually negative
