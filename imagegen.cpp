@@ -1,5 +1,6 @@
 #include "imagegen.h"
 #include "colourmap.h"
+#include "mainwindow.h"
 #include <QList>
 #include <QElapsedTimer>
 #include <QImage>
@@ -12,7 +13,6 @@ ImageGen imageGen;
 /** ****************************************************************************
  * @brief ImageGen::ImageGen
  */
-ImageGen::ImageGen() : i(this) {
 ImageGen::ImageGen() : act(this) {
     InitViewAreas();
 }
@@ -173,6 +173,7 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
     }
 
     auto timePostPhasors = fnTimer.elapsed();
+    qint64 timePostColorIndex, timePostPhasorMag;
 
     // COLOUR MAP
 
@@ -192,11 +193,13 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
     else {
         // Colour map
         colourMap.CreateIndexed(); // !@# remove
+        timePostColorIndex = fnTimer.elapsed();
 
         // Find max and min values
         Double2D_C amplitude(phasorSumArr->rect());
         qreal maxAmp = 0;
         qreal minAmp = genSet.templateAmp.arr->getPoint(1,1);
+
         for (int y = pixArr->yTop; y < pixArr->yTop + pixArr->height; y++) {
             for (int x = pixArr->xLeft; x < pixArr->xLeft + pixArr->width; x++) {
                 qreal amp = std::abs(phasorSumArr->getPoint(x, y));
@@ -205,6 +208,8 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
                 maxAmp = std::max(maxAmp, amp);
             }
         }
+
+        timePostPhasorMag = fnTimer.elapsed();
 
         qreal mult = 100. / (maxAmp - minAmp);
         for (int y = pixArr->yTop; y < pixArr->yTop + pixArr->height; y++) {
@@ -237,7 +242,19 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
     delete phasorSumArr;
     qDebug("ImageGen::GenerateImage took %4lld ms. Setup=%4lldms, PhasorMap=%4lldms, Colouring=%4lldms, Image=%4lldms",
            fnTimer.elapsed(), timePostTemplates, timePostPhasors - timePostTemplates,
-           timePostClrMap - timePostPhasors, timePostImage - timePostClrMap);
+           timePostClrMap - timePostPhasors,
+           timePostImage - timePostClrMap);
+
+
+
+    QString clrTime = QString::asprintf("Colouring=%4lldms. %4lldms index, %4lldms mag, %4lldms clrMap",
+                      timePostClrMap - timePostPhasors,
+                      timePostColorIndex - timePostPhasors,
+                      timePostPhasorMag - timePostColorIndex,
+                      timePostClrMap - timePostPhasorMag);
+    qDebug() << clrTime; // !@#$
+    mainWindow->textWindow->appendPlainText(clrTime);
+
     return 0;
 }
 
