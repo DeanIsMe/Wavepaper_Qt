@@ -84,3 +84,23 @@ QRgb ColourMap::RgbInterpolate(qreal loc, const ClrFix &before, const ClrFix &af
                   f2 * before.clr.green() + f * after.clr.green(),
                   f2 * before.clr.blue() + f * after.clr.blue());
 }
+
+/** ************************************************************************ **/
+/** ************************************************************************ **/
+/** ************************************************************************ **/
+
+/** ****************************************************************************
+ * @brief ColourMapWidget::ColourMapWidget
+ * @param parent
+ */
+ColourMapWidget::ColourMapWidget(QWidget *parent)
+{
+    Q_UNUSED(parent);
+    // Create the widget
+    // Sliders, then colour map display
+}
+
+ColourMapWidget::~ColourMapWidget()
+{
+
+}

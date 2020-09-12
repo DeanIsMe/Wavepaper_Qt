@@ -4,7 +4,7 @@
 #include "datatypes.h"
 #include <QList>
 #include <QColor>
-
+#include <QWidget>
 
 struct ClrFix {
     QColor clr; // Colour at this location
@@ -37,6 +37,14 @@ protected:
     QVector<QColor> clrIndexed; // All colours from 0 to 100. !@#$ delete
     static QColor Interpolate(qreal loc, const ClrFix& before, const ClrFix& after);
     static QRgb RgbInterpolate(qreal loc, const ClrFix &before, const ClrFix &after);
+};
+
+/** ****************************************************************************
+ * @brief The ColourMapWidget class allows the user to create the colour map
+ */
+class ColourMapWidget : public QWidget {
+    ColourMapWidget(QWidget *parent = nullptr);
+    ~ColourMapWidget();
 };
 
 extern ColourMap colourMap;
