@@ -32,13 +32,14 @@ struct ClrFix {
 class ColourMap : public QObject
 {
     Q_OBJECT;
-    friend class ClrFixModel;
     // ColourMap class performs that actual mapping from value to colour
     // for generating the images and previews
 public:
     ColourMap();
 
     QRgb GetColourValue(qreal loc) const;
+
+    ClrFix GetClrFix(qint32 index) const;
 
     void AddColour(QColor clr, qreal loc);
     void AddColour(ClrFix clrFix);
@@ -63,6 +64,7 @@ signals:
  */
 class ClrFixModel : public QAbstractTableModel
 {
+    friend class ColourMapWidget;
     Q_OBJECT;
     static constexpr int colClrBox = 0;
     static constexpr int colClrHex = 1;
@@ -74,6 +76,8 @@ public:
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     bool setData(const QModelIndex &index, const QVariant &value, int role) override;
     Qt::ItemFlags flags(const QModelIndex &index) const override;
+public slots:
+    void TableClicked(const QModelIndex & index);
 private:
     ColourMap * clrMap;
 

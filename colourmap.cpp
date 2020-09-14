@@ -3,6 +3,8 @@
 #include <QLayout>
 #include <QPixmap>
 #include <QPlainTextEdit>
+#include <QColorDialog>
+#include <QHeaderView>
 
 ColourMap colourMap;
 
@@ -60,7 +62,13 @@ QRgb ColourMap::GetColourValue(qreal loc) const {
     const QColor& after = clrIndexed[locBefore + 1];
     return qRgb(fa * before.redF() + fb * after.redF(),
              fa * before.greenF() + fb * after.greenF(),
-             fa * before.blueF() + fb * after.blueF());
+                fa * before.blueF() + fb * after.blueF());
+}
+
+ClrFix ColourMap::GetClrFix(qint32 index) const
+{
+    if (index > clrList.length()) { return ClrFix(QRgb(), 0); }
+    return clrList[index];
 }
 
 /** ****************************************************************************
@@ -151,7 +159,8 @@ QVariant ClrFixModel::data(const QModelIndex &index, int role) const
     switch (role) {
     case Qt::DisplayRole:
         if (index.column() == colClrHex) {
-            return QString::asprintf("0x%06X", clrMap->clrList[index.row()].clr.value());
+            QColor& clr = clrMap->clrList[index.row()].clr;
+            return QString::asprintf("%02X %02X %02X", clr.red(), clr.green(), clr.blue());
         }
         else if (index.column() == colLoc) {
             return QString::asprintf("%.1f", clrMap->clrList[index.row()].loc);
@@ -171,9 +180,9 @@ bool ClrFixModel::setData(const QModelIndex &index, const QVariant &value, int r
 {
     if (role == Qt::EditRole) {
         if (!checkIndex(index)) { return false; }
-        //save value from editor to member m_gridData
         if (index.column() == colLoc) {
             clrMap->EditColourLoc(index.row(), value.toReal());
+            emit dataChanged(index, index);
             return true;
         }
     }
@@ -185,7 +194,23 @@ Qt::ItemFlags ClrFixModel::flags(const QModelIndex &index) const
     if (index.column() == colLoc) {
         return QAbstractTableModel::flags(index) | Qt::ItemIsEditable;
     }
+    else if (index.column() == colClrBox) {
+        return QAbstractTableModel::flags(index) & ~(Qt::ItemIsSelectable);
+    }
     return QAbstractTableModel::flags(index);
+}
+
+void ClrFixModel::TableClicked(const QModelIndex &index)
+{
+    if (index.column() == colClrBox) {
+        QRgb clrNew = QColorDialog::getColor(clrMap->GetClrFix(index.row()).clr).rgb();
+        clrMap->EditColour(index.row(), clrNew);
+
+        emit dataChanged(index, index);
+        QModelIndex idxHex = createIndex(index.row(), colClrHex);
+        emit dataChanged(idxHex, idxHex);
+        qDebug("Colour 0x%08X @ %d, %d", clrNew, index.row(), index.column()); // !@#$
+    }
 }
 
 /** ****************************************************************************
@@ -217,7 +242,13 @@ ColourMapWidget::ColourMapWidget(QWidget *parent) : modelClrFix(&colourMap)
 
     // Table
     tableClrFix.setModel(&modelClrFix);
+    tableClrFix.setColumnWidth(modelClrFix.colClrBox, 20);
+    tableClrFix.setColumnWidth(modelClrFix.colClrHex, 60);
+    tableClrFix.setColumnWidth(modelClrFix.colLoc, 40);
+    tableClrFix.horizontalHeader()->hide();
     clrMapLayout.addWidget(&tableClrFix);
+
+    connect(&tableClrFix, QTableView::clicked, &modelClrFix, ClrFixModel::TableClicked);
 
     this->show();
 }
