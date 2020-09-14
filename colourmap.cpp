@@ -142,7 +142,7 @@ ClrFixModel::ClrFixModel(ColourMap * clrMapIn) : clrMap(clrMapIn)
 int ClrFixModel::rowCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
-    return clrMap->clrList.length();
+    return clrMap->GetColourFixCount();
 }
 
 int ClrFixModel::columnCount(const QModelIndex &parent) const
@@ -153,22 +153,22 @@ int ClrFixModel::columnCount(const QModelIndex &parent) const
 
 QVariant ClrFixModel::data(const QModelIndex &index, int role) const
 {
-    if (index.row() >= clrMap->clrList.length()) {
+    if (index.row() >= clrMap->GetColourFixCount()) {
         return QVariant();
     }
     switch (role) {
     case Qt::DisplayRole:
         if (index.column() == colClrHex) {
-            QColor& clr = clrMap->clrList[index.row()].clr;
+            const QColor& clr = clrMap->GetClrFix(index.row()).clr;
             return QString::asprintf("%02X %02X %02X", clr.red(), clr.green(), clr.blue());
         }
         else if (index.column() == colLoc) {
-            return QString::asprintf("%.1f", clrMap->clrList[index.row()].loc);
+            return QString::asprintf("%.1f", clrMap->GetClrFix(index.row()).loc);
         }
         break;
     case Qt::BackgroundRole:
         if (index.column() == colClrBox) {
-            return QBrush(clrMap->clrList[index.row()].clr);
+            return QBrush(clrMap->GetClrFix(index.row()).clr);
         }
         break;
     }

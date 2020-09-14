@@ -40,6 +40,7 @@ public:
     QRgb GetColourValue(qreal loc) const;
 
     ClrFix GetClrFix(qint32 index) const;
+    qint32 GetColourFixCount() const {return clrList.length();}
 
     void AddColour(QColor clr, qreal loc);
     void AddColour(ClrFix clrFix);
