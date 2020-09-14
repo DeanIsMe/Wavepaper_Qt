@@ -220,24 +220,16 @@ void ClrFixModel::TableClicked(const QModelIndex &index)
 ColourMapWidget::ColourMapWidget(QWidget *parent) : modelClrFix(&colourMap)
 {
     Q_UNUSED(parent);
+    this->setMinimumWidth(200);
+    this->setMaximumWidth(500);
     // Create the widget
     // Sliders, then colour map display
     QVBoxLayout clrMapLayout;
     this->setLayout(&clrMapLayout);
 
     // Colour bar
-    QSize sizeClrBar(200, 20);
-    Rgb2D_C* dataClrBar = new Rgb2D_C(QPoint(0,0), sizeClrBar);
-    for (int x = dataClrBar->xLeft; x < dataClrBar->xLeft + dataClrBar->width; x++) {
-        QRgb clr = colourMap.GetColourValue(100. * (qreal)x / (qreal)sizeClrBar.width());
-        for (int y = dataClrBar->yTop; y < dataClrBar->yTop + dataClrBar->height; y++) {
-            dataClrBar->setPoint(x, y,  clr);
-        }
-    }
-    imgClrBar = QImage((uchar*)dataClrBar->getDataPtr(), sizeClrBar.width(), sizeClrBar.height(), QImage::Format_ARGB32,
-                       ImageDataDealloc, dataClrBar);
+    DrawColourBar();
 
-    lblClrBar.setPixmap(QPixmap::fromImage(imgClrBar));
     clrMapLayout.addWidget(&lblClrBar);
 
     // Table
@@ -249,6 +241,7 @@ ColourMapWidget::ColourMapWidget(QWidget *parent) : modelClrFix(&colourMap)
     clrMapLayout.addWidget(&tableClrFix);
 
     connect(&tableClrFix, QTableView::clicked, &modelClrFix, ClrFixModel::TableClicked);
+    connect(&colourMap, ColourMap::NewClrMapReady, this, DrawColourBar);
 
     this->show();
 }
@@ -256,5 +249,21 @@ ColourMapWidget::ColourMapWidget(QWidget *parent) : modelClrFix(&colourMap)
 ColourMapWidget::~ColourMapWidget()
 {
 
+}
+
+void ColourMapWidget::DrawColourBar()
+{
+    QSize sizeClrBar(this->width(), heightClrBar);
+    Rgb2D_C* dataClrBar = new Rgb2D_C(QPoint(0,0), sizeClrBar);
+    for (int x = dataClrBar->xLeft; x < dataClrBar->xLeft + dataClrBar->width; x++) {
+        QRgb clr = colourMap.GetColourValue(100. * (qreal)x / (qreal)sizeClrBar.width());
+        for (int y = dataClrBar->yTop; y < dataClrBar->yTop + dataClrBar->height; y++) {
+            dataClrBar->setPoint(x, y,  clr);
+        }
+    }
+    imgClrBar = QImage((uchar*)dataClrBar->getDataPtr(), sizeClrBar.width(), sizeClrBar.height(), QImage::Format_ARGB32,
+                       ImageDataDealloc, dataClrBar);
+
+    lblClrBar.setPixmap(QPixmap::fromImage(imgClrBar));
 }
 

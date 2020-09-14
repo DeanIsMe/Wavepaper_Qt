@@ -90,9 +90,15 @@ private:
  * to customise a colour map.
  */
 class ColourMapWidget : public QWidget {
+    Q_OBJECT
+private:
+    static constexpr int heightClrBar = 30;
 public:
     ColourMapWidget(QWidget *parent = nullptr);
     ~ColourMapWidget();
+
+private slots:
+    void DrawColourBar();
 
 private:
     QImage imgClrBar; // Image for the colour bar that represents the map
