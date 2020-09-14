@@ -29,25 +29,31 @@ struct ClrFix {
  * @brief The ColourMap class performs that actual mapping from value to colour
  * for generating the images and previews.
  */
-class ColourMap
+class ColourMap : public QObject
 {
+    Q_OBJECT;
     friend class ClrFixModel;
     // ColourMap class performs that actual mapping from value to colour
     // for generating the images and previews
 public:
     ColourMap();
+
+    QRgb GetColourValue(qreal loc) const;
+
     void AddColour(QColor clr, qreal loc);
     void AddColour(ClrFix clrFix);
+    void EditColourLoc(qint32 index, qreal newLoc);
+    void EditColour(qint32 index, QRgb newClr);
+    void CreateIndex();
 
-    QRgb GetColourValue(qreal loc);
-
-
-    void CreateIndexed();
 protected:
     QList<ClrFix> clrList;
     QVector<QColor> clrIndexed; // All colours from 0 to 100. !@#$ delete
     static QColor Interpolate(qreal loc, const ClrFix& before, const ClrFix& after);
     static QRgb RgbInterpolate(qreal loc, const ClrFix &before, const ClrFix &after);
+signals:
+    void ClrListChanged(); // Emitted automatically any time an edit is made
+    void NewClrMapReady(); // Emitted after the new colour index is made - ready to be used by other parts of the program
 };
 
 
@@ -58,13 +64,19 @@ protected:
 class ClrFixModel : public QAbstractTableModel
 {
     Q_OBJECT;
+    static constexpr int colClrBox = 0;
+    static constexpr int colClrHex = 1;
+    static constexpr int colLoc = 2;
 public:
     ClrFixModel(ColourMap *clrMapIn);
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+    bool setData(const QModelIndex &index, const QVariant &value, int role) override;
+    Qt::ItemFlags flags(const QModelIndex &index) const override;
 private:
     ColourMap * clrMap;
+
 };
 
 

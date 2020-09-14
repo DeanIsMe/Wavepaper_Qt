@@ -9,6 +9,8 @@
 #include <QGraphicsView>
 #include "datatypes.h"
 
+void ImageDataDealloc(void * info);
+
 enum class EmType {
     blank,
     arc,
@@ -169,8 +171,8 @@ public:
     qreal getDistOffsetF() const {return s.distOffsetF;}
 
 signals:
-    void ImageChanged(QImage & image, qreal imgPerSimUnitOut);
-    void EmittersChanged(); // Emitted when the emitter locations change
+    void NewImageReady(QImage & image, qreal imgPerSimUnitOut); // A new image is ready
+    void EmitterArngmtChanged(); // Emitted when the emitter locations change
 
 private:
     static void CalcDistArr(double simUnitPerIndex, Double2D_C &arr);

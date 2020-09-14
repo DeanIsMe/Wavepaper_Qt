@@ -24,7 +24,7 @@ public:
     void ListAllItems();
 
 public slots:
-    void OnEmitterChange();
+    void OnEmitterArngmtChange();
 
     // QGraphicsScene interface
 protected:
@@ -37,7 +37,7 @@ protected:
 
     // Custom
 public:
-    void AddEmitters(ImageGen &imageGen);
+    void EmitterArngmtToList(ImageGen &imageGen);
     void AddAxesLines(ImageGen &imageGen);
 
 };

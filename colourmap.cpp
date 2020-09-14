@@ -6,43 +6,67 @@
 
 ColourMap colourMap;
 
+/** ****************************************************************************
+ * @brief ColourMap::ColourMap
+ */
 ColourMap::ColourMap()
 {
+    QObject::connect(this, ColourMap::ClrListChanged,
+                     this, ColourMap::CreateIndex, Qt::QueuedConnection);
     // !@# temporary data
-    clrList.reserve(5);
-    clrList.append(ClrFix(Qt::green,   0));
-    clrList.append(ClrFix(Qt::black,  25));
-    clrList.append(ClrFix(Qt::red,  50));
-    clrList.append(ClrFix(Qt::black,  75));
-    clrList.append(ClrFix(Qt::blue, 100));
-    CreateIndexed();
+    AddColour(ClrFix(Qt::green,   0));
+    AddColour(ClrFix(Qt::black,  25));
+    AddColour(ClrFix(Qt::red,  50));
+    AddColour(ClrFix(Qt::black,  75));
+    AddColour(ClrFix(Qt::blue, 100));
+    CreateIndex();
 }
 
 void ColourMap::AddColour(ClrFix clrFix)
 {
     clrList.append(clrFix);
-}
-
-// loc is a number from 0 (min) to 100 (max)
-// Retrieves the colour, using the index and interpolation
-QRgb ColourMap::GetColourValue(qreal loc) {
-    int locBefore = std::min(99, std::max(0,(int)loc));
-    const qreal fb = (loc - locBefore);
-    const qreal fa = 1. - fb;
-
-    QColor& before = clrIndexed[locBefore];
-    QColor& after = clrIndexed[locBefore + 1];
-    return qRgb(fa * before.redF() + fb * after.redF(),
-             fa * before.greenF() + fb * after.greenF(),
-             fa * before.blueF() + fb * after.blueF());
+    emit ClrListChanged();
 }
 
 void ColourMap::AddColour(QColor clr, qreal loc)
 {
     AddColour(ClrFix(clr, loc));
+    emit ClrListChanged();
 }
 
-void ColourMap::CreateIndexed()
+
+void ColourMap::EditColourLoc(qint32 index, qreal newLoc)
+{
+    if (index > clrList.length()) { return; }
+    clrList[index].loc = qBound(0., newLoc, 100.);
+    emit ClrListChanged();
+}
+
+void ColourMap::EditColour(qint32 index, QRgb newClr)
+{
+    if (index > clrList.length()) { return; }
+    clrList[index].clr = newClr;
+    emit ClrListChanged();
+}
+
+// loc is a number from 0 (min) to 100 (max)
+// Retrieves the colour, using the index and interpolation
+QRgb ColourMap::GetColourValue(qreal loc) const {
+    int locBefore = std::min(99, std::max(0,(int)loc));
+    const qreal fb = (loc - locBefore);
+    const qreal fa = 1. - fb;
+
+    const QColor& before = clrIndexed[locBefore];
+    const QColor& after = clrIndexed[locBefore + 1];
+    return qRgb(fa * before.redF() + fb * after.redF(),
+             fa * before.greenF() + fb * after.greenF(),
+             fa * before.blueF() + fb * after.blueF());
+}
+
+/** ****************************************************************************
+ * @brief ColourMap::CreateIndex
+ */
+void ColourMap::CreateIndex()
 {
     if (clrList.size() < 2) {
         qFatal("ColourMap::CreateIndexed() not enough colours in list!");
@@ -69,8 +93,16 @@ void ColourMap::CreateIndexed()
         // Interpolate to find this point (from before and after)
         clrIndexed[i] = Interpolate(i, before, after);
     }
+    emit NewClrMapReady();
 }
 
+/** ****************************************************************************
+ * @brief ColourMap::Interpolate
+ * @param loc
+ * @param before
+ * @param after
+ * @return
+ */
 QColor ColourMap::Interpolate(qreal loc, const ClrFix &before, const ClrFix &after) {
     qreal f = (loc - before.loc) / (after.loc - before.loc);
     qreal f2 = 1 - f;
@@ -118,21 +150,42 @@ QVariant ClrFixModel::data(const QModelIndex &index, int role) const
     }
     switch (role) {
     case Qt::DisplayRole:
-        if (index.column() == 1) {
+        if (index.column() == colClrHex) {
             return QString::asprintf("0x%06X", clrMap->clrList[index.row()].clr.value());
         }
-        else if (index.column() == 2) {
+        else if (index.column() == colLoc) {
             return QString::asprintf("%.1f", clrMap->clrList[index.row()].loc);
         }
         break;
     case Qt::BackgroundRole:
-        if (index.column() == 0) {
+        if (index.column() == colClrBox) {
             return QBrush(clrMap->clrList[index.row()].clr);
         }
         break;
     }
 
     return QVariant();
+}
+
+bool ClrFixModel::setData(const QModelIndex &index, const QVariant &value, int role)
+{
+    if (role == Qt::EditRole) {
+        if (!checkIndex(index)) { return false; }
+        //save value from editor to member m_gridData
+        if (index.column() == colLoc) {
+            clrMap->EditColourLoc(index.row(), value.toReal());
+            return true;
+        }
+    }
+    return false;
+}
+
+Qt::ItemFlags ClrFixModel::flags(const QModelIndex &index) const
+{
+    if (index.column() == colLoc) {
+        return QAbstractTableModel::flags(index) | Qt::ItemIsEditable;
+    }
+    return QAbstractTableModel::flags(index);
 }
 
 /** ****************************************************************************

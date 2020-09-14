@@ -14,9 +14,9 @@ PreviewScene::PreviewScene(QObject *parent) :
 
 
 /** ****************************************************************************
- * @brief PreviewScene::AddEmitters
+ * @brief PreviewScene::EmitterArngmtToList
  */
-void PreviewScene::AddEmitters(ImageGen & imageGen) {
+void PreviewScene::EmitterArngmtToList(ImageGen & imageGen) {
     // Get the vector of emitters
     QVector<EmitterF> emitters;
     if (imageGen.GetEmitterList(emitters)) {
@@ -53,6 +53,7 @@ void PreviewScene::AddEmitters(ImageGen & imageGen) {
     this->removeItem(&emItemGroup);
     this->addItem(&emItemGroup);
     invalidate(this->sceneRect(), QGraphicsScene::ItemLayer);
+    // The scene and background are automatically redrawn
 }
 
 /** ****************************************************************************
@@ -148,10 +149,10 @@ void PreviewScene::ListAllItems() {
 }
 
 /** ****************************************************************************
- * @brief PreviewScene::OnEmitterChange
+ * @brief PreviewScene::OnEmitterArngmtChange
  */
-void PreviewScene::OnEmitterChange()
+void PreviewScene::OnEmitterArngmtChange()
 {
-    AddEmitters(imageGen);
+    EmitterArngmtToList(imageGen);
 }
 

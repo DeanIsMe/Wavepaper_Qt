@@ -19,12 +19,12 @@ ImageGen::ImageGen() : act(this) {
 
 void ImageGen::GeneratePreviewImage() {
     imageGen.GenerateImage(imageGen.imgPreview, genPreview);
-    emit imageGen.ImageChanged(imageGen.imgPreview, genPreview.imgPerSimUnit);
+    emit imageGen.NewImageReady(imageGen.imgPreview, genPreview.imgPerSimUnit);
 }
 
 void ImageGen::GenerateQuickImage() {
     imageGen.GenerateImage(imageGen.imgQuick, genQuick);
-    emit imageGen.ImageChanged(imageGen.imgQuick, genQuick.imgPerSimUnit);
+    emit imageGen.NewImageReady(imageGen.imgQuick, genQuick.imgPerSimUnit);
 }
 
 /** ****************************************************************************
@@ -65,8 +65,8 @@ void ImageGen::EmitterCountIncrease() {
     EmArrangement * group = GetActiveArrangement();
     group->count = std::max(group->count + 1, qRound((qreal)group->count * 1.2));
     GenerateImage(imgPreview, genPreview);
-    emit ImageChanged(imgPreview, genPreview.imgPerSimUnit);
-    emit EmittersChanged();
+    emit NewImageReady(imgPreview, genPreview.imgPerSimUnit);
+    emit EmitterArngmtChanged();
 }
 
 /** ****************************************************************************
@@ -78,8 +78,8 @@ void ImageGen::EmitterCountDecrease() {
     group->count = std::max(1, std::min(group->count - 1, qRound((qreal)group->count * 0.8)));
     if (group->count != prevVal) {
         GenerateImage(imgPreview, genPreview);
-        emit ImageChanged(imgPreview, genPreview.imgPerSimUnit);
-        emit EmittersChanged();
+        emit NewImageReady(imgPreview, genPreview.imgPerSimUnit);
+        emit EmitterArngmtChanged();
     }
 }
 
@@ -192,7 +192,6 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
     }
     else {
         // Colour map
-        colourMap.CreateIndexed(); // !@# remove
         timePostColorIndex = fnTimer.elapsed();
 
         // Find max and min values
@@ -696,7 +695,7 @@ void ImageGen::Interact::mouseReleaseEvent(QGraphicsSceneMouseEvent *event, Prev
     qDebug("Scene release event (%7.2f, %7.2f)", event-> scenePos().x(), event->scenePos().y());
     active = false;
 
-    emit parent->EmittersChanged(); // Just need to redraw the axes lines when mirroring
+    emit parent->EmitterArngmtChanged(); // Just need to redraw the axes lines when mirroring
 
     parent->GeneratePreviewImage();
 }
@@ -740,7 +739,7 @@ void ImageGen::Interact::mouseMoveEvent(QGraphicsSceneMouseEvent *event, Preview
         }
     }
 
-    emit parent->EmittersChanged();
+    emit parent->EmitterArngmtChanged();
     parent->GenerateQuickImage();
 }
 

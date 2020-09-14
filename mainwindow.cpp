@@ -52,13 +52,17 @@ MainWindow::MainWindow(QWidget *parent)
 
     previewView->setSceneRect(imageGen.areaSim);
 
-    QObject::connect(&imageGen, &ImageGen::ImageChanged,
+    QObject::connect(&imageGen, &ImageGen::NewImageReady,
                      previewView, &PreviewView::OnBackgroundChange);
 
-    QObject::connect(&imageGen, &ImageGen::EmittersChanged,
-                     previewScene, &PreviewScene::OnEmitterChange);
+    QObject::connect(&imageGen, &ImageGen::EmitterArngmtChanged,
+                     previewScene, &PreviewScene::OnEmitterArngmtChange);
 
-    previewScene->AddEmitters(imageGen);
+    QObject::connect(&colourMap, &ColourMap::NewClrMapReady,
+                     &imageGen, ImageGen::GeneratePreviewImage);
+
+
+    previewScene->EmitterArngmtToList(imageGen);
 
     qDebug() << "Preview view rect " << RectToQString(previewView->rect());
     qDebug() << "Preview view frameRect " << RectToQString(previewView->frameRect());
@@ -71,7 +75,7 @@ MainWindow::MainWindow(QWidget *parent)
 //    QBrush brush(*image);
 //    previewScene->setBackgroundBrush(brush);
 
-    previewScene->AddEmitters(imageGen);
+    previewScene->EmitterArngmtToList(imageGen);
     imageGen.GeneratePreviewImage();
 
     layoutCentral->addWidget(textWindow);
@@ -156,13 +160,13 @@ void MainWindow::on_actionFewer_triggered()
 void MainWindow::on_actionMirrorHor_triggered(bool checked)
 {
     imageGen.GetActiveArrangement()->mirrorHor = checked;
-    previewScene->AddEmitters(imageGen);
+    previewScene->EmitterArngmtToList(imageGen);
     imageGen.GeneratePreviewImage();
 }
 
 void MainWindow::on_actionMirrorVert_triggered(bool checked)
 {
     imageGen.GetActiveArrangement()->mirrorVert = checked;
-    previewScene->AddEmitters(imageGen);
+    previewScene->EmitterArngmtToList(imageGen);
     imageGen.GeneratePreviewImage();
 }
