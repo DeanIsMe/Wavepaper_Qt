@@ -34,11 +34,6 @@ MainWindow::MainWindow(QWidget *parent)
     // Example button column
     QVBoxLayout * layoutButtonCol = new QVBoxLayout;
 
-    QPushButton * btnGo = new QPushButton("Go");
-    QPushButton * btnTwo = new QPushButton("Two");
-    layoutButtonCol->addWidget(btnGo);
-    layoutButtonCol->addWidget(btnTwo);
-
     layoutCentral->addLayout(layoutButtonCol);
 
     imageGen.InitViewAreas();
@@ -81,8 +76,8 @@ MainWindow::MainWindow(QWidget *parent)
     layoutCentral->addWidget(textWindow);
 
     // Add colour map UI
-    ColourMapWidget* colourMapWidget = new ColourMapWidget();
-    layoutCentral->addWidget(colourMapWidget);
+    ColourMapEditorWidget* colourMapEditor = new ColourMapEditorWidget();
+    layoutCentral->addWidget(colourMapEditor);
 }
 
 MainWindow::~MainWindow()
@@ -121,7 +116,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         imageGen.GeneratePreviewImage();
         break;
     default:
-        event->ignore();
+        event->setAccepted(false);
     }
 }
 

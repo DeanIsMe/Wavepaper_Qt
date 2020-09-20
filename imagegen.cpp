@@ -120,9 +120,9 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
         emittersImg[i] = EmitterI(emittersF[i], genSet.imgPerSimUnit);
     }
 
-    qDebug() << "Simulation window " << RectFToQString(areaSim) << "[sim units]";
-    qDebug() << "   Image size " << RectToQString(genSet.areaImg) << "[img units]";
-    qDebug("imgPerSimUnit = %.2f. numpoints", genSet.imgPerSimUnit);
+//    qDebug() << "Simulation window " << RectFToQString(areaSim) << "[sim units]";
+//    qDebug() << "   Image size " << RectToQString(genSet.areaImg) << "[img units]";
+//    qDebug("imgPerSimUnit = %.2f. numpoints", genSet.imgPerSimUnit);
 
     // TEMPLATES
 

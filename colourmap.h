@@ -42,10 +42,12 @@ public:
     ClrFix GetClrFix(qint32 index) const;
     qint32 GetColourFixCount() const {return clrList.length();}
 
-    void AddColour(QColor clr, qreal loc);
-    void AddColour(ClrFix clrFix);
-    void EditColourLoc(qint32 index, qreal newLoc);
-    void EditColour(qint32 index, QRgb newClr);
+    void AddColour(QColor clr, qreal loc, qint32 listIdx = -1);
+    void AddColour(ClrFix clrFix, qint32 listIdx = -1);
+    bool RemoveColour(qint32 listIdx);
+    void MoveColour(qint32 listIdxFrom, qint32 listIdxTo) {clrList.move(listIdxFrom, listIdxTo);}
+    void EditColourLoc(qint32 listIdx, qreal newLoc);
+    void EditColour(qint32 listIdx, QRgb newClr);
     void CreateIndex();
 
 protected:
@@ -65,7 +67,7 @@ signals:
  */
 class ClrFixModel : public QAbstractTableModel
 {
-    friend class ColourMapWidget;
+    friend class ColourMapEditorWidget;
     Q_OBJECT;
     static constexpr int colClrBox = 0;
     static constexpr int colClrHex = 1;
@@ -82,20 +84,45 @@ public slots:
 private:
     ColourMap * clrMap;
 
+
+    // QAbstractItemModel interface
+public:
+    bool insertRows(int row, int count, const QModelIndex &parent) override;
+    bool removeRows(int startRow, int rowCount, const QModelIndex &parent) override;
+    bool moveRows(const QModelIndex &sourceParent, int sourceRow, int count,
+                  const QModelIndex &destinationParent, int destinationChild) override;
+    QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
+};
+
+/** ****************************************************************************
+ * @brief The ClrFixModel class is a model (see Qt Model/View structures)
+ * that tells the view what to display
+ */
+class ClrFixTableView : public QTableView {
+    Q_OBJECT
+public:
+    ClrFixTableView() {}
+
+    void RemoveSelectedRows();
+    void AddRow();
+
+    // QWidget interface
+protected:
+    void keyPressEvent(QKeyEvent *event) override;
 };
 
 
 /** ****************************************************************************
- * @brief The ColourMapWidget class creates a user interface to allow the user
+ * @brief The ColourMapEditorWidget class creates a user interface to allow the user
  * to customise a colour map.
  */
-class ColourMapWidget : public QWidget {
+class ColourMapEditorWidget : public QWidget {
     Q_OBJECT
 private:
     static constexpr int heightClrBar = 30;
 public:
-    ColourMapWidget(QWidget *parent = nullptr);
-    ~ColourMapWidget();
+    ColourMapEditorWidget(QWidget *parent = nullptr);
+    ~ColourMapEditorWidget();
 
 private slots:
     void DrawColourBar();
@@ -104,7 +131,7 @@ private:
     QImage imgClrBar; // Image for the colour bar that represents the map
     ClrFixModel modelClrFix;
     QLabel lblClrBar;
-    QTableView tableClrFix;
+    ClrFixTableView tableClrFix;
 };
 
 extern ColourMap colourMap;

@@ -5,6 +5,7 @@
 #include <QPlainTextEdit>
 #include <QColorDialog>
 #include <QHeaderView>
+#include <QPushButton>
 
 ColourMap colourMap;
 
@@ -24,35 +25,52 @@ ColourMap::ColourMap()
     CreateIndex();
 }
 
-void ColourMap::AddColour(ClrFix clrFix)
+/** ****************************************************************************
+ * @brief ColourMap::AddColour
+ * @param clr
+ * @param loc
+ * @param listIdx
+ */
+void ColourMap::AddColour(QColor clr, qreal loc, qint32 listIdx)
 {
-    clrList.append(clrFix);
+    AddColour(ClrFix(clr, loc), listIdx);
     emit ClrListChanged();
 }
 
-void ColourMap::AddColour(QColor clr, qreal loc)
+void ColourMap::AddColour(ClrFix clrFix, qint32 listIdx)
 {
-    AddColour(ClrFix(clr, loc));
+    clrList.insert(listIdx, clrFix);
     emit ClrListChanged();
 }
 
-
-void ColourMap::EditColourLoc(qint32 index, qreal newLoc)
+bool ColourMap::RemoveColour(qint32 listIdx)
 {
-    if (index > clrList.length()) { return; }
-    clrList[index].loc = qBound(0., newLoc, 100.);
+    if (listIdx > clrList.length()) { return false; }
+    if (clrList.length() <= 2) { return false; } // Must have at least 2 colours
+    clrList.removeAt(listIdx);
+    emit ClrListChanged();
+    return true;
+}
+
+void ColourMap::EditColourLoc(qint32 listIdx, qreal newLoc)
+{
+    if (listIdx > clrList.length()) { return; }
+    clrList[listIdx].loc = qBound(0., newLoc, 100.);
     emit ClrListChanged();
 }
 
-void ColourMap::EditColour(qint32 index, QRgb newClr)
+void ColourMap::EditColour(qint32 listIdx, QRgb newClr)
 {
-    if (index > clrList.length()) { return; }
-    clrList[index].clr = newClr;
+    if (listIdx > clrList.length()) { return; }
+    clrList[listIdx].clr = newClr;
     emit ClrListChanged();
 }
 
-// loc is a number from 0 (min) to 100 (max)
-// Retrieves the colour, using the index and interpolation
+/** ****************************************************************************
+ * @brief ColourMap::GetColourValue calculates the colour, using the index and interpolation
+ * @param loc is a number from 0 (min) to 100 (max)
+ * @return
+ */
 QRgb ColourMap::GetColourValue(qreal loc) const {
     int locBefore = std::min(99, std::max(0,(int)loc));
     const qreal fb = (loc - locBefore);
@@ -151,6 +169,12 @@ int ClrFixModel::columnCount(const QModelIndex &parent) const
     return 3;
 }
 
+/** ****************************************************************************
+ * @brief ClrFixModel::data
+ * @param index
+ * @param role
+ * @return
+ */
 QVariant ClrFixModel::data(const QModelIndex &index, int role) const
 {
     if (index.row() >= clrMap->GetColourFixCount()) {
@@ -158,6 +182,7 @@ QVariant ClrFixModel::data(const QModelIndex &index, int role) const
     }
     switch (role) {
     case Qt::DisplayRole:
+    case Qt::EditRole: // What is displayed when editing text
         if (index.column() == colClrHex) {
             const QColor& clr = clrMap->GetClrFix(index.row()).clr;
             return QString::asprintf("%02X %02X %02X", clr.red(), clr.green(), clr.blue());
@@ -176,6 +201,13 @@ QVariant ClrFixModel::data(const QModelIndex &index, int role) const
     return QVariant();
 }
 
+/** ****************************************************************************
+ * @brief ClrFixModel::setData
+ * @param index
+ * @param value
+ * @param role
+ * @return
+ */
 bool ClrFixModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
     if (role == Qt::EditRole) {
@@ -189,6 +221,11 @@ bool ClrFixModel::setData(const QModelIndex &index, const QVariant &value, int r
     return false;
 }
 
+/** ****************************************************************************
+ * @brief ClrFixModel::flags
+ * @param index
+ * @return
+ */
 Qt::ItemFlags ClrFixModel::flags(const QModelIndex &index) const
 {
     if (index.column() == colLoc) {
@@ -197,61 +234,172 @@ Qt::ItemFlags ClrFixModel::flags(const QModelIndex &index) const
     else if (index.column() == colClrBox) {
         return QAbstractTableModel::flags(index) & ~(Qt::ItemIsSelectable);
     }
+    else if (index.column() == colClrHex) {
+        return QAbstractTableModel::flags(index) & ~(Qt::ItemIsSelectable);
+    }
     return QAbstractTableModel::flags(index);
 }
 
+/** ****************************************************************************
+ * @brief ClrFixModel::TableClicked
+ * @param index
+ */
 void ClrFixModel::TableClicked(const QModelIndex &index)
 {
     if (index.column() == colClrBox) {
-        QRgb clrNew = QColorDialog::getColor(clrMap->GetClrFix(index.row()).clr).rgb();
-        clrMap->EditColour(index.row(), clrNew);
+        QColor clrNew = QColorDialog::getColor(clrMap->GetClrFix(index.row()).clr);
+        if (!clrNew.isValid()) {return;} // User cancelled
+        QRgb clrRgbNew = clrNew.rgb();
+        clrMap->EditColour(index.row(), clrRgbNew);
 
         emit dataChanged(index, index);
         QModelIndex idxHex = createIndex(index.row(), colClrHex);
         emit dataChanged(idxHex, idxHex);
-        qDebug("Colour 0x%08X @ %d, %d", clrNew, index.row(), index.column()); // !@#$
     }
 }
 
 /** ****************************************************************************
- * @brief ColourMapWidget::ColourMapWidget
+ * @brief ClrFixModel::removeRows
+ * @param startRow
+ * @param rowCount
+ * @param parent
+ * @return
+ */
+
+/** ****************************************************************************
+ * @brief ClrFixModel::removeRows
+ */
+bool ClrFixModel::removeRows(int startRow, int rowCount, const QModelIndex &parent)
+{
+    Q_UNUSED(parent);
+    beginRemoveRows(QModelIndex(), startRow, startRow+rowCount-1);
+    for (int i = 0; i < rowCount; i++) {
+        clrMap->RemoveColour(startRow);
+    }
+    endRemoveRows();
+    return true;
+}
+
+/** ****************************************************************************
+ * @brief ClrFixModel::insertRows
+ */
+bool ClrFixModel::insertRows(int startRow, int rowCount, const QModelIndex &parent)
+{
+    Q_UNUSED(parent);
+    beginInsertRows(QModelIndex(), startRow, startRow+rowCount-1);
+    for (int i = 0; i < rowCount; i++) {
+        clrMap->AddColour(ClrFix(Qt::white, 100.0), startRow);
+    }
+    endInsertRows();
+    return true;
+}
+
+/** ****************************************************************************
+ * @brief ClrFixModel::moveRows
+ */
+bool ClrFixModel::moveRows(const QModelIndex &sourceParent, int sourceRow, int count, const QModelIndex &destinationParent, int destinationChild)
+{
+    beginMoveRows(sourceParent, sourceRow, sourceRow + count, destinationParent, destinationChild);
+    int destRow = destinationChild;
+    if (sourceRow < destRow) {
+        // Moving row(s) forward
+        for (int i = 0; i < count; i++) {
+            clrMap->MoveColour(sourceRow, destRow);
+        }
+    }
+    else {
+        // Moving row(s) backwards
+        for (int i = count - 1; i >= 0; i--) {
+            clrMap->MoveColour(sourceRow + i, destRow);
+        }
+    }
+    endMoveRows();
+    return true;
+}
+
+/** ****************************************************************************
+ * @brief ClrFixModel::headerData
+ * @param section
+ * @param orientation
+ * @param role
+ * @return
+ */
+QVariant ClrFixModel::headerData(int section, Qt::Orientation orientation, int role) const
+{
+    if (role != Qt::DisplayRole) {
+        return QVariant();
+    }
+
+    if (orientation == Qt::Horizontal) {
+        // Columns
+        switch (section) {
+        case colClrBox: return "Colour";
+        case colClrHex: return "Hex";
+        case colLoc: return "Pos";
+        default:
+            return QStringLiteral("Column %1").arg(section);
+        }
+    }
+    else {
+        // Rows
+        return QString::asprintf("%d", section);
+    }
+}
+
+
+/** ****************************************************************************
+ * @brief ColourMapEditorWidget::ColourMapEditorWidget
  * @param parent
  */
-ColourMapWidget::ColourMapWidget(QWidget *parent) : modelClrFix(&colourMap)
+ColourMapEditorWidget::ColourMapEditorWidget(QWidget *parent) : modelClrFix(&colourMap)
 {
     Q_UNUSED(parent);
     this->setMinimumWidth(200);
     this->setMaximumWidth(500);
     // Create the widget
     // Sliders, then colour map display
-    QVBoxLayout clrMapLayout;
-    this->setLayout(&clrMapLayout);
+    QVBoxLayout * clrMapLayout = new QVBoxLayout();
+    this->setLayout(clrMapLayout);
 
     // Colour bar
     DrawColourBar();
 
-    clrMapLayout.addWidget(&lblClrBar);
+    clrMapLayout->addWidget(&lblClrBar);
 
     // Table
     tableClrFix.setModel(&modelClrFix);
-    tableClrFix.setColumnWidth(modelClrFix.colClrBox, 20);
+    tableClrFix.setColumnWidth(modelClrFix.colClrBox, 50);
     tableClrFix.setColumnWidth(modelClrFix.colClrHex, 60);
     tableClrFix.setColumnWidth(modelClrFix.colLoc, 40);
-    tableClrFix.horizontalHeader()->hide();
-    clrMapLayout.addWidget(&tableClrFix);
+    clrMapLayout->addWidget(&tableClrFix);
 
-    connect(&tableClrFix, QTableView::clicked, &modelClrFix, ClrFixModel::TableClicked);
+    connect(&tableClrFix, ClrFixTableView::clicked, &modelClrFix, ClrFixModel::TableClicked);
     connect(&colourMap, ColourMap::NewClrMapReady, this, DrawColourBar);
+
+    // Buttons for add and delete
+    QPushButton * btnAddRow = new QPushButton("Add");
+    QPushButton * btnRemoveRow = new QPushButton("Remove");
+    connect(btnAddRow, QPushButton::clicked, &tableClrFix, ClrFixTableView::AddRow);
+    connect(btnRemoveRow, QPushButton::clicked, &tableClrFix, ClrFixTableView::RemoveSelectedRows);
+
+    QHBoxLayout * layoutAddRemoveButtons = new QHBoxLayout();
+    layoutAddRemoveButtons->addWidget(btnAddRow);
+    layoutAddRemoveButtons->addWidget(btnRemoveRow);
+
+    clrMapLayout->addLayout(layoutAddRemoveButtons);
 
     this->show();
 }
 
-ColourMapWidget::~ColourMapWidget()
+ColourMapEditorWidget::~ColourMapEditorWidget()
 {
 
 }
 
-void ColourMapWidget::DrawColourBar()
+/**
+ * @brief ColourMapEditorWidget::DrawColourBar redraws the bar that demonstrates the colour map
+ */
+void ColourMapEditorWidget::DrawColourBar()
 {
     QSize sizeClrBar(this->width(), heightClrBar);
     Rgb2D_C* dataClrBar = new Rgb2D_C(QPoint(0,0), sizeClrBar);
@@ -267,3 +415,35 @@ void ColourMapWidget::DrawColourBar()
     lblClrBar.setPixmap(QPixmap::fromImage(imgClrBar));
 }
 
+
+/** ****************************************************************************
+ * @brief ClrFixTableView::keyPressEvent
+ * @param event
+ */
+void ClrFixTableView::RemoveSelectedRows()
+{
+    QModelIndexList selected = this->selectionModel()->selectedRows();
+    if (selected.length() > 0) {
+        qDebug("Deleting %d rows from colour fix @ %d", selected.length(), selected.first().row());
+        // This function assumes that the selected rows are in ascending order
+        for (int i = selected.length() - 1; i >= 0; i--) {
+            this->model()->removeRow(selected[i].row());
+        }
+    }
+}
+
+void ClrFixTableView::AddRow()
+{
+    this->model()->insertRow(this->model()->rowCount());
+}
+
+void ClrFixTableView::keyPressEvent(QKeyEvent *event)
+{
+    if (event->key() == Qt::Key_Delete) {
+        RemoveSelectedRows();
+        event->setAccepted(true);
+    }
+    else {
+        event->setAccepted(false);
+    }
+}
