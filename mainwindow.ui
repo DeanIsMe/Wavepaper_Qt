@@ -39,13 +39,17 @@
    </attribute>
    <addaction name="actionMore"/>
    <addaction name="actionFewer"/>
+   <addaction name="separator"/>
    <addaction name="actionMirrorHor"/>
    <addaction name="actionMirrorVert"/>
+   <addaction name="separator"/>
+   <addaction name="actionWavelengthIncrease"/>
+   <addaction name="actionWavelengthDecrease"/>
   </widget>
   <action name="actionMore">
    <property name="icon">
     <iconset resource="Resources.qrc">
-     <normaloff>:/icons/increaseCount</normaloff>:/icons/increaseCount</iconset>
+     <normaloff>:/icons/countIncrease</normaloff>:/icons/countIncrease</iconset>
    </property>
    <property name="text">
     <string>More</string>
@@ -57,7 +61,7 @@
   <action name="actionFewer">
    <property name="icon">
     <iconset resource="Resources.qrc">
-     <normaloff>:/icons/reduceCount</normaloff>:/icons/reduceCount</iconset>
+     <normaloff>:/icons/countDecrease</normaloff>:/icons/countDecrease</iconset>
    </property>
    <property name="text">
     <string>Fewer</string>
@@ -87,15 +91,39 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
-     <normaloff>Resources/flip-vert-24px.svg</normaloff>
-     <normalon>:/icons/mirrorHor</normalon>Resources/flip-vert-24px.svg</iconset>
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/mirrorVert</normaloff>
+     <normalon>:/icons/mirrorVert</normalon>:/icons/mirrorVert</iconset>
    </property>
    <property name="text">
     <string>Mirror Vertical</string>
    </property>
    <property name="toolTip">
     <string>Mirror the current group of emitters in the vertical direction (about the line x = 0).</string>
+   </property>
+  </action>
+  <action name="actionWavelengthDecrease">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/wavelengthDecrease</normaloff>:/icons/wavelengthDecrease</iconset>
+   </property>
+   <property name="text">
+    <string>Decrease Wavelength</string>
+   </property>
+   <property name="toolTip">
+    <string>Shorten the wavelength for a more variable image</string>
+   </property>
+  </action>
+  <action name="actionWavelengthIncrease">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/wavelengthIncrease</normaloff>:/icons/wavelengthIncrease</iconset>
+   </property>
+   <property name="text">
+    <string>Increase Wavelength</string>
+   </property>
+   <property name="toolTip">
+    <string>Lengthen the wavelength for a more gradual image</string>
    </property>
   </action>
  </widget>

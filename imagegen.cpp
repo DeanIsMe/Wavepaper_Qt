@@ -17,14 +17,20 @@ ImageGen::ImageGen() : act(this) {
     InitViewAreas();
 }
 
+/** ****************************************************************************
+ * @brief ImageGen::GeneratePreviewImage
+ */
 void ImageGen::GeneratePreviewImage() {
-    imageGen.GenerateImage(imageGen.imgPreview, genPreview);
-    emit imageGen.NewImageReady(imageGen.imgPreview, genPreview.imgPerSimUnit);
+    GenerateImage(imgPreview, genPreview);
+    emit NewImageReady(imgPreview, genPreview.imgPerSimUnit);
 }
 
+/** ****************************************************************************
+ * @brief ImageGen::GenerateQuickImage
+ */
 void ImageGen::GenerateQuickImage() {
-    imageGen.GenerateImage(imageGen.imgQuick, genQuick);
-    emit imageGen.NewImageReady(imageGen.imgQuick, genQuick.imgPerSimUnit);
+    GenerateImage(imgQuick, genQuick);
+    emit NewImageReady(imgQuick, genQuick.imgPerSimUnit);
 }
 
 /** ****************************************************************************
@@ -67,6 +73,24 @@ void ImageGen::EmitterCountIncrease() {
     GenerateImage(imgPreview, genPreview);
     emit NewImageReady(imgPreview, genPreview.imgPerSimUnit);
     emit EmitterArngmtChanged();
+}
+
+/** ****************************************************************************
+ * @brief ImageGen::WavelengthDecrease
+ */
+void ImageGen::WavelengthDecrease()
+{
+    this->s.wavelength *= 0.8;
+    GeneratePreviewImage();
+}
+
+/** ****************************************************************************
+ * @brief ImageGen::WavelengthIncrease
+ */
+void ImageGen::WavelengthIncrease()
+{
+    this->s.wavelength *= 1.25;
+    GeneratePreviewImage();
 }
 
 /** ****************************************************************************

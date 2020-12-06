@@ -164,8 +164,6 @@ public:
     static void DebugEmitterLocs(const QVector<EmitterF> &emittersF);
     static EmArrangement DefaultArrangement();
     void setTargetImgPoints(qint32 imgPoints, GenSettings &genSet);
-    void EmitterCountIncrease();
-    void EmitterCountDecrease();
 
     void setDistOffsetF(qreal in) {s.distOffsetF = in;}
     qreal getDistOffsetF() const {return s.distOffsetF;}
@@ -173,6 +171,12 @@ public:
 signals:
     void NewImageReady(QImage & image, qreal imgPerSimUnitOut); // A new image is ready
     void EmitterArngmtChanged(); // Emitted when the emitter locations change
+
+public slots:
+    void EmitterCountDecrease();
+    void EmitterCountIncrease();
+    void WavelengthDecrease();
+    void WavelengthIncrease();
 
 private:
     static void CalcDistArr(double simUnitPerIndex, Double2D_C &arr);

@@ -56,6 +56,18 @@ MainWindow::MainWindow(QWidget *parent)
     QObject::connect(&colourMap, &ColourMap::NewClrMapReady,
                      &imageGen, ImageGen::GeneratePreviewImage);
 
+    // Action trigger events
+    QObject::connect(ui->actionFewer, QAction::triggered,
+                     &imageGen, &ImageGen::EmitterCountDecrease);
+    QObject::connect(ui->actionMore, QAction::triggered,
+                     &imageGen, &ImageGen::EmitterCountIncrease);
+
+    QObject::connect(ui->actionWavelengthDecrease, QAction::triggered,
+                     &imageGen, &ImageGen::WavelengthDecrease);
+
+    QObject::connect(ui->actionWavelengthIncrease, QAction::triggered,
+                     &imageGen, &ImageGen::WavelengthIncrease);
+
 
     previewScene->EmitterArngmtToList(imageGen);
 
@@ -140,17 +152,6 @@ void PaintTestImage(QWidget * testCanvas) {
     }
     painter.drawImage(testArea.x(), testArea.y(), imageTest);
 }
-
-void MainWindow::on_actionMore_triggered()
-{
-    imageGen.EmitterCountIncrease();
-}
-
-void MainWindow::on_actionFewer_triggered()
-{
-    imageGen.EmitterCountDecrease();
-}
-
 
 void MainWindow::on_actionMirrorHor_triggered(bool checked)
 {
