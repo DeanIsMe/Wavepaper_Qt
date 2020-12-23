@@ -107,12 +107,14 @@ public:
         EmArrangement * grpActive;
         QPointF pressPos;
         bool ctrlPressed;
-    } act;
+    } act; // Interaction
 
 
 private:
     MainWindow * mainWindow = nullptr;
     QList<EmArrangement> arngmtList;
+    bool pendingQuickImage; // True if a quick image is pending to be generated
+    bool pendingPreviewImage; // True if a preview image is pending to be generated
     struct TemplateDist {
         Double2D_C * arr = nullptr; // Index is image units. Values are scene units
         qreal imgPerSimUnit; // The imgPerSimUnit that this template was generated with
@@ -153,8 +155,9 @@ public:
 public:
     ImageGen();
     void SetMainWindow(MainWindow * mainWindowIn) {mainWindow = mainWindowIn;}
-    void GeneratePreviewImage();
-    void GenerateQuickImage();
+    void NewPreviewImageNeeded();
+    void NewQuickImageNeeded();
+    void NewImageNeeded();
     int GenerateImage(QImage &imageOut, GenSettings &genSet);
     EmArrangement *GetActiveArrangement();
     int InitViewAreas();
@@ -171,12 +174,16 @@ public:
 signals:
     void NewImageReady(QImage & image, qreal imgPerSimUnitOut); // A new image is ready
     void EmitterArngmtChanged(); // Emitted when the emitter locations change
+    void GenerateImageSignal(); // Just used to queue up GenerateImageSlot
 
 public slots:
     void EmitterCountDecrease();
     void EmitterCountIncrease();
     void WavelengthDecrease();
     void WavelengthIncrease();
+
+private slots:
+    void GenerateImageSlot();
 
 private:
     static void CalcDistArr(double simUnitPerIndex, Double2D_C &arr);

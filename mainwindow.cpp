@@ -51,10 +51,11 @@ MainWindow::MainWindow(QWidget *parent)
                      previewView, &PreviewView::OnBackgroundChange);
 
     QObject::connect(&imageGen, &ImageGen::EmitterArngmtChanged,
-                     previewScene, &PreviewScene::OnEmitterArngmtChange);
+                     previewScene, &PreviewScene::OnEmitterArngmtChange,
+                     Qt::QueuedConnection);
 
     QObject::connect(&colourMap, &ColourMap::NewClrMapReady,
-                     &imageGen, ImageGen::GeneratePreviewImage);
+                     &imageGen, ImageGen::NewImageNeeded);
 
     // Action trigger events
     QObject::connect(ui->actionFewer, QAction::triggered,
@@ -83,7 +84,7 @@ MainWindow::MainWindow(QWidget *parent)
 //    previewScene->setBackgroundBrush(brush);
 
     previewScene->EmitterArngmtToList(imageGen);
-    imageGen.GeneratePreviewImage();
+    imageGen.NewImageNeeded();
 
     layoutCentral->addWidget(textWindow);
 
@@ -103,7 +104,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     switch (event->key()) {
     case Qt::Key_1:
         imageGen.s.wavelength *= 1.5;
-        imageGen.GeneratePreviewImage();
+        imageGen.NewImageNeeded();
         qDebug("Image regenerated. Wavelength = %.2f", imageGen.s.wavelength);
         break;
     case Qt::Key_2:
@@ -120,12 +121,12 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     case Qt::Key_Plus: // !@# temp
         imageGen.s.distOffsetF *= 1.2;
         qDebug("distOffsetF = %.2f", imageGen.s.distOffsetF);
-        imageGen.GeneratePreviewImage();
+        imageGen.NewImageNeeded();
         break;
     case Qt::Key_Minus: // !@# temp
         imageGen.s.distOffsetF *= (1./1.2);
         qDebug("distOffsetF = %.2f", imageGen.s.distOffsetF);
-        imageGen.GeneratePreviewImage();
+        imageGen.NewImageNeeded();
         break;
     default:
         event->setAccepted(false);
@@ -157,12 +158,12 @@ void MainWindow::on_actionMirrorHor_triggered(bool checked)
 {
     imageGen.GetActiveArrangement()->mirrorHor = checked;
     previewScene->EmitterArngmtToList(imageGen);
-    imageGen.GeneratePreviewImage();
+    imageGen.NewImageNeeded();
 }
 
 void MainWindow::on_actionMirrorVert_triggered(bool checked)
 {
     imageGen.GetActiveArrangement()->mirrorVert = checked;
     previewScene->EmitterArngmtToList(imageGen);
-    imageGen.GeneratePreviewImage();
+    imageGen.NewImageNeeded();
 }

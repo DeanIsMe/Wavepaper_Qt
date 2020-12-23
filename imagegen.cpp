@@ -14,23 +14,62 @@ ImageGen imageGen;
  * @brief ImageGen::ImageGen
  */
 ImageGen::ImageGen() : act(this) {
+    QObject::connect(this, &ImageGen::GenerateImageSignal,
+                     this, &ImageGen::GenerateImageSlot, Qt::QueuedConnection);
     InitViewAreas();
 }
 
 /** ****************************************************************************
- * @brief ImageGen::GeneratePreviewImage
+ * @brief ImageGen::NewImageNeeded
  */
-void ImageGen::GeneratePreviewImage() {
-    GenerateImage(imgPreview, genPreview);
-    emit NewImageReady(imgPreview, genPreview.imgPerSimUnit);
+void ImageGen::NewImageNeeded() {
+    // The quick image should be drawn first, and the preview image after
+    pendingQuickImage = true;
+    pendingPreviewImage = true;
+    emit GenerateImageSignal(); // Process it later in the event queue
 }
 
 /** ****************************************************************************
- * @brief ImageGen::GenerateQuickImage
+ * @brief ImageGen::NewPreviewImageNeeded
  */
-void ImageGen::GenerateQuickImage() {
-    GenerateImage(imgQuick, genQuick);
-    emit NewImageReady(imgQuick, genQuick.imgPerSimUnit);
+void ImageGen::NewPreviewImageNeeded() {
+    pendingPreviewImage = true;
+    emit GenerateImageSignal(); // Process it later in the event queue
+}
+
+/** ****************************************************************************
+ * @brief ImageGen::NewQuickImageNeeded
+ */
+void ImageGen::NewQuickImageNeeded() {
+    pendingQuickImage = true;
+    emit GenerateImageSignal(); // Process it later in the event queue
+}
+
+
+/** ****************************************************************************
+ * @brief ImageGen::GenerateImageSlot
+ */
+void ImageGen::GenerateImageSlot()
+{
+    // Draw a 'quick' image with a higher priority than the more detailed 'preview' image
+    bool handled = false;
+    if (pendingQuickImage) {
+        handled = true;
+        GenerateImage(imgQuick, genQuick);
+        emit NewImageReady(imgQuick, genQuick.imgPerSimUnit);
+        pendingQuickImage = false;
+    }
+    if (pendingPreviewImage) {
+        if (handled) {
+            emit GenerateImageSignal(); // Process it next time
+        }
+        else {
+            handled = true;
+            GenerateImage(imgPreview, genPreview);
+            emit NewImageReady(imgPreview, genPreview.imgPerSimUnit);
+            pendingPreviewImage = false;
+        }
+    }
 }
 
 /** ****************************************************************************
@@ -70,28 +109,10 @@ void ImageGen::setTargetImgPoints(qint32 imgPoints, GenSettings & genSet) {
 void ImageGen::EmitterCountIncrease() {
     EmArrangement * group = GetActiveArrangement();
     group->count = std::max(group->count + 1, qRound((qreal)group->count * 1.2));
-    GenerateImage(imgPreview, genPreview);
-    emit NewImageReady(imgPreview, genPreview.imgPerSimUnit);
+    NewImageNeeded();
     emit EmitterArngmtChanged();
 }
 
-/** ****************************************************************************
- * @brief ImageGen::WavelengthDecrease
- */
-void ImageGen::WavelengthDecrease()
-{
-    this->s.wavelength *= 0.8;
-    GeneratePreviewImage();
-}
-
-/** ****************************************************************************
- * @brief ImageGen::WavelengthIncrease
- */
-void ImageGen::WavelengthIncrease()
-{
-    this->s.wavelength *= 1.25;
-    GeneratePreviewImage();
-}
 
 /** ****************************************************************************
  * @brief ImageGen::EmitterCountDecrease
@@ -101,10 +122,27 @@ void ImageGen::EmitterCountDecrease() {
     int prevVal = group->count;
     group->count = std::max(1, std::min(group->count - 1, qRound((qreal)group->count * 0.8)));
     if (group->count != prevVal) {
-        GenerateImage(imgPreview, genPreview);
-        emit NewImageReady(imgPreview, genPreview.imgPerSimUnit);
+        NewImageNeeded();
         emit EmitterArngmtChanged();
     }
+}
+
+/** ****************************************************************************
+ * @brief ImageGen::WavelengthDecrease
+ */
+void ImageGen::WavelengthDecrease()
+{
+    this->s.wavelength *= 0.8;
+    NewImageNeeded();
+}
+
+/** ****************************************************************************
+ * @brief ImageGen::WavelengthIncrease
+ */
+void ImageGen::WavelengthIncrease()
+{
+    this->s.wavelength *= 1.25;
+    NewImageNeeded();
 }
 
 /** ****************************************************************************
@@ -713,6 +751,11 @@ void ImageGen::Interact::mousePressEvent(QGraphicsSceneMouseEvent *event, Previe
     pressPos = event->scenePos();
 }
 
+/** ****************************************************************************
+ * @brief ImageGen::Interact::mouseReleaseEvent
+ * @param event
+ * @param scene
+ */
 void ImageGen::Interact::mouseReleaseEvent(QGraphicsSceneMouseEvent *event, PreviewScene *scene)
 {
     Q_UNUSED(scene);
@@ -721,9 +764,14 @@ void ImageGen::Interact::mouseReleaseEvent(QGraphicsSceneMouseEvent *event, Prev
 
     emit parent->EmitterArngmtChanged(); // Just need to redraw the axes lines when mirroring
 
-    parent->GeneratePreviewImage();
+    parent->NewPreviewImageNeeded();
 }
 
+/** ****************************************************************************
+ * @brief ImageGen::Interact::mouseMoveEvent
+ * @param event
+ * @param scene
+ */
 void ImageGen::Interact::mouseMoveEvent(QGraphicsSceneMouseEvent *event, PreviewScene *scene)
 {
     Q_UNUSED(scene);
@@ -764,9 +812,12 @@ void ImageGen::Interact::mouseMoveEvent(QGraphicsSceneMouseEvent *event, Preview
     }
 
     emit parent->EmitterArngmtChanged();
-    parent->GenerateQuickImage();
+    parent->NewQuickImageNeeded();
 }
 
+/** ****************************************************************************
+ * @brief ImageGen::Interact::Cancel
+ */
 void ImageGen::Interact::Cancel() {
     // Restore the backup
     if (active) {
@@ -777,7 +828,7 @@ void ImageGen::Interact::Cancel() {
     active = false;
 }
 
-/**
+/** ****************************************************************************
  * @brief ImageGen::TemplatePhasor::MakeNew
  * @param size
  * @param wavelengthIn
