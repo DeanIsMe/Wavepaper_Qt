@@ -172,7 +172,7 @@ public:
     qreal getDistOffsetF() const {return s.distOffsetF;}
 
 signals:
-    void NewImageReady(QImage & image, qreal imgPerSimUnitOut); // A new image is ready
+    void NewImageReady(QImage & image, qreal imgPerSimUnitOut, QColor backgroundClr); // A new image is ready
     void EmitterArngmtChanged(); // Emitted when the emitter locations change
     void GenerateImageSignal(); // Just used to queue up GenerateImageSlot
 

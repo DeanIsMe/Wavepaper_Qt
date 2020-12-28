@@ -104,14 +104,15 @@ void PreviewView::resizeEvent(QResizeEvent *event) {
 }
 
 /** ****************************************************************************
- * @brief PreviewView::BackgroundChanged
+ * @brief PreviewView::OnPatternImageChange
  */
-void PreviewView::OnBackgroundChange(QImage & image, qreal imgPerSimUnit)
+void PreviewView::OnPatternImageChange(QImage & image, qreal imgPerSimUnit, QColor backgroundClr)
 {
     scene()->invalidate(imageGen.areaSim, QGraphicsScene::BackgroundLayer);
     // resetCachedContent(); // Delete previously cached background to force redraw
-    backgroundImage = &image;
-    backgroundImgPerSimUnit = imgPerSimUnit;
+    patternImage = &image;
+    patternImgPerSimUnit = imgPerSimUnit;
+    backgroundColour = backgroundClr;
     update(); // Redraws, but not immediately
 }
 
@@ -130,9 +131,10 @@ void PreviewView::drawBackground(QPainter *painter, const QRectF &rect)
     // Image coordinates map to the scene / simulation coordinates with
     // a factor of imgPerSimUnit. The image itself has dimensions that start at 0,0,
     // whilst the scene can start at any point.
-    QRectF imgSourceRect((rect.topLeft() - sceneRect().topLeft()) * backgroundImgPerSimUnit,
-                      rect.size() * backgroundImgPerSimUnit);
-    painter->drawImage(rect, *backgroundImage, imgSourceRect);
+    QRectF imgSourceRect((rect.topLeft() - sceneRect().topLeft()) * patternImgPerSimUnit,
+                      rect.size() * patternImgPerSimUnit);
+    painter->fillRect(rect, backgroundColour);
+    painter->drawImage(rect, *patternImage, imgSourceRect);
 }
 
 /** ****************************************************************************

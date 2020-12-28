@@ -67,9 +67,9 @@ void ColourMap::EditColour(qint32 listIdx, QRgb newClr)
 }
 
 /** ****************************************************************************
- * @brief ColourMap::GetColourValue calculates the colour, using the index and interpolation
+ * @brief ColourMap::GetColourValue calculates the colour, using the location and interpolation
  * @param loc is a number from 0 (min) to 1 (max)
- * @return
+ * @return a QRgb, using the alpha layer
  */
 QRgb ColourMap::GetColourValue(qreal loc) const {
     qreal locAsIndex = (loc * (qreal)clrIndexMax);
@@ -84,6 +84,28 @@ QRgb ColourMap::GetColourValue(qreal loc) const {
                 fa * before.blueF() + fb * after.blueF(),
                  255.0 * (fa * maskIndexed[idxBefore] + fb * maskIndexed[idxBefore + 1]));
 }
+
+/** ****************************************************************************
+ * @brief ColourMap::GetBlendedColourValue calculates the colour, using the location and interpolation
+ * @param loc is a number from 0 (min) to 1 (max)
+ * @returns a QRgb with alpha layer off - the background is pre-blended into the colour
+ */
+QRgb ColourMap::GetBlendedColourValue(qreal loc) const {
+    qreal locAsIndex = (loc * (qreal)clrIndexMax);
+    int idxBefore = std::min(clrIndexMax-1, std::max(0,(int)locAsIndex));
+    const qreal fb = (locAsIndex - idxBefore);
+    const qreal fa = 1. - fb;
+
+    const QColor& before = clrIndexed[idxBefore];
+    const QColor& after = clrIndexed[idxBefore + 1];
+
+    qreal mask = (fa * maskIndexed[idxBefore] + fb * maskIndexed[idxBefore + 1]);
+    qreal maskInv = 1. - mask;
+    return qRgb(mask * (fa * before.redF() + fb * after.redF()) + maskInv * m.backColour.redF(),
+                mask * (fa * before.greenF() + fb * after.greenF()) + maskInv * m.backColour.greenF(),
+                mask * (fa * before.blueF() + fb * after.blueF()) + maskInv * m.backColour.blueF());
+}
+
 
 /** ****************************************************************************
  * @brief ColourMap::GetBaseColourValue
@@ -585,7 +607,7 @@ void ColourMapEditorWidget::DrawColourBars()
         QRgb clrBase = colourMap.GetBaseColourValue(loc);
         qreal valMask = colourMap.GetMaskValue(loc);
         QRgb clrMask = qRgb(valMask*255, valMask*255, valMask*255);
-        QRgb clrResult = colourMap.GetColourValue(loc);
+        QRgb clrResult = colourMap.GetBlendedColourValue(loc);
 
         for (int y = dataBarBase->yTop; y < dataBarBase->yTop + dataBarBase->height; y++) {
             dataBarBase->setPoint(x, y,  clrBase);

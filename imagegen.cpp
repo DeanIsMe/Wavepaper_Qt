@@ -56,7 +56,7 @@ void ImageGen::GenerateImageSlot()
     if (pendingQuickImage) {
         handled = true;
         GenerateImage(imgQuick, genQuick);
-        emit NewImageReady(imgQuick, genQuick.imgPerSimUnit);
+        emit NewImageReady(imgQuick, genQuick.imgPerSimUnit, colourMap.GetMaskConfig().backColour);
         pendingQuickImage = false;
     }
     if (pendingPreviewImage) {
@@ -66,7 +66,7 @@ void ImageGen::GenerateImageSlot()
         else {
             handled = true;
             GenerateImage(imgPreview, genPreview);
-            emit NewImageReady(imgPreview, genPreview.imgPerSimUnit);
+            emit NewImageReady(imgPreview, genPreview.imgPerSimUnit, colourMap.GetMaskConfig().backColour);
             pendingPreviewImage = false;
         }
     }

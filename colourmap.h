@@ -38,9 +38,21 @@ class ColourMap : public QObject
     // ColourMap class performs that actual mapping from value to colour
     // for generating the images and previews
 public:
+    struct MaskCfg { // Mask settings
+        qreal numRevs = 3; // How many ripples from from min to max
+        qreal offset = 0; // Phase offset
+        qreal dutyCycle = 0.3; // 0.5 for even (50%)
+        qreal widthFactor = 0.5; // Width of transition. 0=immediate transition. 1.0=transition is 50% of period.
+        QColor backColour = QColor(0,0,0); // When mask is 0%, what the colour will be
+    };
+private:
+    MaskCfg m;
+public:
+
     ColourMap();
 
     QRgb GetColourValue(qreal loc) const;
+    QRgb GetBlendedColourValue(qreal loc) const;
     QRgb GetBaseColourValue(qreal loc) const;
     qreal GetMaskValue(qreal loc) const;
 
@@ -54,16 +66,10 @@ public:
     void EditColourLoc(qint32 listIdx, qreal newLoc);
     void EditColour(qint32 listIdx, QRgb newClr);
     void CreateIndex();
+    const MaskCfg& GetMaskConfig() {return m;}
 
-private:
-    struct { // Mask settings
-        qreal numRevs = 3; // How many ripples from from min to max
-        qreal offset = 0; // Phase offset
-        qreal dutyCycle = 0.3; // 0.5 for even (50%)
-        qreal widthFactor = 0.5; // Width of transition. 0=immediate transition. 1.0=transition is 50% of period.
-        QColor backColour = QColor(0,0,0); // When mask is 0%, what the colour will be
-    } m;
-    void CreateMaskIndex();
+    private:
+        void CreateMaskIndex();
 
 public:
     static const int clrIndexMax = 100; // The colour indices span from 0 to this number

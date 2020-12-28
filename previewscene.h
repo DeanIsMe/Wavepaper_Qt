@@ -54,15 +54,16 @@ protected:
     void resizeEvent(QResizeEvent *event) override;
 
 public slots:
-    void OnBackgroundChange(QImage &image, qreal imgPerSimUnit);
+    void OnPatternImageChange(QImage &image, qreal imgPerSimUnit, QColor backgroundClr);
 
     // QGraphicsView interface
 protected:
     void drawBackground(QPainter *painter, const QRectF &rect);
 
 protected:
-    QImage * backgroundImage = nullptr;
-    qreal backgroundImgPerSimUnit; // Saved for the background
+    QImage * patternImage = nullptr;
+    qreal patternImgPerSimUnit; // Saved for the pattern image
+    QColor backgroundColour = Qt::black;
 };
 
 #endif // PREVIEWSCENE_H

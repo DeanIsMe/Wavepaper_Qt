@@ -48,7 +48,7 @@ MainWindow::MainWindow(QWidget *parent)
     previewView->setSceneRect(imageGen.areaSim);
 
     QObject::connect(&imageGen, &ImageGen::NewImageReady,
-                     previewView, &PreviewView::OnBackgroundChange);
+                     previewView, &PreviewView::OnPatternImageChange);
 
     QObject::connect(&imageGen, &ImageGen::EmitterArngmtChanged,
                      previewScene, &PreviewScene::OnEmitterArngmtChange,
