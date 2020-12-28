@@ -10,9 +10,12 @@
 #include <QLabel>
 #include <QTableView>
 
+/** ****************************************************************************
+ * @brief The ClrFix struct
+ */
 struct ClrFix {
     QColor clr; // Colour at this location
-    qreal loc; // 0 to 100
+    qreal loc; // 0.0 to 1.0
     ClrFix(QColor _clr, qreal _loc) : clr(_clr), loc(_loc) {}
     bool operator <(const ClrFix& other) const {
         return loc < other.loc;
@@ -38,6 +41,8 @@ public:
     ColourMap();
 
     QRgb GetColourValue(qreal loc) const;
+    QRgb GetBaseColourValue(qreal loc) const;
+    qreal GetMaskValue(qreal loc) const;
 
     ClrFix GetClrFix(qint32 index) const;
     qint32 GetColourFixCount() const {return clrList.length();}
@@ -50,9 +55,23 @@ public:
     void EditColour(qint32 listIdx, QRgb newClr);
     void CreateIndex();
 
+private:
+    struct { // Mask settings
+        qreal numRevs = 3; // How many ripples from from min to max
+        qreal offset = 0; // Phase offset
+        qreal dutyCycle = 0.3; // 0.5 for even (50%)
+        qreal widthFactor = 0.5; // Width of transition. 0=immediate transition. 1.0=transition is 50% of period.
+        QColor backColour = QColor(0,0,0); // When mask is 0%, what the colour will be
+    } m;
+    void CreateMaskIndex();
+
+public:
+    static const int clrIndexMax = 100; // The colour indices span from 0 to this number
 protected:
     QList<ClrFix> clrList;
-    QVector<QColor> clrIndexed; // All colours from 0 to 100. !@#$ delete
+    QVector<QColor> clrIndexed; // All colours from locations 0 to 1.0 (indices 0 to clrIndexMax)
+    QVector<qreal> maskIndexed; // All mask values from locations 0 to 1.0 (indices 0 to clrIndexMax). Values are 0 to 1.0.
+
     static QColor Interpolate(qreal loc, const ClrFix& before, const ClrFix& after);
     static QRgb RgbInterpolate(qreal loc, const ClrFix &before, const ClrFix &after);
 signals:
@@ -125,12 +144,17 @@ public:
     ~ColourMapEditorWidget();
 
 private slots:
-    void DrawColourBar();
+    void DrawColourBars();
 
 private:
-    QImage imgClrBar; // Image for the colour bar that represents the map
+    QImage imgBarBase; // Image for the colour bar that represents the base colour map
+    QImage imgBarMask; // Image for the colour bar that represents the colour map mask
+    QImage imgBarResult; // Image for the colour bar that represents the resultant colour map
     ClrFixModel modelClrFix;
-    QLabel lblClrBar;
+    QLabel lblClrBarBase;
+    QLabel lblClrBarMask;
+    QLabel lblClrBarResult;
+
     ClrFixTableView tableClrFix;
 };
 

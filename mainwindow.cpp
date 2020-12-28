@@ -91,6 +91,8 @@ MainWindow::MainWindow(QWidget *parent)
     // Add colour map UI
     ColourMapEditorWidget* colourMapEditor = new ColourMapEditorWidget();
     layoutCentral->addWidget(colourMapEditor);
+
+
 }
 
 MainWindow::~MainWindow()

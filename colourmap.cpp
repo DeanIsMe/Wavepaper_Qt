@@ -17,11 +17,11 @@ ColourMap::ColourMap()
     QObject::connect(this, ColourMap::ClrListChanged,
                      this, ColourMap::CreateIndex, Qt::QueuedConnection);
     // !@# temporary data
-    AddColour(ClrFix(Qt::green,   0));
-    AddColour(ClrFix(Qt::black,  25));
-    AddColour(ClrFix(Qt::red,  50));
-    AddColour(ClrFix(Qt::black,  75));
-    AddColour(ClrFix(Qt::blue, 100));
+    AddColour(ClrFix(Qt::green,   0.0));
+    //AddColour(ClrFix(Qt::black,  0.25));
+    AddColour(ClrFix(Qt::red,  0.50));
+    //AddColour(ClrFix(Qt::black,  0.75));
+    AddColour(ClrFix(Qt::blue, 1.00));
     CreateIndex();
 }
 
@@ -55,7 +55,7 @@ bool ColourMap::RemoveColour(qint32 listIdx)
 void ColourMap::EditColourLoc(qint32 listIdx, qreal newLoc)
 {
     if (listIdx > clrList.length()) { return; }
-    clrList[listIdx].loc = qBound(0., newLoc, 100.);
+    clrList[listIdx].loc = qBound(0., newLoc, 1.0);
     emit ClrListChanged();
 }
 
@@ -68,21 +68,61 @@ void ColourMap::EditColour(qint32 listIdx, QRgb newClr)
 
 /** ****************************************************************************
  * @brief ColourMap::GetColourValue calculates the colour, using the index and interpolation
- * @param loc is a number from 0 (min) to 100 (max)
+ * @param loc is a number from 0 (min) to 1 (max)
  * @return
  */
 QRgb ColourMap::GetColourValue(qreal loc) const {
-    int locBefore = std::min(99, std::max(0,(int)loc));
-    const qreal fb = (loc - locBefore);
+    qreal locAsIndex = (loc * (qreal)clrIndexMax);
+    int idxBefore = std::min(clrIndexMax-1, std::max(0,(int)locAsIndex));
+    const qreal fb = (locAsIndex - idxBefore);
     const qreal fa = 1. - fb;
 
-    const QColor& before = clrIndexed[locBefore];
-    const QColor& after = clrIndexed[locBefore + 1];
+    const QColor& before = clrIndexed[idxBefore];
+    const QColor& after = clrIndexed[idxBefore + 1];
+    return qRgba(fa * before.redF() + fb * after.redF(),
+             fa * before.greenF() + fb * after.greenF(),
+                fa * before.blueF() + fb * after.blueF(),
+                 255.0 * (fa * maskIndexed[idxBefore] + fb * maskIndexed[idxBefore + 1]));
+}
+
+/** ****************************************************************************
+ * @brief ColourMap::GetBaseColourValue
+ * @param loc
+ * @return
+ */
+QRgb ColourMap::GetBaseColourValue(qreal loc) const
+{
+    qreal locAsIndex = (loc * (qreal)clrIndexMax);
+    int idxBefore = std::min(clrIndexMax-1, std::max(0,(int)locAsIndex));
+    const qreal fb = (locAsIndex - idxBefore);
+    const qreal fa = 1. - fb;
+
+    const QColor& before = clrIndexed[idxBefore];
+    const QColor& after = clrIndexed[idxBefore + 1];
     return qRgb(fa * before.redF() + fb * after.redF(),
              fa * before.greenF() + fb * after.greenF(),
                 fa * before.blueF() + fb * after.blueF());
 }
 
+/** ****************************************************************************
+ * @brief ColourMap::GetMaskValue
+ * @param loc
+ * @return
+ */
+qreal ColourMap::GetMaskValue(qreal loc) const
+{
+    qreal locAsIndex = (loc * (qreal)clrIndexMax);
+    int idxBefore = std::min(clrIndexMax-1, std::max(0,(int)locAsIndex));
+    const qreal fb = (locAsIndex - idxBefore);
+    const qreal fa = 1. - fb;
+    return fa * maskIndexed[idxBefore] + fb * maskIndexed[idxBefore + 1];
+}
+
+/** ****************************************************************************
+ * @brief ColourMap::GetClrFix
+ * @param index
+ * @return
+ */
 ClrFix ColourMap::GetClrFix(qint32 index) const
 {
     if (index > clrList.length()) { return ClrFix(QRgb(), 0); }
@@ -99,13 +139,15 @@ void ColourMap::CreateIndex()
     }
     std::sort(clrList.begin(), clrList.end());
 
-    clrList.first().loc;
+
+    // Calculate colour index
     clrIndexed.clear();
-    clrIndexed.resize(101);
+    clrIndexed.resize(clrIndexMax + 1);
     for (qint32 i = 0; i < clrIndexed.size(); i++) {
+        qreal loc = (qreal)i / clrIndexMax;
         // Find the colours on either side
-        ClrFix before(Qt::transparent, 0), after(Qt::transparent, 100);
-        ClrFix thisClr(Qt::transparent, i);
+        ClrFix before(Qt::transparent, 0), after(Qt::transparent, 1.0);
+        ClrFix thisClr(Qt::transparent, loc);
         // Find the first element after this location
         auto afterIt = std::upper_bound(clrList.begin(), clrList.end(), thisClr);
         if (afterIt != clrList.end()) {
@@ -117,9 +159,135 @@ void ColourMap::CreateIndex()
             before = *beforeIt;
         }
         // Interpolate to find this point (from before and after)
-        clrIndexed[i] = Interpolate(i, before, after);
+        clrIndexed[i] = Interpolate(loc, before, after);
     }
+
+    CreateMaskIndex();
+
     emit NewClrMapReady();
+}
+
+/** ****************************************************************************
+ * @brief ColourMap::CreateMaskIndex
+ */
+void ColourMap::CreateMaskIndex()
+{
+    // Calculate mask index
+    qint32 maskLen = this->clrIndexMax + 1;
+    maskIndexed.clear();
+    maskIndexed.resize(maskLen);
+
+    qint32 period = round(maskLen/m.numRevs); // # period as #points
+    qint32 transitionLen = std::max(1, (int)(m.widthFactor*0.5*maskLen/m.numRevs));
+
+    QVector<double> transition;
+    transition.resize(transitionLen);
+
+    if (transitionLen == 1) {transition[0] = 0;}
+    else {
+        double delta = 3.1415926 / (double) (transitionLen - 1);
+        for (qint32 i = 0; i < transition.size(); i++) {
+            transition[i] = cos(i * delta)/2+0.5; // 0 to 1
+        }
+    }
+
+    qint32 back = floor(transitionLen/2+1);
+    QVector<qint32> transitionIndices(transitionLen);
+    std::iota(transitionIndices.begin(), transitionIndices.end(), -back);
+    QVector<double> scaler(maskLen, 0.5); // The output. Initialise to 0.5
+
+    qint32 thisIdx = round((-1 - m.offset) * period); // i: present index. Start back from the start
+    bool odd = true;
+    qint32 prevIdx = thisIdx;
+    while (thisIdx <= maskLen) {
+        QVector<qint32> indicesToAdd(0);
+        QVector<qreal> valuesToAdd(0);
+        if (odd) {
+            // 1 to 0
+            thisIdx = thisIdx + m.dutyCycle * period;
+            qint32 start = thisIdx + transitionIndices[0];
+            qint32 numOverlap = prevIdx - start + 1;
+            if (numOverlap <= 0 || start <= 0) { // No overlapping
+                // The ones
+                qint32 preLen = start - prevIdx;
+                qint32 len = preLen + transitionLen;
+                indicesToAdd.resize(len);
+                std::iota(indicesToAdd.begin(), indicesToAdd.begin() + preLen, prevIdx+1);
+
+                valuesToAdd.resize(len);
+                valuesToAdd.fill(1.0); // All ones
+                // The transition
+                for (qint32 j = 0; j < transitionLen; j++) {
+                    indicesToAdd[preLen + j] = thisIdx + transitionIndices[j];
+                    valuesToAdd[preLen + j] = transition[j];
+                }
+            } else {
+                // We have overlapping.
+                // Up to the intersection. Take the smaller of the 2 values
+                qint32 preLen = start - prevIdx + 1;
+                qint32 len = preLen + transitionLen;
+                indicesToAdd.resize(len);
+                std::iota(indicesToAdd.begin(), indicesToAdd.begin() + preLen, start);
+
+                valuesToAdd.resize(len);
+                for (qint32 j = 0; j < numOverlap; j++) {
+                    valuesToAdd[j] = std::min(maskIndexed[start + j],transition[j]);
+                }
+                // After the intersection
+                for (qint32 j = 0; j < transitionLen; j++) {
+                    indicesToAdd[preLen + j] = prevIdx + 1 + j;
+                    valuesToAdd[preLen + j] = transition[numOverlap + j];
+                }
+            }
+        } else {
+            // 0 to 1
+            thisIdx = thisIdx + (1.0 - m.dutyCycle) * period;
+            qint32 start = thisIdx + transitionIndices[0];
+            qint32 numOverlap = prevIdx - start + 1;
+            if (numOverlap <= 0 || start <= 0) { // No overlapping
+                // The zeros
+                qint32 preLen = start - prevIdx;
+                qint32 len = preLen + transitionLen;
+                indicesToAdd.resize(len);
+                std::iota(indicesToAdd.begin(), indicesToAdd.begin() + preLen, prevIdx+1);
+
+                valuesToAdd.resize(len);
+                valuesToAdd.fill(0.0); // All zeros
+                // The transition
+                for (qint32 j = 0; j < transitionLen; j++) {
+                    indicesToAdd[preLen + j] = thisIdx + transitionIndices[j];
+                    valuesToAdd[preLen + j] = 1.0 - transition[j];
+                }
+            } else {
+                // We have overlapping.
+                // Up to the intersection. Take the smaller of the 2 values
+                qint32 preLen = start - prevIdx + 1;
+                qint32 len = preLen + transitionLen;
+                indicesToAdd.resize(len);
+                std::iota(indicesToAdd.begin(), indicesToAdd.begin() + preLen, start);
+
+                valuesToAdd.resize(len);
+                for (qint32 j = 0; j < numOverlap; j++) {
+                    valuesToAdd[j] = std::max(maskIndexed[start + j], 1.0-transition[j]);
+                }
+                // After the intersection
+                for (qint32 j = 0; j < transitionLen; j++) {
+                    indicesToAdd[preLen + j] = prevIdx + 1 + j;
+                    valuesToAdd[preLen + j] = 1.0 - transition[numOverlap + j];
+                }
+            }
+        }
+        prevIdx = std::min(maskLen, thisIdx + transitionLen - back - 1);
+        odd = !odd;
+
+        for (qint32 j = 0; j < indicesToAdd.length(); j++) {
+            // Remove the out of range values
+            qint32 index = indicesToAdd[j];
+            if (index >= 0 && index < maskLen) {
+                maskIndexed[index] = valuesToAdd[j];
+            }
+        }
+    }
 }
 
 /** ****************************************************************************
@@ -362,9 +530,12 @@ ColourMapEditorWidget::ColourMapEditorWidget(QWidget *parent) : modelClrFix(&col
     this->setLayout(clrMapLayout);
 
     // Colour bar
-    DrawColourBar();
+    DrawColourBars();
+    clrMapLayout->addWidget(&lblClrBarBase);
+    clrMapLayout->addWidget(&lblClrBarMask);
+    clrMapLayout->addWidget(&lblClrBarResult);
 
-    clrMapLayout->addWidget(&lblClrBar);
+
 
     // Table
     tableClrFix.setModel(&modelClrFix);
@@ -374,7 +545,7 @@ ColourMapEditorWidget::ColourMapEditorWidget(QWidget *parent) : modelClrFix(&col
     clrMapLayout->addWidget(&tableClrFix);
 
     connect(&tableClrFix, ClrFixTableView::clicked, &modelClrFix, ClrFixModel::TableClicked);
-    connect(&colourMap, ColourMap::NewClrMapReady, this, DrawColourBar);
+    connect(&colourMap, ColourMap::NewClrMapReady, this, DrawColourBars);
 
     // Buttons for add and delete
     QPushButton * btnAddRow = new QPushButton("Add");
@@ -391,28 +562,51 @@ ColourMapEditorWidget::ColourMapEditorWidget(QWidget *parent) : modelClrFix(&col
     this->show();
 }
 
+/** ****************************************************************************
+* @brief ColourMapEditorWidget::~ColourMapEditorWidget
+*/
 ColourMapEditorWidget::~ColourMapEditorWidget()
 {
 
 }
 
-/**
- * @brief ColourMapEditorWidget::DrawColourBar redraws the bar that demonstrates the colour map
+/** ****************************************************************************
+ * @brief ColourMapEditorWidget::DrawColourBars redraws the bar that demonstrates the colour map
  */
-void ColourMapEditorWidget::DrawColourBar()
+void ColourMapEditorWidget::DrawColourBars()
 {
     QSize sizeClrBar(this->width(), heightClrBar);
-    Rgb2D_C* dataClrBar = new Rgb2D_C(QPoint(0,0), sizeClrBar);
-    for (int x = dataClrBar->xLeft; x < dataClrBar->xLeft + dataClrBar->width; x++) {
-        QRgb clr = colourMap.GetColourValue(100. * (qreal)x / (qreal)sizeClrBar.width());
-        for (int y = dataClrBar->yTop; y < dataClrBar->yTop + dataClrBar->height; y++) {
-            dataClrBar->setPoint(x, y,  clr);
+    Rgb2D_C* dataBarBase = new Rgb2D_C(QPoint(0,0), sizeClrBar);
+    Rgb2D_C* dataBarMask = new Rgb2D_C(QPoint(0,0), sizeClrBar);
+    Rgb2D_C* dataBarResult = new Rgb2D_C(QPoint(0,0), sizeClrBar);
+    for (int x = dataBarBase->xLeft; x < dataBarBase->xLeft + dataBarBase->width; x++) {
+        qreal loc = (qreal)(x - dataBarBase->xLeft) / (qreal)sizeClrBar.width();
+        // !@# Make this more efficient
+        QRgb clrBase = colourMap.GetBaseColourValue(loc);
+        qreal valMask = colourMap.GetMaskValue(loc);
+        QRgb clrMask = qRgb(valMask*255, valMask*255, valMask*255);
+        QRgb clrResult = colourMap.GetColourValue(loc);
+
+        for (int y = dataBarBase->yTop; y < dataBarBase->yTop + dataBarBase->height; y++) {
+            dataBarBase->setPoint(x, y,  clrBase);
+            dataBarMask->setPoint(x, y,  clrMask);
+            dataBarResult->setPoint(x, y,  clrResult);
         }
     }
-    imgClrBar = QImage((uchar*)dataClrBar->getDataPtr(), sizeClrBar.width(), sizeClrBar.height(), QImage::Format_ARGB32,
-                       ImageDataDealloc, dataClrBar);
 
-    lblClrBar.setPixmap(QPixmap::fromImage(imgClrBar));
+    imgBarBase = QImage((uchar*)dataBarBase->getDataPtr(), sizeClrBar.width(), sizeClrBar.height(), QImage::Format_ARGB32,
+                       ImageDataDealloc, dataBarBase);
+
+
+    imgBarMask = QImage((uchar*)dataBarMask->getDataPtr(), sizeClrBar.width(), sizeClrBar.height(), QImage::Format_ARGB32,
+                       ImageDataDealloc, dataBarMask);
+
+    imgBarResult = QImage((uchar*)dataBarResult->getDataPtr(), sizeClrBar.width(), sizeClrBar.height(), QImage::Format_ARGB32,
+                       ImageDataDealloc, dataBarResult);
+
+    lblClrBarBase.setPixmap(QPixmap::fromImage(imgBarBase));
+    lblClrBarMask.setPixmap(QPixmap::fromImage(imgBarMask));
+    lblClrBarResult.setPixmap(QPixmap::fromImage(imgBarResult));
 }
 
 

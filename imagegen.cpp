@@ -272,10 +272,10 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
 
         timePostPhasorMag = fnTimer.elapsed();
 
-        qreal mult = 100. / (maxAmp - minAmp);
+        qreal mult = 1. / (maxAmp - minAmp);
         for (int y = pixArr->yTop; y < pixArr->yTop + pixArr->height; y++) {
             for (int x = pixArr->xLeft; x < pixArr->xLeft + pixArr->width; x++) {
-                // Calculate location in range 0 to 100;
+                // Calculate location in range 0 to 1;
                 qreal loc = (amplitude.getPoint(x, y) - minAmp) * mult;
                 pixArr->setPoint(x, y, colourMap.GetColourValue(loc));
             }
