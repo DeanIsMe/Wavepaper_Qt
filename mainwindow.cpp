@@ -55,7 +55,7 @@ MainWindow::MainWindow(QWidget *parent)
                      Qt::QueuedConnection);
 
     QObject::connect(&colourMap, &ColourMap::NewClrMapReady,
-                     &imageGen, ImageGen::NewImageNeeded);
+                     &imageGen, ImageGen::NewImageNeeded, Qt::QueuedConnection);
 
     // Action trigger events
     QObject::connect(ui->actionFewer, QAction::triggered,
@@ -68,6 +68,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     QObject::connect(ui->actionWavelengthIncrease, QAction::triggered,
                      &imageGen, &ImageGen::WavelengthIncrease);
+
+    QObject::connect(ui->actionMaskEdit, QAction::triggered,
+                     &imageGen, &ImageGen::OnMaskEditChange);
 
 
     previewScene->EmitterArngmtToList(imageGen);

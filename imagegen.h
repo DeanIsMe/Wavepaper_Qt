@@ -8,6 +8,7 @@
 #include <QPainter>
 #include <QGraphicsView>
 #include "datatypes.h"
+#include "colourmap.h"
 
 void ImageDataDealloc(void * info);
 
@@ -86,27 +87,38 @@ class ImageGen : public QObject
 public:
     // PROGRAM SETTINGS
     static constexpr qint32 imgPointsQuick = 40000;
-    static constexpr qint32 imgPointsPreview = 1000000; // !@#$ 200000;
-    static constexpr qreal templateOversizeFactor = 1.2; // The amount of extra length that the templates are calculated for
+    static constexpr qint32 imgPointsPreview = 500000; // !@#$ 200000;
+    static constexpr qreal templateOversizeFactor = 1.2; // The amount of extra length that the templates are calculated for (to prevent repeated recalculations)
 
     class Interact {
+        enum class Type {
+            null,
+            arrangement,
+            mask,
+        };
+
     public:
         Interact(ImageGen * parentIn) : parent(parentIn) {}
         void mousePressEvent(QGraphicsSceneMouseEvent *event, PreviewScene * scene);
         void mouseReleaseEvent(QGraphicsSceneMouseEvent *event, PreviewScene * scene);
         void mouseMoveEvent(QGraphicsSceneMouseEvent *event, PreviewScene * scene);
-        bool IsActive() {return active;}
+        bool IsActive() {return active != Type::null;}
         EmArrangement * GetActiveGroup() { return grpActive; }
 
 
     private:
         void Cancel();
         ImageGen * const parent;
-        bool active = false;
+        Type active = Type::null;
+
+        QPointF pressPos; // Where the interaction started
+        bool ctrlPressed; // If the 'control' key was pressed at the start of the interaction
+        // For emitter arrangement changes:
         EmArrangement grpBackup;
         EmArrangement * grpActive;
-        QPointF pressPos;
-        bool ctrlPressed;
+        // For mask changes
+        ColourMap::MaskCfg maskConfigBackup;
+
     } act; // Interaction
 
 
@@ -151,6 +163,7 @@ public:
     QImage imgPreview;
     QImage imgQuick;
     qreal testVal = 1;
+    bool maskEditEn = false; // True when mask edit is toggled ON
 
 public:
     ImageGen();
@@ -181,6 +194,7 @@ public slots:
     void EmitterCountIncrease();
     void WavelengthDecrease();
     void WavelengthIncrease();
+    void OnMaskEditChange(bool state);
 
 private slots:
     void GenerateImageSlot();

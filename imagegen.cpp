@@ -146,6 +146,15 @@ void ImageGen::WavelengthIncrease()
 }
 
 /** ****************************************************************************
+ * @brief ImageGen::OnMaskEditChange
+ */
+void ImageGen::OnMaskEditChange(bool state)
+{
+    maskEditEn = state;
+    qDebug("maskEditEn = %d", state);
+}
+
+/** ****************************************************************************
  * @brief ImageDataDealloc is a small utility function to clean up mem alloc
  * @note Function is of type QImageCleanupFunction
  * @param info
@@ -244,41 +253,32 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
 
     // Use the resultant amplitude to fill in the pixel data
     Rgb2D_C* pixArr = new Rgb2D_C(genSet.areaImg);
-    if (0) {
-        // Colour angle (basic)
-        for (int y = pixArr->yTop; y < pixArr->yTop + pixArr->height; y++) {
-            for (int x = pixArr->xLeft; x < pixArr->xLeft + pixArr->width; x++) {
-                pixArr->setPoint(x, y, ColourAngleToQrgb(std::abs(phasorSumArr->getPoint(x, y)) * scaler * 1530 * 0.2, 255));
-            }
+
+    // Colour map
+    timePostColorIndex = fnTimer.elapsed();
+
+    // Find max and min values
+    Double2D_C amplitude(phasorSumArr->rect());
+    qreal maxAmp = 0;
+    qreal minAmp = genSet.templateAmp.arr->getPoint(1,1);
+
+    for (int y = pixArr->yTop; y < pixArr->yTop + pixArr->height; y++) {
+        for (int x = pixArr->xLeft; x < pixArr->xLeft + pixArr->width; x++) {
+            qreal amp = std::abs(phasorSumArr->getPoint(x, y));
+            amplitude.setPoint(x, y, amp);
+            minAmp = std::min(minAmp, amp);
+            maxAmp = std::max(maxAmp, amp);
         }
     }
-    else {
-        // Colour map
-        timePostColorIndex = fnTimer.elapsed();
 
-        // Find max and min values
-        Double2D_C amplitude(phasorSumArr->rect());
-        qreal maxAmp = 0;
-        qreal minAmp = genSet.templateAmp.arr->getPoint(1,1);
+    timePostPhasorMag = fnTimer.elapsed();
 
-        for (int y = pixArr->yTop; y < pixArr->yTop + pixArr->height; y++) {
-            for (int x = pixArr->xLeft; x < pixArr->xLeft + pixArr->width; x++) {
-                qreal amp = std::abs(phasorSumArr->getPoint(x, y));
-                amplitude.setPoint(x, y, amp);
-                minAmp = std::min(minAmp, amp);
-                maxAmp = std::max(maxAmp, amp);
-            }
-        }
-
-        timePostPhasorMag = fnTimer.elapsed();
-
-        qreal mult = 1. / (maxAmp - minAmp);
-        for (int y = pixArr->yTop; y < pixArr->yTop + pixArr->height; y++) {
-            for (int x = pixArr->xLeft; x < pixArr->xLeft + pixArr->width; x++) {
-                // Calculate location in range 0 to 1;
-                qreal loc = (amplitude.getPoint(x, y) - minAmp) * mult;
-                pixArr->setPoint(x, y, colourMap.GetColourValue(loc));
-            }
+    qreal mult = 1. / (maxAmp - minAmp);
+    for (int y = pixArr->yTop; y < pixArr->yTop + pixArr->height; y++) {
+        for (int x = pixArr->xLeft; x < pixArr->xLeft + pixArr->width; x++) {
+            // Calculate location in range 0 to 1;
+            qreal loc = (amplitude.getPoint(x, y) - minAmp) * mult;
+            pixArr->setPoint(x, y, colourMap.GetColourValue(loc));
         }
     }
 
@@ -740,15 +740,26 @@ void ImageGen::Interact::mousePressEvent(QGraphicsSceneMouseEvent *event, Previe
     Q_UNUSED(scene);
     qDebug("Scene press   event (%7.2f, %7.2f)", event->scenePos().x(), event->scenePos().y());
     Cancel();
-    grpActive = parent->GetActiveArrangement();
-    if (!grpActive) {
-        // No active groups
-        return;
-    }
-    active = true;
+
+
     ctrlPressed = (event->modifiers() & Qt::ControlModifier);
-    grpBackup = *grpActive; // Save, so that it can be reverted
     pressPos = event->scenePos();
+
+    if (parent->maskEditEn) {
+        // Interact with the mask
+        active = Type::mask;
+        maskConfigBackup = colourMap.GetMaskConfig();
+    }
+    else {
+        // Interact with the emitter arrangement
+        grpActive = parent->GetActiveArrangement();
+        if (!grpActive) {
+            // No active groups
+            return;
+        }
+        grpBackup = *grpActive; // Save, so that it can be reverted
+        active = Type::arrangement;
+    }
 }
 
 /** ****************************************************************************
@@ -760,10 +771,20 @@ void ImageGen::Interact::mouseReleaseEvent(QGraphicsSceneMouseEvent *event, Prev
 {
     Q_UNUSED(scene);
     qDebug("Scene release event (%7.2f, %7.2f)", event-> scenePos().x(), event->scenePos().y());
-    active = false;
 
-    emit parent->EmitterArngmtChanged(); // Just need to redraw the axes lines when mirroring
+    switch (active) {
+    case Type::null:
+        break;
 
+    case Type::arrangement:
+        emit parent->EmitterArngmtChanged(); // Just need to redraw the axes lines when mirroring
+        break;
+
+    case Type::mask:
+        break;
+    }
+
+    active = Type::null;
     parent->NewPreviewImageNeeded();
 }
 
@@ -772,46 +793,72 @@ void ImageGen::Interact::mouseReleaseEvent(QGraphicsSceneMouseEvent *event, Prev
  * @param event
  * @param scene
  */
-void ImageGen::Interact::mouseMoveEvent(QGraphicsSceneMouseEvent *event, PreviewScene *scene)
-{
+void ImageGen::Interact::mouseMoveEvent(QGraphicsSceneMouseEvent *event, PreviewScene *scene) {
     Q_UNUSED(scene);
     qDebug("Scene move    event (%7.2f, %7.2f)", event->scenePos().x(), event->scenePos().y());
-    if (!active) {return;}
+    if (!IsActive()) {return;}
     // Determine how much the mouse has moved while clicked
-    QPointF delta = event->scenePos() - pressPos;
+    QPointF deltaScene = event->scenePos() - pressPos;
+    // deltaRatio: the movement in X & Y directions as a ratio of the scene dimensions
+    QPointF deltaRatio = QPointF(deltaScene.x() / parent->areaSim.width(), deltaScene.y() / parent->areaSim.height());
 
-    // Alt disables snapping
-    bool snapEn = (event->modifiers() & Qt::AltModifier) == 0;
+    if (active == Type::arrangement) {
+        // *********************************************************************
+        // Arrangement edit
 
-    if (ctrlPressed) {
-        // Change location
-        grpActive->center = grpBackup.center + delta;
-        if (snapEn) {
-            grpActive->center.setX(Snap(grpActive->center.x(), 9e9, parent->areaSim.width() * 0.05));
-            grpActive->center.setY(Snap(grpActive->center.y(), 9e9, parent->areaSim.width() * 0.05));
-        }
-    }
-    else {
-        switch (grpActive->type) {
-        case EmType::arc: {
-            grpActive->arcRadius = std::max(0.0, grpBackup.arcRadius - delta.y());
-            qreal spanDelta = delta.x() / parent->areaSim.width() * 3.1415926 * 2;
+        // Alt disables snapping
+        bool snapEn = (event->modifiers() & Qt::AltModifier) == 0;
 
-            grpActive->arcSpan = std::max(0.0, grpBackup.arcSpan + spanDelta);
+        if (ctrlPressed) {
+            // Change location
+            grpActive->center = grpBackup.center + deltaScene;
             if (snapEn) {
-                grpActive->arcSpan = Snap(grpActive->arcSpan, PI, PI * 0.1);
+                grpActive->center.setX(Snap(grpActive->center.x(), 9e9, parent->areaSim.width() * 0.05));
+                grpActive->center.setY(Snap(grpActive->center.y(), 9e9, parent->areaSim.width() * 0.05));
             }
-            break;
         }
-        case EmType::line:
-            grpActive->lenTotal = std::max(0.0, grpBackup.lenTotal - delta.y());
-            break;
-        default:
-            return;
+        else {
+            // Change arrangement
+            switch (grpActive->type) {
+            case EmType::arc: {
+                // Arc: change arcRadius and arcSpan
+                grpActive->arcRadius = std::max(0.0, grpBackup.arcRadius - deltaScene.y());
+                qreal spanDelta = deltaRatio.x() * 3.1415926 * 2;
+
+                grpActive->arcSpan = std::max(0.0, grpBackup.arcSpan + spanDelta);
+                if (snapEn) {
+                    grpActive->arcSpan = Snap(grpActive->arcSpan, PI, PI * 0.1);
+                }
+                break;
+            }
+            case EmType::line:
+                // Line: change length
+                grpActive->lenTotal = std::max(0.0, grpBackup.lenTotal - deltaScene.y());
+                break;
+            default:
+                return;
+            }
         }
+
+        emit parent->EmitterArngmtChanged();
     }
 
-    emit parent->EmitterArngmtChanged();
+    else if (active == Type::mask) {
+        // *********************************************************************
+        // Mask edit
+        auto newMaskCfg = maskConfigBackup;
+        if (ctrlPressed) {
+            // X:Offset. Y: Transition width/sharpness
+            newMaskCfg.offset = maskConfigBackup.offset + deltaRatio.x();
+            newMaskCfg.widthFactor = qBound(0.0, maskConfigBackup.widthFactor + deltaRatio.y(), 2.0);
+        }
+        else {
+            // X:Ripple Count. Y:Duty Cycle
+            newMaskCfg.numRevs = maskConfigBackup.numRevs * (1 + deltaRatio.x() * 3.);
+            newMaskCfg.dutyCycle = qBound(0.0, maskConfigBackup.dutyCycle + deltaRatio.y(), 1.0);
+        }
+        colourMap.SetMaskConfig(newMaskCfg);
+    }
     parent->NewQuickImageNeeded();
 }
 
@@ -820,12 +867,21 @@ void ImageGen::Interact::mouseMoveEvent(QGraphicsSceneMouseEvent *event, Preview
  */
 void ImageGen::Interact::Cancel() {
     // Restore the backup
-    if (active) {
+    switch (active) {
+    case Type::null:
+        break;
+
+    case Type::arrangement:
         if (grpActive) {
             *grpActive = grpBackup;
         }
+        break;
+
+    case Type::mask:
+        colourMap.SetMaskConfig(maskConfigBackup);
+        break;
     }
-    active = false;
+    active = Type::null;
 }
 
 /** ****************************************************************************

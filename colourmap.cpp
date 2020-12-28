@@ -14,15 +14,53 @@ ColourMap colourMap;
  */
 ColourMap::ColourMap()
 {
-    QObject::connect(this, ColourMap::ClrListChanged,
-                     this, ColourMap::CreateIndex, Qt::QueuedConnection);
+    QObject::connect(this, ColourMap::ClrMapChanged,
+                     this, ColourMap::RecalcSlot, Qt::QueuedConnection);
+
     // !@# temporary data
     AddColour(ClrFix(Qt::green,   0.0));
     //AddColour(ClrFix(Qt::black,  0.25));
-    AddColour(ClrFix(Qt::red,  0.50));
+    AddColour(ClrFix(Qt::cyan,  0.50));
     //AddColour(ClrFix(Qt::black,  0.75));
     AddColour(ClrFix(Qt::blue, 1.00));
-    CreateIndex();
+
+    CalcColourIndex();
+    CalcMaskIndex();
+}
+
+/** ****************************************************************************
+ * @brief ColourMap::ClrListChanged
+ */
+void ColourMap::ClrListChanged() {
+    pendingRecalcClrIndex = true;
+    emit ClrMapChanged();
+}
+
+/** ****************************************************************************
+ * @brief ColourMap::MaskChanged
+ */
+void ColourMap::MaskChanged() {
+    pendingRecalcMaskIndex = true;
+    emit ClrMapChanged();
+}
+
+/** ****************************************************************************
+ * @brief ColourMap::RecalcSlot
+ */
+void ColourMap::RecalcSlot()
+{
+    // This slot exists to prevent unnecessary extra recalculation
+    if (pendingRecalcClrIndex) {
+        CalcColourIndex();
+    }
+    if (pendingRecalcMaskIndex) {
+        CalcMaskIndex();
+    }
+    if (pendingRecalcClrIndex || pendingRecalcMaskIndex) {
+        emit NewClrMapReady();
+    }
+    pendingRecalcClrIndex = false;
+    pendingRecalcMaskIndex = false;
 }
 
 /** ****************************************************************************
@@ -34,13 +72,13 @@ ColourMap::ColourMap()
 void ColourMap::AddColour(QColor clr, qreal loc, qint32 listIdx)
 {
     AddColour(ClrFix(clr, loc), listIdx);
-    emit ClrListChanged();
+    ClrListChanged();
 }
 
 void ColourMap::AddColour(ClrFix clrFix, qint32 listIdx)
 {
     clrList.insert(listIdx, clrFix);
-    emit ClrListChanged();
+    ClrListChanged();
 }
 
 bool ColourMap::RemoveColour(qint32 listIdx)
@@ -48,7 +86,7 @@ bool ColourMap::RemoveColour(qint32 listIdx)
     if (listIdx > clrList.length()) { return false; }
     if (clrList.length() <= 2) { return false; } // Must have at least 2 colours
     clrList.removeAt(listIdx);
-    emit ClrListChanged();
+    ClrListChanged();
     return true;
 }
 
@@ -56,14 +94,14 @@ void ColourMap::EditColourLoc(qint32 listIdx, qreal newLoc)
 {
     if (listIdx > clrList.length()) { return; }
     clrList[listIdx].loc = qBound(0., newLoc, 1.0);
-    emit ClrListChanged();
+    ClrListChanged();
 }
 
 void ColourMap::EditColour(qint32 listIdx, QRgb newClr)
 {
     if (listIdx > clrList.length()) { return; }
     clrList[listIdx].clr = newClr;
-    emit ClrListChanged();
+    ClrListChanged();
 }
 
 /** ****************************************************************************
@@ -152,10 +190,11 @@ ClrFix ColourMap::GetClrFix(qint32 index) const
 }
 
 /** ****************************************************************************
- * @brief ColourMap::CreateIndex
+ * @brief ColourMap::CalcColourIndex
  */
-void ColourMap::CreateIndex()
+void ColourMap::CalcColourIndex()
 {
+    qDebug("CalcColourIndex");
     if (clrList.size() < 2) {
         qFatal("ColourMap::CreateIndexed() not enough colours in list!");
     }
@@ -183,18 +222,14 @@ void ColourMap::CreateIndex()
         // Interpolate to find this point (from before and after)
         clrIndexed[i] = Interpolate(loc, before, after);
     }
-
-    CreateMaskIndex();
-
-    emit NewClrMapReady();
 }
 
 /** ****************************************************************************
- * @brief ColourMap::CreateMaskIndex
+ * @brief ColourMap::CalcMaskIndex
  */
-void ColourMap::CreateMaskIndex()
+void ColourMap::CalcMaskIndex()
 {
-    // Calculate mask index
+    qDebug("CalcMaskIndex");
     qint32 maskLen = this->clrIndexMax + 1;
     maskIndexed.clear();
     maskIndexed.resize(maskLen);
@@ -258,7 +293,7 @@ void ColourMap::CreateMaskIndex()
                 // After the intersection
                 for (qint32 j = 0; j < transitionLen; j++) {
                     indicesToAdd[preLen + j] = prevIdx + 1 + j;
-                    valuesToAdd[preLen + j] = transition[numOverlap + j];
+                    valuesToAdd[preLen + j] = transition[numOverlap + j - 1];
                 }
             }
         } else {
@@ -295,7 +330,7 @@ void ColourMap::CreateMaskIndex()
                 // After the intersection
                 for (qint32 j = 0; j < transitionLen; j++) {
                     indicesToAdd[preLen + j] = prevIdx + 1 + j;
-                    valuesToAdd[preLen + j] = 1.0 - transition[numOverlap + j];
+                    valuesToAdd[preLen + j] = 1.0 - transition[numOverlap + j - 1];
                 }
             }
         }
@@ -567,7 +602,7 @@ ColourMapEditorWidget::ColourMapEditorWidget(QWidget *parent) : modelClrFix(&col
     clrMapLayout->addWidget(&tableClrFix);
 
     connect(&tableClrFix, ClrFixTableView::clicked, &modelClrFix, ClrFixModel::TableClicked);
-    connect(&colourMap, ColourMap::NewClrMapReady, this, DrawColourBars);
+    connect(&colourMap, ColourMap::NewClrMapReady, this, DrawColourBars, Qt::QueuedConnection);
 
     // Buttons for add and delete
     QPushButton * btnAddRow = new QPushButton("Add");

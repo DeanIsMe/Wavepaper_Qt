@@ -41,7 +41,7 @@ public:
     struct MaskCfg { // Mask settings
         qreal numRevs = 3; // How many ripples from from min to max
         qreal offset = 0; // Phase offset
-        qreal dutyCycle = 0.3; // 0.5 for even (50%)
+        qreal dutyCycle = 0.3; // 0.5 for even (50%). Must be 0 to 1.0
         qreal widthFactor = 0.5; // Width of transition. 0=immediate transition. 1.0=transition is 50% of period.
         QColor backColour = QColor(0,0,0); // When mask is 0%, what the colour will be
     };
@@ -65,11 +65,12 @@ public:
     void MoveColour(qint32 listIdxFrom, qint32 listIdxTo) {clrList.move(listIdxFrom, listIdxTo);}
     void EditColourLoc(qint32 listIdx, qreal newLoc);
     void EditColour(qint32 listIdx, QRgb newClr);
-    void CreateIndex();
+    void CalcColourIndex();
     const MaskCfg& GetMaskConfig() {return m;}
+    void SetMaskConfig(MaskCfg& maskCfgIn) {m = maskCfgIn; MaskChanged();}
 
-    private:
-        void CreateMaskIndex();
+private:
+    void CalcMaskIndex();
 
 public:
     static const int clrIndexMax = 100; // The colour indices span from 0 to this number
@@ -77,11 +78,20 @@ protected:
     QList<ClrFix> clrList;
     QVector<QColor> clrIndexed; // All colours from locations 0 to 1.0 (indices 0 to clrIndexMax)
     QVector<qreal> maskIndexed; // All mask values from locations 0 to 1.0 (indices 0 to clrIndexMax). Values are 0 to 1.0.
+    bool pendingRecalcClrIndex = true;
+    bool pendingRecalcMaskIndex = true;
 
     static QColor Interpolate(qreal loc, const ClrFix& before, const ClrFix& after);
     static QRgb RgbInterpolate(qreal loc, const ClrFix &before, const ClrFix &after);
+
+    void ClrListChanged(); // Called any time an edit is made to the colour list
+    void MaskChanged(); // Called any time an edit is made to the mask
+
+private slots:
+    void RecalcSlot();
+
 signals:
-    void ClrListChanged(); // Emitted automatically any time an edit is made
+    void ClrMapChanged(); // Emitted any time an edit is made to the mask
     void NewClrMapReady(); // Emitted after the new colour index is made - ready to be used by other parts of the program
 };
 

@@ -45,6 +45,8 @@
    <addaction name="separator"/>
    <addaction name="actionWavelengthIncrease"/>
    <addaction name="actionWavelengthDecrease"/>
+   <addaction name="separator"/>
+   <addaction name="actionMaskEdit"/>
   </widget>
   <action name="actionMore">
    <property name="icon">
@@ -124,6 +126,22 @@
    </property>
    <property name="toolTip">
     <string>Lengthen the wavelength for a more gradual image</string>
+   </property>
+  </action>
+  <action name="actionMaskEdit">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/maskSelect</normaloff>
+     <normalon>:/icons/maskSelect</normalon>:/icons/maskSelect</iconset>
+   </property>
+   <property name="text">
+    <string>Mask Edit</string>
+   </property>
+   <property name="toolTip">
+    <string>Edit the image mask</string>
    </property>
   </action>
  </widget>

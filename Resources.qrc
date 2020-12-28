@@ -6,5 +6,6 @@
         <file alias="mirrorVert">Resources/flip-vert-24px.svg</file>
         <file alias="wavelengthDecrease">Resources/wavelength_decrease.svg</file>
         <file alias="wavelengthIncrease">Resources/wavelength_increase.svg</file>
+        <file alias="maskSelect">Resources/mask_select-24px.svg</file>
     </qresource>
 </RCC>
