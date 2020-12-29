@@ -68,6 +68,7 @@ public:
     void CalcColourIndex();
     const MaskCfg& GetMaskConfig() {return m;}
     void SetMaskConfig(MaskCfg& maskCfgIn) {m = maskCfgIn; MaskChanged();}
+    bool RecalcPending() {return pendingRecalcClrIndex || pendingRecalcMaskIndex;}
 
 private:
     void CalcMaskIndex();

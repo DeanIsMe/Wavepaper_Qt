@@ -52,6 +52,7 @@ void ImageGen::NewQuickImageNeeded() {
 void ImageGen::GenerateImageSlot()
 {
     // Draw a 'quick' image with a higher priority than the more detailed 'preview' image
+    if (colourMap.RecalcPending()) { return; }
     bool handled = false;
     if (pendingQuickImage) {
         handled = true;

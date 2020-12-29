@@ -134,17 +134,11 @@ void PreviewView::drawBackground(QPainter *painter, const QRectF &rect)
     // Image coordinates map to the scene / simulation coordinates with
     // a factor of imgPerSimUnit. The image itself has dimensions that start at 0,0,
     // whilst the scene can start at any point.
-    qDebug("drawBackground. rect=(%.2fx%.2f). @(%.2f, %.2f)", rect.width(), rect.height(), rect.x(), rect.y()); // !@#$
-    if (rect.width() > 101.0) {
-        qDebug("Long");
-    }
-    else {
-        qDebug("Short");
-    }
+    //qDebug("drawBackground. rect=(%.2fx%.2f). @(%.2f, %.2f)", rect.width(), rect.height(), rect.x(), rect.y());
 
     QRectF imgSourceRect((rect.topLeft() - sceneRect().topLeft()) * patternImgPerSimUnit,
                       rect.size() * patternImgPerSimUnit);
-    painter->fillRect(rect, backgroundColour);
+    painter->fillRect(sceneRect(), backgroundColour);
     painter->drawImage(rect, *patternImage, imgSourceRect);
 }
 
