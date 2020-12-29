@@ -73,7 +73,7 @@ private:
     void CalcMaskIndex();
 
 public:
-    static const int clrIndexMax = 100; // The colour indices span from 0 to this number
+    static const int clrIndexMax = 200; // The colour indices span from 0 to this number
 protected:
     QList<ClrFix> clrList;
     QVector<QColor> clrIndexed; // All colours from locations 0 to 1.0 (indices 0 to clrIndexMax)

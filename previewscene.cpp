@@ -94,12 +94,15 @@ PreviewView::PreviewView(QWidget *parent) : QGraphicsView(parent)
  * @param event
  */
 void PreviewView::resizeEvent(QResizeEvent *event) {
-    event->accept();
     // Enforce the aspect ratio
-    qreal newWidth = std::min((qreal)event->size().height() * imageGen.aspectRatio(), (qreal)event->size().width());
-    this->resize(newWidth, newWidth / imageGen.aspectRatio());
+    // 2020-12-29 This causes jerky behaviour as it triggers this resizeEvent again. Does not work well.
+    // qreal newWidth = std::min((qreal)event->size().height() * imageGen.aspectRatio(), (qreal)event->size().width());
+    // qDebug("resizeEvent. size=(%dx%d)px. newWidth=%.2f", event->size().width(), event->size().height(), newWidth);
+    // this->resize(newWidth, newWidth / imageGen.aspectRatio());
+
     // Ensure that the viewable section of the screen stays the same
     this->fitInView(imageGen.areaSim, Qt::KeepAspectRatio);
+    return QGraphicsView::resizeEvent(event);
     // Background redraw will be triggered
 }
 
@@ -131,6 +134,14 @@ void PreviewView::drawBackground(QPainter *painter, const QRectF &rect)
     // Image coordinates map to the scene / simulation coordinates with
     // a factor of imgPerSimUnit. The image itself has dimensions that start at 0,0,
     // whilst the scene can start at any point.
+    qDebug("drawBackground. rect=(%.2fx%.2f). @(%.2f, %.2f)", rect.width(), rect.height(), rect.x(), rect.y()); // !@#$
+    if (rect.width() > 101.0) {
+        qDebug("Long");
+    }
+    else {
+        qDebug("Short");
+    }
+
     QRectF imgSourceRect((rect.topLeft() - sceneRect().topLeft()) * patternImgPerSimUnit,
                       rect.size() * patternImgPerSimUnit);
     painter->fillRect(rect, backgroundColour);
