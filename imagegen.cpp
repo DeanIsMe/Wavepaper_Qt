@@ -854,7 +854,7 @@ void ImageGen::Interact::mouseMoveEvent(QGraphicsSceneMouseEvent *event, Preview
         }
         else {
             // X:Ripple Count. Y:Duty Cycle
-            newMaskCfg.numRevs = maskConfigBackup.numRevs * (1 + deltaRatio.x() * 3.);
+            newMaskCfg.numRevs = qBound(0.1, maskConfigBackup.numRevs + deltaRatio.x() * 5., 200.0);
             newMaskCfg.dutyCycle = qBound(0.0, maskConfigBackup.dutyCycle + deltaRatio.y(), 1.0);
         }
         colourMap.SetMaskConfig(newMaskCfg);

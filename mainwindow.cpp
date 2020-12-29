@@ -55,7 +55,7 @@ MainWindow::MainWindow(QWidget *parent)
                      Qt::QueuedConnection);
 
     QObject::connect(&colourMap, &ColourMap::NewClrMapReady,
-                     &imageGen, ImageGen::NewImageNeeded, Qt::QueuedConnection);
+                     &imageGen, ImageGen::NewQuickImageNeeded, Qt::QueuedConnection);
 
     // Action trigger events
     QObject::connect(ui->actionFewer, QAction::triggered,

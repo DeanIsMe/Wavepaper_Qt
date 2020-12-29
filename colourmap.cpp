@@ -234,116 +234,71 @@ void ColourMap::CalcMaskIndex()
     maskIndexed.clear();
     maskIndexed.resize(maskLen);
 
-    qint32 period = round(maskLen/m.numRevs); // # period as #points
+    qint32 period = std::max(2, (qint32)(maskLen/m.numRevs)); // period as #points
+    qint32 highLen = qBound(1, (int) (m.dutyCycle * period), period);
+    qint32 lowLen = period - highLen;
     qint32 transitionLen = std::max(1, (int)(m.widthFactor*0.5*maskLen/m.numRevs));
 
+    // Pre-calculate the transition
     QVector<double> transition;
     transition.resize(transitionLen);
-
     if (transitionLen == 1) {transition[0] = 0;}
     else {
         double delta = 3.1415926 / (double) (transitionLen - 1);
         for (qint32 i = 0; i < transition.size(); i++) {
-            transition[i] = cos(i * delta)/2+0.5; // 0 to 1
+            transition[i] = cos(i * delta)*0.5 + 0.5; // 1 to 0
         }
     }
+    // If the transition is greater than the period, pop values from
+    // the front and back (symmetrically)
+    while (transitionLen * 2 > period) {
+        if (transitionLen % 2) {
+            transition.pop_back();
+        }
+        else {
+            transition.pop_front();
+        }
+        transitionLen--;
+    }
 
-    qint32 back = floor(transitionLen/2+1);
-    QVector<qint32> transitionIndices(transitionLen);
-    std::iota(transitionIndices.begin(), transitionIndices.end(), -back);
-    QVector<double> scaler(maskLen, 0.5); // The output. Initialise to 0.5
-
-    qint32 thisIdx = round((-1 - m.offset) * period); // i: present index. Start back from the start
-    bool odd = true;
-    qint32 prevIdx = thisIdx;
-    while (thisIdx <= maskLen) {
-        QVector<qint32> indicesToAdd(0);
-        QVector<qreal> valuesToAdd(0);
-        if (odd) {
-            // 1 to 0
-            thisIdx = thisIdx + m.dutyCycle * period;
-            qint32 start = thisIdx + transitionIndices[0];
-            qint32 numOverlap = prevIdx - start + 1;
-            if (numOverlap <= 0 || start <= 0) { // No overlapping
-                // The ones
-                qint32 preLen = start - prevIdx;
-                qint32 len = preLen + transitionLen;
-                indicesToAdd.resize(len);
-                std::iota(indicesToAdd.begin(), indicesToAdd.begin() + preLen, prevIdx+1);
-
-                valuesToAdd.resize(len);
-                valuesToAdd.fill(1.0); // All ones
-                // The transition
-                for (qint32 j = 0; j < transitionLen; j++) {
-                    indicesToAdd[preLen + j] = thisIdx + transitionIndices[j];
-                    valuesToAdd[preLen + j] = transition[j];
-                }
-            } else {
-                // We have overlapping.
-                // Up to the intersection. Take the smaller of the 2 values
-                qint32 preLen = start - prevIdx + 1;
-                qint32 len = preLen + transitionLen;
-                indicesToAdd.resize(len);
-                std::iota(indicesToAdd.begin(), indicesToAdd.begin() + preLen, start);
-
-                valuesToAdd.resize(len);
-                for (qint32 j = 0; j < numOverlap; j++) {
-                    valuesToAdd[j] = std::min(maskIndexed[start + j],transition[j]);
-                }
-                // After the intersection
-                for (qint32 j = 0; j < transitionLen; j++) {
-                    indicesToAdd[preLen + j] = prevIdx + 1 + j;
-                    valuesToAdd[preLen + j] = transition[numOverlap + j - 1];
-                }
-            }
-        } else {
-            // 0 to 1
-            thisIdx = thisIdx + (1.0 - m.dutyCycle) * period;
-            qint32 start = thisIdx + transitionIndices[0];
-            qint32 numOverlap = prevIdx - start + 1;
-            if (numOverlap <= 0 || start <= 0) { // No overlapping
-                // The zeros
-                qint32 preLen = start - prevIdx;
-                qint32 len = preLen + transitionLen;
-                indicesToAdd.resize(len);
-                std::iota(indicesToAdd.begin(), indicesToAdd.begin() + preLen, prevIdx+1);
-
-                valuesToAdd.resize(len);
-                valuesToAdd.fill(0.0); // All zeros
-                // The transition
-                for (qint32 j = 0; j < transitionLen; j++) {
-                    indicesToAdd[preLen + j] = thisIdx + transitionIndices[j];
-                    valuesToAdd[preLen + j] = 1.0 - transition[j];
-                }
-            } else {
-                // We have overlapping.
-                // Up to the intersection. Take the smaller of the 2 values
-                qint32 preLen = start - prevIdx + 1;
-                qint32 len = preLen + transitionLen;
-                indicesToAdd.resize(len);
-                std::iota(indicesToAdd.begin(), indicesToAdd.begin() + preLen, start);
-
-                valuesToAdd.resize(len);
-                for (qint32 j = 0; j < numOverlap; j++) {
-                    valuesToAdd[j] = std::max(maskIndexed[start + j], 1.0-transition[j]);
-                }
-                // After the intersection
-                for (qint32 j = 0; j < transitionLen; j++) {
-                    indicesToAdd[preLen + j] = prevIdx + 1 + j;
-                    valuesToAdd[preLen + j] = 1.0 - transition[numOverlap + j - 1];
-                }
+    qint32 activeTransIdx = - m.offset * (qreal) period - transitionLen/2; // Transition start location (as an index). Should always be <= thisIdx
+    while (activeTransIdx > 0) { activeTransIdx -= period; }
+    qint8 transVal = 1; // The value that this transition is moving to.  0: high to low.  1: low to high.
+    qint32 thisIdx = 0;
+    while (thisIdx < maskLen) {
+        // Check for an update on the active transition
+        if (transVal) {
+            if (thisIdx >= activeTransIdx + highLen) {
+                activeTransIdx += highLen;
+                transVal = 0;
+                continue;
             }
         }
-        prevIdx = std::min(maskLen, thisIdx + transitionLen - back - 1);
-        odd = !odd;
-
-        for (qint32 j = 0; j < indicesToAdd.length(); j++) {
-            // Remove the out of range values
-            qint32 index = indicesToAdd[j];
-            if (index >= 0 && index < maskLen) {
-                maskIndexed[index] = valuesToAdd[j];
+        else {
+            if (thisIdx >= activeTransIdx + lowLen) {
+                activeTransIdx += lowLen;
+                transVal = 1;
+                continue;
             }
         }
+
+        // Calculate the value for this index
+        const qint32 thisTransIdx = thisIdx - activeTransIdx;
+        qreal thisVal;
+        if (thisTransIdx < transitionLen) {
+            // Currently in a transition
+            if (transVal) { // 0 to 1
+                thisVal = 1.0 - transition[thisTransIdx];
+            }
+            else { // 1 to 0
+                thisVal = transition[thisTransIdx];
+            }
+        }
+        else {
+            // Not in a transition. Constant value
+            thisVal = transVal ? 1.0 : 0.0;
+        }
+        maskIndexed[thisIdx++] = thisVal;
     }
 }
 
