@@ -37,5 +37,6 @@ private slots:
     void on_actionMirrorHor_triggered(bool checked);
     void on_actionMirrorVert_triggered(bool checked);
     void on_actionMaskEnable_triggered(bool checked);
+    void on_actionHideEmitters_toggled(bool arg1);
 };
 #endif // MAINWINDOW_H

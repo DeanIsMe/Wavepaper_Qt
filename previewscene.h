@@ -37,8 +37,8 @@ protected:
 
     // Custom
 public:
-    void EmitterArngmtToList(ImageGen &imageGen);
-    void AddAxesLines(ImageGen &imageGen);
+    void EmitterArngmtToList(ImageGen &imgGen);
+    void AddAxesLines(ImageGen &imgGen);
 
 };
 

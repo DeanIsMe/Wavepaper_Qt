@@ -37,6 +37,8 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="actionHideEmitters"/>
+   <addaction name="separator"/>
    <addaction name="actionMore"/>
    <addaction name="actionFewer"/>
    <addaction name="separator"/>
@@ -177,6 +179,22 @@
    </property>
    <property name="toolTip">
     <string>Enable the mask</string>
+   </property>
+  </action>
+  <action name="actionHideEmitters">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/visibleOff</normaloff>
+     <normalon>:/icons/visibleOff</normalon>:/icons/visibleOff</iconset>
+   </property>
+   <property name="text">
+    <string>Hide Emitters</string>
+   </property>
+   <property name="toolTip">
+    <string>Hide emitters from the preview</string>
    </property>
   </action>
  </widget>

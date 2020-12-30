@@ -16,42 +16,48 @@ PreviewScene::PreviewScene(QObject *parent) :
 /** ****************************************************************************
  * @brief PreviewScene::EmitterArngmtToList
  */
-void PreviewScene::EmitterArngmtToList(ImageGen & imageGen) {
+void PreviewScene::EmitterArngmtToList(ImageGen & imgGen) {
     // Get the vector of emitters
     QVector<EmitterF> emitters;
-    if (imageGen.GetEmitterList(emitters)) {
+    if (imgGen.GetEmitterList(emitters)) {
         return;
     }
 
-    const double emDia = imageGen.s.emitterRadius * 2.0; // Simulation/scene coordinates
+    const double emDia = imgGen.s.emitterRadius * 2.0; // Simulation/scene coordinates
     QPen pen(QColorConstants::Black);
-    pen.setWidthF(imageGen.s.emitterRadius * 0.3);
+    pen.setWidthF(imgGen.s.emitterRadius * 0.3);
     QBrush brush(QColorConstants::White);
 
+    // Delete every existing graphics item from the group
     for (QGraphicsItem * item : emItemGroup.childItems()) {
         emItemGroup.removeFromGroup(item);
         delete item;
     }
 
-    // !@# upgrade to group together each arrangement
-
-    // Note that the actual ellipse position is a combination of the QGraphicsItem
-    // position and the QGraphicsEllipseItem rect position.
-    // If the item pos is (0,0) and the rect() is centered on (10,20), then
-    // the ellipse will be centered on (10,20).
-    QRectF emRect(0., 0., emDia, emDia);
-    emRect.moveCenter(QPointF(0,0)); // The rect() will always be centered around 0
-    for (EmitterF e : emitters) {
-        QGraphicsEllipseItem * item = new QGraphicsEllipseItem(emRect, &emItemGroup);
-        item->setPos(e.loc);
-        item->setPen(pen);
-        item->setBrush(brush);
+    if (!imgGen.EmittersHidden()) {
+        // For each emitter, create a graphics item and add to the group
+        // !@# upgrade to group together each arrangement
+        // Note that the actual ellipse position is a combination of the QGraphicsItem
+        // position and the QGraphicsEllipseItem rect position.
+        // If the item pos is (0,0) and the rect() is centered on (10,20), then
+        // the ellipse will be centered on (10,20).
+        QRectF emRect(0., 0., emDia, emDia);
+        emRect.moveCenter(QPointF(0,0)); // The rect() will always be centered around 0
+        for (EmitterF e : emitters) {
+            QGraphicsEllipseItem * item = new QGraphicsEllipseItem(emRect, &emItemGroup);
+            item->setPos(e.loc);
+            item->setPen(pen);
+            item->setBrush(brush);
+        }
     }
 
-    AddAxesLines(imageGen);
 
+    // Re-add the group to the scene
     this->removeItem(&emItemGroup);
     this->addItem(&emItemGroup);
+
+    AddAxesLines(imgGen);
+
     invalidate(this->sceneRect(), QGraphicsScene::ItemLayer);
     // The scene and background are automatically redrawn
 }
@@ -60,12 +66,12 @@ void PreviewScene::EmitterArngmtToList(ImageGen & imageGen) {
  * @brief PreviewScene::AddAxesLines
  * @param imageGen
  */
-void PreviewScene::AddAxesLines(ImageGen & imageGen) {
+void PreviewScene::AddAxesLines(ImageGen & imgGen) {
     this->removeItem(&yAxisItem);
     this->removeItem(&xAxisItem);
     // Axes are drawn only when interacting with an arrangement that's mirrored
-    if (imageGen.act.IsActive() && imageGen.act.GetActiveGroup()) {
-        EmArrangement* group = imageGen.act.GetActiveGroup();
+    if (imgGen.act.IsActive() && imgGen.act.GetActiveGroup()) {
+        EmArrangement* group = imgGen.act.GetActiveGroup();
         if (group->mirrorHor) {
             yAxisItem.setLine(QLineF(0, sceneRect().top(), 0, sceneRect().bottom()));
             this->addItem(&yAxisItem);
@@ -87,6 +93,13 @@ PreviewView::PreviewView(QWidget *parent) : QGraphicsView(parent)
 {
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
+    if (imageGen.s.view.aspectRatio < 1.) {
+        // Portrait orientation. Width determined from height
+        widthFromHeight = true;
+        this->setMinimumHeight(300);
+        this->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
+    }
     else {
         // Landscape orientation. Height determined from width
         widthFromHeight = false;

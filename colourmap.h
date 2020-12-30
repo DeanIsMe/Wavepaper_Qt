@@ -15,7 +15,7 @@
 using namespace QtCharts;
 
 /** ****************************************************************************
- * @brief The ClrFix struct
+ * @brief The ClrFix struct is just a combination of colour + location (0 to 1)
  */
 struct ClrFix {
     QColor clr; // Colour at this location
@@ -33,6 +33,18 @@ struct ClrFix {
 };
 
 /** ****************************************************************************
+ * @brief The MaskCfg struct
+ */
+struct MaskCfg { // Mask settings
+    bool enabled = false; // True if the mask is on
+    qreal numRevs = 3; // How many ripples from from min to max
+    qreal offset = 0; // Phase offset, as a count of periods. Should be 0 to 1.
+    qreal dutyCycle = 0.3; // 0.5 for even (50%). Must be 0 to 1.0
+    qreal smooth = 0.5; // Width factor of transition. 0=immediate transition. 1.0=transition is 50% of period.
+    QColor backColour = QColor(0,0,0); // When mask is 0%, what the colour will be
+};
+
+/** ****************************************************************************
  * @brief The ColourMap class performs that actual mapping from value to colour
  * for generating the images and previews.
  */
@@ -42,17 +54,8 @@ class ColourMap : public QObject
     // ColourMap class performs that actual mapping from value to colour
     // for generating the images and previews
 public:
-    struct MaskCfg { // Mask settings
-        qreal numRevs = 3; // How many ripples from from min to max
-        qreal offset = 0; // Phase offset, as a count of periods. Should be 0 to 1.
-        qreal dutyCycle = 0.3; // 0.5 for even (50%). Must be 0 to 1.0
-        qreal smooth = 0.5; // Width factor of transition. 0=immediate transition. 1.0=transition is 50% of period.
-        QColor backColour = QColor(0,0,0); // When mask is 0%, what the colour will be
-    };
-private:
-    MaskCfg m;
-public:
 
+public:
     ColourMap();
 
     QRgb GetColourValue(qreal loc) const;
@@ -69,25 +72,30 @@ public:
     void MoveColour(qint32 listIdxFrom, qint32 listIdxTo) {clrList.move(listIdxFrom, listIdxTo);}
     void EditColourLoc(qint32 listIdx, qreal newLoc);
     void EditColour(qint32 listIdx, QRgb newClr);
-    void CalcColourIndex();
+
     const MaskCfg& GetMaskConfig() {return m;}
+    bool MaskIsEnabled() const {return m.enabled;}
+
     void SetMaskConfig(MaskCfg& maskCfgIn) {m = maskCfgIn; MaskSettingChanged();}
-    bool RecalcPending() const {return pendingRecalcClrIndex || pendingRecalcMaskIndex;}
-    bool MaskIsEnabled() const {return maskEnable;}
+
+    bool RecalcIsPending() const {return pendingRecalcClrIndex || pendingRecalcMaskIndex;}
 
 private:
+    void CalcColourIndex();
     void CalcMaskIndex();
 
 public:
     static const int clrIndexMax = 200; // The colour indices span from 0 to this number
 protected:
     QList<ClrFix> clrList;
+    MaskCfg m;
+
     QVector<QColor> clrIndexed; // All colours from locations 0 to 1.0 (indices 0 to clrIndexMax)
     QVector<qreal> maskIndexed; // All mask values from locations 0 to 1.0 (indices 0 to clrIndexMax). Values are 0 to 1.0.
-    bool maskEnable = false; // True if the mask is on
     bool pendingRecalcClrIndex = true;
     bool pendingRecalcMaskIndex = true;
 
+protected:
     static QColor Interpolate(qreal loc, const ClrFix& before, const ClrFix& after);
     static QRgb RgbInterpolate(qreal loc, const ClrFix &before, const ClrFix &after);
 
@@ -97,10 +105,10 @@ protected:
 private slots:
     void RecalcSlot();
 public slots:
-    void SetMaskEnable(bool on);
+    bool SetMaskEnable(bool on);
 
 signals:
-    void ClrMapChanged(); // Emitted any time an edit is made to the mask
+    void RecalcSignal(); // Emitted any time an edit is made to the mask
     void NewClrMapReady(); // Emitted after the new colour index is made - ready to be used by other parts of the program
 };
 
@@ -179,13 +187,16 @@ private:
     QImage imgBarBase; // Image for the colour bar that represents the base colour map
     QImage imgBarMask; // Image for the colour bar that represents the colour map mask
     QImage imgBarResult; // Image for the colour bar that represents the resultant colour map
-    ClrFixModel modelClrFix;
+    ClrFixModel modelClrFix; // Table model (interacts with colourMap for the data)
+
+    // Labels are used as a colour bar to demonstrate the colour map
     QLabel lblClrBarBase;
     QLabel lblClrBarMask;
     QLabel lblClrBarResult;
 
-    ClrFixTableView tableClrFix;
+    ClrFixTableView tableClrFix; // Table for editing the colours
 
+    // Line chart to display the mask
     QLineSeries maskSeries;
     QChart maskChart;
     QChartView maskChartView;

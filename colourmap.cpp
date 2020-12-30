@@ -16,7 +16,7 @@ ColourMap colourMap;
  */
 ColourMap::ColourMap()
 {
-    QObject::connect(this, ColourMap::ClrMapChanged,
+    QObject::connect(this, ColourMap::RecalcSignal,
                      this, ColourMap::RecalcSlot, Qt::QueuedConnection);
 
     // !@# temporary data
@@ -35,7 +35,7 @@ ColourMap::ColourMap()
  */
 void ColourMap::ClrListChanged() {
     pendingRecalcClrIndex = true;
-    emit ClrMapChanged();
+    emit RecalcSignal();
 }
 
 /** ****************************************************************************
@@ -43,7 +43,7 @@ void ColourMap::ClrListChanged() {
  */
 void ColourMap::MaskSettingChanged() {
     pendingRecalcMaskIndex = true;
-    emit ClrMapChanged();
+    emit RecalcSignal();
 }
 
 /** ****************************************************************************
@@ -68,14 +68,16 @@ void ColourMap::RecalcSlot()
 /** ****************************************************************************
  * @brief ColourMap::SetMaskEnable
  * @param on
+ * @returns true if the value was changed
  */
-void ColourMap::SetMaskEnable(bool on)
+bool ColourMap::SetMaskEnable(bool on)
 {
-    if (maskEnable != on) {
-        maskEnable = on;
+    if (m.enabled != on) {
+        m.enabled = on;
         MaskSettingChanged();
-        imageGen.NewPreviewImageNeeded();
+        return true;
     }
+    return false;
 }
 
 /** ****************************************************************************
@@ -186,7 +188,7 @@ QRgb ColourMap::GetBaseColourValue(qreal loc) const
  */
 qreal ColourMap::GetMaskValue(qreal loc) const
 {
-    if (!maskEnable) {return 1.0;}
+    if (!m.enabled) {return 1.0;}
     qreal locAsIndex = (loc * (qreal)clrIndexMax);
     int idxBefore = std::min(clrIndexMax-1, std::max(0,(int)locAsIndex));
     const qreal fb = (locAsIndex - idxBefore);
@@ -249,7 +251,7 @@ void ColourMap::CalcMaskIndex()
     qint32 maskLen = this->clrIndexMax + 1;
     maskIndexed.clear();
     maskIndexed.resize(maskLen);
-    if (!maskEnable) {
+    if (!m.enabled) {
         maskIndexed.fill(1.0);
         return;
     }

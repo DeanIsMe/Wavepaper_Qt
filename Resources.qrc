@@ -10,5 +10,7 @@
         <file alias="showChart">Resources/show_chart-24px.svg</file>
         <file alias="mask">Resources/mask-24px.svg</file>
         <file alias="edit">Resources/edit-24px.svg</file>
+        <file alias="visibleOff">Resources/visibility_off-24px.svg</file>
+        <file alias="visibleOn">Resources/visibility-24px.svg</file>
     </qresource>
 </RCC>

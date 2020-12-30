@@ -55,7 +55,7 @@ MainWindow::MainWindow(QWidget *parent)
                      Qt::QueuedConnection);
 
     QObject::connect(&colourMap, &ColourMap::NewClrMapReady,
-                     &imageGen, ImageGen::NewQuickImageNeeded, Qt::DirectConnection);
+                     &imageGen, ImageGen::NewImageNeeded, Qt::DirectConnection);
 
     // Action trigger events
     QObject::connect(ui->actionFewer, QAction::triggered,
@@ -69,6 +69,8 @@ MainWindow::MainWindow(QWidget *parent)
     QObject::connect(ui->actionWavelengthIncrease, QAction::triggered,
                      &imageGen, &ImageGen::WavelengthIncrease);
 
+    QObject::connect(ui->actionHideEmitters, QAction::toggled,
+                     &imageGen, &ImageGen::HideEmitters);
 
     previewScene->EmitterArngmtToList(imageGen);
 
@@ -203,7 +205,9 @@ void MainWindow::on_actionMirrorVert_triggered(bool checked)
  */
 void MainWindow::on_actionMaskEnable_triggered(bool checked)
 {
-    colourMap.SetMaskEnable(checked);
+    if (colourMap.SetMaskEnable(checked)) {
+        imageGen.NewPreviewImageNeeded();
+    }
     if (!checked) {
         ui->actionShowMaskChart->setChecked(false);
     }

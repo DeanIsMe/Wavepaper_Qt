@@ -103,6 +103,7 @@ public:
         void mouseReleaseEvent(QGraphicsSceneMouseEvent *event, PreviewScene * scene);
         void mouseMoveEvent(QGraphicsSceneMouseEvent *event, PreviewScene * scene);
         bool IsActive() {return active != Type::null;}
+        bool IsEmitterEditActive() {return active == Type::arrangement;}
         EmArrangement * GetActiveGroup() { return grpActive; }
 
 
@@ -117,7 +118,7 @@ public:
         EmArrangement grpBackup;
         EmArrangement * grpActive;
         // For mask changes
-        ColourMap::MaskCfg maskConfigBackup;
+        MaskCfg maskConfigBackup;
 
     } act; // Interaction
 
@@ -127,6 +128,8 @@ private:
     QList<EmArrangement> arngmtList;
     bool pendingQuickImage; // True if a quick image is pending to be generated
     bool pendingPreviewImage; // True if a preview image is pending to be generated
+    bool hideEmitters = false; // When true, the emitters are not drawn on the preview window
+
     struct TemplateDist {
         Double2D_C * arr = nullptr; // Index is image units. Values are scene units
         qreal imgPerSimUnit; // The imgPerSimUnit that this template was generated with
@@ -183,6 +186,7 @@ public:
 
     void setDistOffsetF(qreal in) {s.distOffsetF = in;}
     qreal getDistOffsetF() const {return s.distOffsetF;}
+    bool EmittersHidden() {return hideEmitters && !act.IsEmitterEditActive();}
 
 signals:
     void NewImageReady(QImage & image, qreal imgPerSimUnitOut, QColor backgroundClr); // A new image is ready
@@ -195,6 +199,10 @@ public slots:
     void WavelengthDecrease();
     void WavelengthIncrease();
     void OnMaskEditChange(bool state);
+    void HideEmitters(bool hide) {
+        hideEmitters = hide;
+        emit EmitterArngmtChanged();
+    }
 
 private slots:
     void GenerateImageSlot();
@@ -212,8 +220,6 @@ private:
     void CalcDistTemplate(QRect templateRect, GenSettings &genSet);
     void CalcAmpTemplate(qreal distOffset, GenSettings &genSet);
     void CalcPhasorTemplate(QRect templateRect, GenSettings &genSet);
-public:
-
 };
 
 extern ImageGen imageGen;
