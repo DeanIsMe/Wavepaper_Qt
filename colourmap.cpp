@@ -74,6 +74,7 @@ void ColourMap::SetMaskEnable(bool on)
     if (maskEnable != on) {
         maskEnable = on;
         MaskSettingChanged();
+        imageGen.NewPreviewImageNeeded();
     }
 }
 

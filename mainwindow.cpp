@@ -98,15 +98,24 @@ MainWindow::MainWindow(QWidget *parent)
     QObject::connect(ui->actionShowMaskChart, QAction::toggled,
                      colourMapEditor, &ColourMapEditorWidget::SetMaskChartVisible);
 
+    // actionMaskEnable is handled by the funtion on_actionMaskEnable_triggered
+
     // Text window for debugging
     layoutCentral->addWidget(textWindow);
 }
 
+/** ****************************************************************************
+ * @brief MainWindow::~MainWindow
+ */
 MainWindow::~MainWindow()
 {
     delete ui;
 }
 
+/** ****************************************************************************
+ * @brief MainWindow::keyPressEvent
+ * @param event
+ */
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
     qDebug() << "Key pressed: " << event->key();
@@ -142,7 +151,10 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     }
 }
 
-
+/** ****************************************************************************
+ * @brief PaintTestImage
+ * @param testCanvas
+ */
 void PaintTestImage(QWidget * testCanvas) {
     QRect testArea = testCanvas->rect();
     QPainter painter(testCanvas);
@@ -163,6 +175,10 @@ void PaintTestImage(QWidget * testCanvas) {
     painter.drawImage(testArea.x(), testArea.y(), imageTest);
 }
 
+/** ****************************************************************************
+ * @brief MainWindow::on_actionMirrorHor_triggered
+ * @param checked
+ */
 void MainWindow::on_actionMirrorHor_triggered(bool checked)
 {
     imageGen.GetActiveArrangement()->mirrorHor = checked;
@@ -170,6 +186,10 @@ void MainWindow::on_actionMirrorHor_triggered(bool checked)
     imageGen.NewImageNeeded();
 }
 
+/** ****************************************************************************
+ * @brief MainWindow::on_actionMirrorVert_triggered
+ * @param checked
+ */
 void MainWindow::on_actionMirrorVert_triggered(bool checked)
 {
     imageGen.GetActiveArrangement()->mirrorVert = checked;
@@ -177,6 +197,10 @@ void MainWindow::on_actionMirrorVert_triggered(bool checked)
     imageGen.NewImageNeeded();
 }
 
+/** ****************************************************************************
+ * @brief MainWindow::on_actionMaskEnable_triggered
+ * @param checked
+ */
 void MainWindow::on_actionMaskEnable_triggered(bool checked)
 {
     colourMap.SetMaskEnable(checked);
