@@ -71,8 +71,9 @@ public:
     void EditColour(qint32 listIdx, QRgb newClr);
     void CalcColourIndex();
     const MaskCfg& GetMaskConfig() {return m;}
-    void SetMaskConfig(MaskCfg& maskCfgIn) {m = maskCfgIn; MaskChanged();}
-    bool RecalcPending() {return pendingRecalcClrIndex || pendingRecalcMaskIndex;}
+    void SetMaskConfig(MaskCfg& maskCfgIn) {m = maskCfgIn; MaskSettingChanged();}
+    bool RecalcPending() const {return pendingRecalcClrIndex || pendingRecalcMaskIndex;}
+    bool MaskIsEnabled() const {return maskEnable;}
 
 private:
     void CalcMaskIndex();
@@ -83,6 +84,7 @@ protected:
     QList<ClrFix> clrList;
     QVector<QColor> clrIndexed; // All colours from locations 0 to 1.0 (indices 0 to clrIndexMax)
     QVector<qreal> maskIndexed; // All mask values from locations 0 to 1.0 (indices 0 to clrIndexMax). Values are 0 to 1.0.
+    bool maskEnable = false; // True if the mask is on
     bool pendingRecalcClrIndex = true;
     bool pendingRecalcMaskIndex = true;
 
@@ -90,10 +92,12 @@ protected:
     static QRgb RgbInterpolate(qreal loc, const ClrFix &before, const ClrFix &after);
 
     void ClrListChanged(); // Called any time an edit is made to the colour list
-    void MaskChanged(); // Called any time an edit is made to the mask
+    void MaskSettingChanged(); // Called any time an edit is made to the mask
 
 private slots:
     void RecalcSlot();
+public slots:
+    void SetMaskEnable(bool on);
 
 signals:
     void ClrMapChanged(); // Emitted any time an edit is made to the mask
@@ -166,6 +170,9 @@ public:
 
 private slots:
     void DrawColourBars();
+
+public slots:
+    void SetMaskChartVisible(bool on);
 
 private:
     QImage imgBarBase; // Image for the colour bar that represents the base colour map

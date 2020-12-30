@@ -39,9 +39,9 @@ void ColourMap::ClrListChanged() {
 }
 
 /** ****************************************************************************
- * @brief ColourMap::MaskChanged
+ * @brief ColourMap::MaskSettingChanged
  */
-void ColourMap::MaskChanged() {
+void ColourMap::MaskSettingChanged() {
     pendingRecalcMaskIndex = true;
     emit ClrMapChanged();
 }
@@ -63,6 +63,18 @@ void ColourMap::RecalcSlot()
     }
     pendingRecalcClrIndex = false;
     pendingRecalcMaskIndex = false;
+}
+
+/** ****************************************************************************
+ * @brief ColourMap::SetMaskEnable
+ * @param on
+ */
+void ColourMap::SetMaskEnable(bool on)
+{
+    if (maskEnable != on) {
+        maskEnable = on;
+        MaskSettingChanged();
+    }
 }
 
 /** ****************************************************************************
@@ -173,6 +185,7 @@ QRgb ColourMap::GetBaseColourValue(qreal loc) const
  */
 qreal ColourMap::GetMaskValue(qreal loc) const
 {
+    if (!maskEnable) {return 1.0;}
     qreal locAsIndex = (loc * (qreal)clrIndexMax);
     int idxBefore = std::min(clrIndexMax-1, std::max(0,(int)locAsIndex));
     const qreal fb = (locAsIndex - idxBefore);
@@ -235,6 +248,10 @@ void ColourMap::CalcMaskIndex()
     qint32 maskLen = this->clrIndexMax + 1;
     maskIndexed.clear();
     maskIndexed.resize(maskLen);
+    if (!maskEnable) {
+        maskIndexed.fill(1.0);
+        return;
+    }
 
     qint32 period = std::max(2, (qint32)(maskLen/m.numRevs)); // period as #points
     qint32 highLen = qBound(1, (int) (m.dutyCycle * period), period);
@@ -547,8 +564,8 @@ ColourMapEditorWidget::ColourMapEditorWidget(QWidget *parent) : modelClrFix(&col
     clrMapLayout->addWidget(&lblClrBarBase);
     clrMapLayout->addWidget(&lblClrBarMask);
     clrMapLayout->addWidget(&lblClrBarResult);
-
     clrMapLayout->addWidget(&maskChartView);
+    maskChartView.setVisible(false);
 
     // Table
     tableClrFix.setModel(&modelClrFix);
@@ -588,7 +605,7 @@ ColourMapEditorWidget::~ColourMapEditorWidget()
  */
 void ColourMapEditorWidget::DrawColourBars()
 {
-    const qint32 barWidth = lblClrBarResult.width();
+    const qint32 barWidth = lblClrBarBase.width();
     QSize sizeClrBar(barWidth, heightClrBar);
     Rgb2D_C* dataBarBase = new Rgb2D_C(QPoint(0,0), sizeClrBar);
     Rgb2D_C* dataBarMask = new Rgb2D_C(QPoint(0,0), sizeClrBar);
@@ -624,6 +641,9 @@ void ColourMapEditorWidget::DrawColourBars()
     lblClrBarMask.setPixmap(QPixmap::fromImage(imgBarMask));
     lblClrBarResult.setPixmap(QPixmap::fromImage(imgBarResult));
 
+    lblClrBarMask.setVisible(colourMap.MaskIsEnabled());
+    lblClrBarResult.setVisible(colourMap.MaskIsEnabled());
+
     // MASK CHART VIEW
     // The maskChartView has an annoying border of 9 pixels that prevents it
     // from lining up with the labels. I tried many methods to get rid of this,
@@ -634,10 +654,15 @@ void ColourMapEditorWidget::DrawColourBars()
     maskChart.addSeries(&maskSeries);
 
     maskChart.setBackgroundBrush(QBrush(imgBarResult));
-    //maskChart.setPlotAreaBackgroundBrush(QBrush(imgBarResult));
     maskChart.setMargins(QMargins(0,0,0,0));
     maskChart.setBackgroundRoundness(0);
-    maskSeries.setColor(Qt::white);
+    maskSeries.setColor(Qt::gray);
+
+    maskChart.createDefaultAxes();
+    maskChart.axes(Qt::Horizontal)[0]->setRange(0, 1.0);
+    maskChart.axes(Qt::Horizontal)[0]->setVisible(false);
+    maskChart.axes(Qt::Vertical)[0]->setRange(0, 1.0);
+    maskChart.axes(Qt::Vertical)[0]->setVisible(false);
 
     maskChartView.setChart(&maskChart);
     maskChartView.setFixedWidth(barWidth);
@@ -645,6 +670,15 @@ void ColourMapEditorWidget::DrawColourBars()
     maskChartView.setContentsMargins(0,0,0,0);
     maskChartView.setRenderHint(QPainter::Antialiasing);
     qDebug("maskChartView.x=%d,   maskChart.x=%.2f. chartViewWidth=%d, lblColourWidth=%d", maskChartView.x(), maskChart.x(), maskChartView.width(), lblClrBarBase.width());
+}
+
+/** ****************************************************************************
+ * @brief ColourMapEditorWidget::SetMaskChartVisible
+ * @param on
+ */
+void ColourMapEditorWidget::SetMaskChartVisible(bool on)
+{
+   maskChartView.setVisible(on);
 }
 
 

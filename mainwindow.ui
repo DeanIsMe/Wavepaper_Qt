@@ -46,7 +46,10 @@
    <addaction name="actionWavelengthIncrease"/>
    <addaction name="actionWavelengthDecrease"/>
    <addaction name="separator"/>
+   <addaction name="actionMaskEnable"/>
    <addaction name="actionMaskEdit"/>
+   <addaction name="actionShowMaskChart"/>
+   <addaction name="separator"/>
   </widget>
   <action name="actionMore">
    <property name="icon">
@@ -134,14 +137,46 @@
    </property>
    <property name="icon">
     <iconset resource="Resources.qrc">
-     <normaloff>:/icons/maskSelect</normaloff>
-     <normalon>:/icons/maskSelect</normalon>:/icons/maskSelect</iconset>
+     <normaloff>:/icons/edit</normaloff>
+     <normalon>:/icons/edit</normalon>:/icons/edit</iconset>
    </property>
    <property name="text">
     <string>Mask Edit</string>
    </property>
    <property name="toolTip">
     <string>Edit the image mask</string>
+   </property>
+  </action>
+  <action name="actionShowMaskChart">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/showChart</normaloff>
+     <normalon>:/icons/showChart</normalon>:/icons/showChart</iconset>
+   </property>
+   <property name="text">
+    <string>Show Mask Chart</string>
+   </property>
+   <property name="toolTip">
+    <string>Show the chart that displays the chart</string>
+   </property>
+  </action>
+  <action name="actionMaskEnable">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/mask</normaloff>
+     <normalon>:/icons/mask</normalon>:/icons/mask</iconset>
+   </property>
+   <property name="text">
+    <string>Mask Enable</string>
+   </property>
+   <property name="toolTip">
+    <string>Enable the mask</string>
    </property>
   </action>
  </widget>

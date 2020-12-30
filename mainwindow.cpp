@@ -69,9 +69,6 @@ MainWindow::MainWindow(QWidget *parent)
     QObject::connect(ui->actionWavelengthIncrease, QAction::triggered,
                      &imageGen, &ImageGen::WavelengthIncrease);
 
-    QObject::connect(ui->actionMaskEdit, QAction::triggered,
-                     &imageGen, &ImageGen::OnMaskEditChange);
-
 
     previewScene->EmitterArngmtToList(imageGen);
 
@@ -89,13 +86,20 @@ MainWindow::MainWindow(QWidget *parent)
     previewScene->EmitterArngmtToList(imageGen);
     imageGen.NewImageNeeded();
 
-    layoutCentral->addWidget(textWindow);
-
     // Add colour map UI
     ColourMapEditorWidget* colourMapEditor = new ColourMapEditorWidget();
     layoutCentral->addWidget(colourMapEditor);
 
+    // Note: the 'triggered' signal is NOT sent when the value is changed with 'setChecked'.
+    //       So, I use 'toggled' instead
+    QObject::connect(ui->actionMaskEdit, QAction::toggled,
+                     &imageGen, &ImageGen::OnMaskEditChange);
 
+    QObject::connect(ui->actionShowMaskChart, QAction::toggled,
+                     colourMapEditor, &ColourMapEditorWidget::SetMaskChartVisible);
+
+    // Text window for debugging
+    layoutCentral->addWidget(textWindow);
 }
 
 MainWindow::~MainWindow()
@@ -171,4 +175,13 @@ void MainWindow::on_actionMirrorVert_triggered(bool checked)
     imageGen.GetActiveArrangement()->mirrorVert = checked;
     previewScene->EmitterArngmtToList(imageGen);
     imageGen.NewImageNeeded();
+}
+
+void MainWindow::on_actionMaskEnable_triggered(bool checked)
+{
+    colourMap.SetMaskEnable(checked);
+    if (!checked) {
+        ui->actionShowMaskChart->setChecked(false);
+    }
+    ui->actionMaskEdit->setChecked(checked);
 }
