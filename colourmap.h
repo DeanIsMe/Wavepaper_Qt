@@ -9,6 +9,10 @@
 #include <QAbstractTableModel>
 #include <QLabel>
 #include <QTableView>
+#include <QChart>
+#include <QChartView>
+#include <QLineSeries>
+using namespace QtCharts;
 
 /** ****************************************************************************
  * @brief The ClrFix struct
@@ -42,7 +46,7 @@ public:
         qreal numRevs = 3; // How many ripples from from min to max
         qreal offset = 0; // Phase offset, as a count of periods. Should be 0 to 1.
         qreal dutyCycle = 0.3; // 0.5 for even (50%). Must be 0 to 1.0
-        qreal widthFactor = 0.5; // Width of transition. 0=immediate transition. 1.0=transition is 50% of period.
+        qreal smooth = 0.5; // Width factor of transition. 0=immediate transition. 1.0=transition is 50% of period.
         QColor backColour = QColor(0,0,0); // When mask is 0%, what the colour will be
     };
 private:
@@ -173,6 +177,10 @@ private:
     QLabel lblClrBarResult;
 
     ClrFixTableView tableClrFix;
+
+    QLineSeries maskSeries;
+    QChart maskChart;
+    QChartView maskChartView;
 };
 
 extern ColourMap colourMap;

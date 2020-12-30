@@ -616,7 +616,7 @@ int ImageGen::EmitterArrangementToLocs(const EmArrangement & arngmt, QVector<QPo
         }
         break;
     case EmType::square:
-        // !@#$ implement!
+        // !@# implement!
         break;
     case EmType::custom:
         emLocsOut = arngmt.customLocs;
@@ -851,12 +851,13 @@ void ImageGen::Interact::mouseMoveEvent(QGraphicsSceneMouseEvent *event, Preview
         if (ctrlPressed) {
             // X:Offset. Y: Transition width/sharpness
             newMaskCfg.offset = maskConfigBackup.offset + deltaRatio.x();
-            newMaskCfg.widthFactor = qBound(0.0, maskConfigBackup.widthFactor + deltaRatio.y(), 2.0);
+            newMaskCfg.numRevs = qBound(0.1, maskConfigBackup.numRevs + deltaRatio.y() * 5., 200.0);
+
         }
         else {
             // X:Ripple Count. Y:Duty Cycle
-            newMaskCfg.numRevs = qBound(0.1, maskConfigBackup.numRevs + deltaRatio.x() * 5., 200.0);
-            newMaskCfg.dutyCycle = qBound(0.0, maskConfigBackup.dutyCycle + deltaRatio.y(), 1.0);
+            newMaskCfg.smooth = qBound(0.0, maskConfigBackup.smooth + deltaRatio.x(), 2.0);
+            newMaskCfg.dutyCycle = qBound(0.0, maskConfigBackup.dutyCycle - deltaRatio.y() * 0.5, 1.0);
         }
         colourMap.SetMaskConfig(newMaskCfg);
     }

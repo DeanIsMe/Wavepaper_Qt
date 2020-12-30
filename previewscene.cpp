@@ -33,7 +33,7 @@ void PreviewScene::EmitterArngmtToList(ImageGen & imageGen) {
         delete item;
     }
 
-    // !@#$ upgrade to group together each arrangement
+    // !@# upgrade to group together each arrangement
 
     // Note that the actual ellipse position is a combination of the QGraphicsItem
     // position and the QGraphicsEllipseItem rect position.

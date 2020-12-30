@@ -7,6 +7,8 @@
 #include <QHeaderView>
 #include <QPushButton>
 
+
+
 ColourMap colourMap;
 
 /** ****************************************************************************
@@ -229,7 +231,7 @@ void ColourMap::CalcColourIndex()
  */
 void ColourMap::CalcMaskIndex()
 {
-    qDebug("CalcMaskIndex");
+    qDebug("CalcMaskIndex. Revs=%.2f, Duty=%.2f, Smooth=%.2f, Offset=%.2f", m.numRevs, m.dutyCycle, m.smooth, m.offset);
     qint32 maskLen = this->clrIndexMax + 1;
     maskIndexed.clear();
     maskIndexed.resize(maskLen);
@@ -237,7 +239,7 @@ void ColourMap::CalcMaskIndex()
     qint32 period = std::max(2, (qint32)(maskLen/m.numRevs)); // period as #points
     qint32 highLen = qBound(1, (int) (m.dutyCycle * period), period);
     qint32 lowLen = period - highLen;
-    qint32 transitionLen = std::max(1, (int)(m.widthFactor*0.5*maskLen/m.numRevs));
+    qint32 transitionLen = std::max(1, (int)(m.smooth*0.5*maskLen/m.numRevs));
 
     // Pre-calculate the transition
     QVector<double> transition;
@@ -250,18 +252,16 @@ void ColourMap::CalcMaskIndex()
         }
     }
     // If the transition is greater than the period, pop values from
-    // the front and back (symmetrically)
+    // the back
+    // Note this this can result in discontinuous lines. This is intentional;
+    // To avoid discontinuities, I would seperately calculate the transition[]
+    // for both high and low states. However, the discontinuities look pretty cool
     while (transitionLen * 2 > period) {
-        if (transitionLen % 2) {
-            transition.pop_back();
-        }
-        else {
-            transition.pop_front();
-        }
+        transition.pop_back();
         transitionLen--;
     }
 
-    qint32 activeTransIdx = - m.offset * (qreal) period - transitionLen/2; // Transition start location (as an index). Should always be <= thisIdx
+    qint32 activeTransIdx = m.offset * (qreal) period - transitionLen/2; // Transition start location (as an index). Should always be <= thisIdx
     while (activeTransIdx > 0) { activeTransIdx -= period; }
     qint8 transVal = 1; // The value that this transition is moving to.  0: high to low.  1: low to high.
     qint32 thisIdx = 0;
@@ -526,7 +526,8 @@ QVariant ClrFixModel::headerData(int section, Qt::Orientation orientation, int r
     }
 }
 
-
+/** ************************************************************************ **/
+/** ************************************************************************ **/
 /** ****************************************************************************
  * @brief ColourMapEditorWidget::ColourMapEditorWidget
  * @param parent
@@ -547,7 +548,7 @@ ColourMapEditorWidget::ColourMapEditorWidget(QWidget *parent) : modelClrFix(&col
     clrMapLayout->addWidget(&lblClrBarMask);
     clrMapLayout->addWidget(&lblClrBarResult);
 
-
+    clrMapLayout->addWidget(&maskChartView);
 
     // Table
     tableClrFix.setModel(&modelClrFix);
@@ -587,16 +588,19 @@ ColourMapEditorWidget::~ColourMapEditorWidget()
  */
 void ColourMapEditorWidget::DrawColourBars()
 {
-    QSize sizeClrBar(this->width(), heightClrBar);
+    const qint32 barWidth = lblClrBarResult.width();
+    QSize sizeClrBar(barWidth, heightClrBar);
     Rgb2D_C* dataBarBase = new Rgb2D_C(QPoint(0,0), sizeClrBar);
     Rgb2D_C* dataBarMask = new Rgb2D_C(QPoint(0,0), sizeClrBar);
     Rgb2D_C* dataBarResult = new Rgb2D_C(QPoint(0,0), sizeClrBar);
-    for (int x = dataBarBase->xLeft; x < dataBarBase->xLeft + dataBarBase->width; x++) {
-        qreal loc = (qreal)(x - dataBarBase->xLeft) / (qreal)sizeClrBar.width();
+    QVector<QPointF> chartData(sizeClrBar.width());
+    for (qint32 x = dataBarBase->xLeft, i = 0; x < dataBarBase->xLeft + dataBarBase->width; x++, i++) {
+        qreal loc = (qreal)i / (qreal)sizeClrBar.width();
         // !@# Make this more efficient
         QRgb clrBase = colourMap.GetBaseColourValue(loc);
         qreal valMask = colourMap.GetMaskValue(loc);
         QRgb clrMask = qRgb(valMask*255, valMask*255, valMask*255);
+        chartData[i] = QPointF(loc, valMask);
         QRgb clrResult = colourMap.GetBlendedColourValue(loc);
 
         for (int y = dataBarBase->yTop; y < dataBarBase->yTop + dataBarBase->height; y++) {
@@ -606,19 +610,41 @@ void ColourMapEditorWidget::DrawColourBars()
         }
     }
 
-    imgBarBase = QImage((uchar*)dataBarBase->getDataPtr(), sizeClrBar.width(), sizeClrBar.height(), QImage::Format_ARGB32,
+    imgBarBase = QImage((uchar*)dataBarBase->getDataPtr(), barWidth, sizeClrBar.height(), QImage::Format_ARGB32,
                        ImageDataDealloc, dataBarBase);
 
 
-    imgBarMask = QImage((uchar*)dataBarMask->getDataPtr(), sizeClrBar.width(), sizeClrBar.height(), QImage::Format_ARGB32,
+    imgBarMask = QImage((uchar*)dataBarMask->getDataPtr(), barWidth, sizeClrBar.height(), QImage::Format_ARGB32,
                        ImageDataDealloc, dataBarMask);
 
-    imgBarResult = QImage((uchar*)dataBarResult->getDataPtr(), sizeClrBar.width(), sizeClrBar.height(), QImage::Format_ARGB32,
+    imgBarResult = QImage((uchar*)dataBarResult->getDataPtr(), barWidth, sizeClrBar.height(), QImage::Format_ARGB32,
                        ImageDataDealloc, dataBarResult);
 
     lblClrBarBase.setPixmap(QPixmap::fromImage(imgBarBase));
     lblClrBarMask.setPixmap(QPixmap::fromImage(imgBarMask));
     lblClrBarResult.setPixmap(QPixmap::fromImage(imgBarResult));
+
+    // MASK CHART VIEW
+    // The maskChartView has an annoying border of 9 pixels that prevents it
+    // from lining up with the labels. I tried many methods to get rid of this,
+    // but I eventually gave up.
+    // The background of the mask is set to the dataBarResult
+    maskSeries.replace(chartData);
+    maskChart.legend()->hide();
+    maskChart.addSeries(&maskSeries);
+
+    maskChart.setBackgroundBrush(QBrush(imgBarResult));
+    //maskChart.setPlotAreaBackgroundBrush(QBrush(imgBarResult));
+    maskChart.setMargins(QMargins(0,0,0,0));
+    maskChart.setBackgroundRoundness(0);
+    maskSeries.setColor(Qt::white);
+
+    maskChartView.setChart(&maskChart);
+    maskChartView.setFixedWidth(barWidth);
+    maskChartView.setFixedHeight(heightClrBar * 3);
+    maskChartView.setContentsMargins(0,0,0,0);
+    maskChartView.setRenderHint(QPainter::Antialiasing);
+    qDebug("maskChartView.x=%d,   maskChart.x=%.2f. chartViewWidth=%d, lblColourWidth=%d", maskChartView.x(), maskChart.x(), maskChartView.width(), lblClrBarBase.width());
 }
 
 
