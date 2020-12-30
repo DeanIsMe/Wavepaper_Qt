@@ -159,7 +159,7 @@ public:
     QRectF areaSim; // The rectangle of the image view area (simulation coordinates)
     QSize outResolution; // The output will be rendered to this resolution
 
-    qreal aspectRatio() const {return (qreal)outResolution.width() / (qreal)outResolution.height();} // Width / height
+    qreal aspectRatio() const {return s.view.aspectRatio;} // Width / height
     QImage imgPreview;
     QImage imgQuick;
     qreal testVal = 1;

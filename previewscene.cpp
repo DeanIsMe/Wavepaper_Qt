@@ -87,6 +87,14 @@ PreviewView::PreviewView(QWidget *parent) : QGraphicsView(parent)
 {
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    else {
+        // Landscape orientation. Height determined from width
+        widthFromHeight = false;
+        this->setMinimumWidth(300);
+        this->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+    }
+
+    this->setContentsMargins(0,0,0,0);
 }
 
 /** ****************************************************************************
@@ -94,15 +102,24 @@ PreviewView::PreviewView(QWidget *parent) : QGraphicsView(parent)
  * @param event
  */
 void PreviewView::resizeEvent(QResizeEvent *event) {
+    qDebug("resizeEvent IN");
     // Enforce the aspect ratio
     // 2020-12-29 This causes jerky behaviour as it triggers this resizeEvent again. Does not work well.
-    // qreal newWidth = std::min((qreal)event->size().height() * imageGen.aspectRatio(), (qreal)event->size().width());
-    // qDebug("resizeEvent. size=(%dx%d)px. newWidth=%.2f", event->size().width(), event->size().height(), newWidth);
+    //qreal newWidth = std::min((qreal)event->size().height() * imageGen.aspectRatio(), (qreal)event->size().width());
+    //qDebug("resizeEvent. size=(%dx%d)px. newWidth=%.2f. viewWidth=%d",
+//           event->size().width(), event->size().height(), newWidth, this->width());
     // this->resize(newWidth, newWidth / imageGen.aspectRatio());
 
     // Ensure that the viewable section of the screen stays the same
     this->fitInView(imageGen.areaSim, Qt::KeepAspectRatio);
-    return QGraphicsView::resizeEvent(event);
+    if (widthFromHeight) {
+        this->setMinimumWidth((qreal)event->size().height() * imageGen.s.view.aspectRatio);
+    }
+    else {
+        this->setMinimumHeight((qreal)event->size().width() / imageGen.s.view.aspectRatio);
+    }
+    QGraphicsView::resizeEvent(event);
+    qDebug("resizeEvent OUT");
     // Background redraw will be triggered
 }
 

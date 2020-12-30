@@ -78,8 +78,8 @@ void ImageGen::GenerateImageSlot()
  * @return
  */
 int ImageGen::InitViewAreas() {
-    outResolution = QSize(1080, 1920);
-    areaSim = QRectF(0, 0, 100, 100. / aspectRatio());
+    outResolution = QSize(1080, 1080 / s.view.aspectRatio);
+    areaSim = QRectF(0, 0, 100, 100. / s.view.aspectRatio);
     areaSim.moveCenter(QPoint(0,0));
 
     setTargetImgPoints(imgPointsPreview, genPreview);

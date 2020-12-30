@@ -175,6 +175,7 @@ public slots:
     void SetMaskChartVisible(bool on);
 
 private:
+    qint32 barWidth; // The width of the colour bar image
     QImage imgBarBase; // Image for the colour bar that represents the base colour map
     QImage imgBarMask; // Image for the colour bar that represents the colour map mask
     QImage imgBarResult; // Image for the colour bar that represents the resultant colour map
@@ -188,6 +189,10 @@ private:
     QLineSeries maskSeries;
     QChart maskChart;
     QChartView maskChartView;
+
+    // QWidget interface
+protected:
+    void resizeEvent(QResizeEvent *event) override;
 };
 
 extern ColourMap colourMap;

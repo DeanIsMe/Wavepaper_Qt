@@ -61,6 +61,7 @@ protected:
     void drawBackground(QPainter *painter, const QRectF &rect);
 
 protected:
+    bool widthFromHeight; // True if the width is determined by the height. False for the opposite.
     QImage * patternImage = nullptr;
     qreal patternImgPerSimUnit; // Saved for the pattern image
     QColor backgroundColour = Qt::black;

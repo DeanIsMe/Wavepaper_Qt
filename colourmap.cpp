@@ -606,7 +606,7 @@ ColourMapEditorWidget::~ColourMapEditorWidget()
  */
 void ColourMapEditorWidget::DrawColourBars()
 {
-    const qint32 barWidth = lblClrBarBase.width();
+    barWidth = lblClrBarBase.width();
     QSize sizeClrBar(barWidth, heightClrBar);
     Rgb2D_C* dataBarBase = new Rgb2D_C(QPoint(0,0), sizeClrBar);
     Rgb2D_C* dataBarMask = new Rgb2D_C(QPoint(0,0), sizeClrBar);
@@ -679,7 +679,19 @@ void ColourMapEditorWidget::DrawColourBars()
  */
 void ColourMapEditorWidget::SetMaskChartVisible(bool on)
 {
-   maskChartView.setVisible(on);
+    maskChartView.setVisible(on);
+}
+
+/**
+ * @brief ColourMapEditorWidget::resizeEvent
+ * @param event
+ */
+void ColourMapEditorWidget::resizeEvent(QResizeEvent *event)
+{
+    QWidget::resizeEvent(event);
+    if (lblClrBarBase.width() != barWidth) {
+        DrawColourBars();
+    }
 }
 
 
