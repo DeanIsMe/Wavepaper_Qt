@@ -12,5 +12,6 @@
         <file alias="edit">Resources/edit-24px.svg</file>
         <file alias="visibleOff">Resources/visibility_off-24px.svg</file>
         <file alias="visibleOn">Resources/visibility-24px.svg</file>
+        <file alias="save">Resources/save-24px.svg</file>
     </qresource>
 </RCC>

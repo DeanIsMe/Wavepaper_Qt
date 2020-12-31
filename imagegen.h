@@ -149,8 +149,8 @@ public:
     Settings s;
 
     struct GenSettings {
-        double targetImgPoints = imgPointsPreview; // Total number of points in the preview
-        double imgPerSimUnit;
+        double targetImgPoints = imgPointsPreview; // Total number of points in the preview. Change with setTargetImgPoints()
+        double imgPerSimUnit; // The imgPerSimUnit that this template was generated with
         QRect areaImg; // The rectangle of the image view area (image coordinates)
         TemplateDist templateDist;
         TemplateAmp templateAmp;
@@ -161,6 +161,7 @@ public:
     GenSettings genQuick;
     QRectF areaSim; // The rectangle of the image view area (simulation coordinates)
     QSize outResolution; // The output will be rendered to this resolution
+    bool saveWithTransparency = false; // If true, when an image with a mask is saved, it will be saved with transparency. If false, then the background colour will be rendered into the image
 
     qreal aspectRatio() const {return s.view.aspectRatio;} // Width / height
     QImage imgPreview;
@@ -182,16 +183,19 @@ public:
     static void DebugEmitterLocs(const QVector<EmitterI>& emittersImg);
     static void DebugEmitterLocs(const QVector<EmitterF> &emittersF);
     static EmArrangement DefaultArrangement();
-    void setTargetImgPoints(qint32 imgPoints, GenSettings &genSet);
+    void setTargetImgPoints(qint32 imgPoints, GenSettings &genSet) const;
 
     void setDistOffsetF(qreal in) {s.distOffsetF = in;}
     qreal getDistOffsetF() const {return s.distOffsetF;}
     bool EmittersHidden() {return hideEmitters && !act.IsEmitterEditActive();}
 
+    void SaveImage();
+
 signals:
     void NewImageReady(QImage & image, qreal imgPerSimUnitOut, QColor backgroundClr); // A new image is ready
     void EmitterArngmtChanged(); // Emitted when the emitter locations change
     void GenerateImageSignal(); // Just used to queue up GenerateImageSlot
+    void OverlayTextSignal(QString text);
 
 public slots:
     void EmitterCountDecrease();

@@ -50,6 +50,9 @@ MainWindow::MainWindow(QWidget *parent)
     QObject::connect(&imageGen, &ImageGen::NewImageReady,
                      previewView, &PreviewView::OnPatternImageChange);
 
+    QObject::connect(&imageGen, &ImageGen::OverlayTextSignal,
+                     previewScene, &PreviewScene::OverlayTextSlot);
+
     QObject::connect(&imageGen, &ImageGen::EmitterArngmtChanged,
                      previewScene, &PreviewScene::OnEmitterArngmtChange,
                      Qt::QueuedConnection);
@@ -71,6 +74,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     QObject::connect(ui->actionHideEmitters, QAction::toggled,
                      &imageGen, &ImageGen::HideEmitters);
+
+    QObject::connect(ui->actionSaveImage, QAction::triggered,
+                     &imageGen, &ImageGen::SaveImage);
 
     previewScene->EmitterArngmtToList(imageGen);
 
@@ -123,20 +129,17 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     qDebug() << "Key pressed: " << event->key();
     switch (event->key()) {
     case Qt::Key_1:
-        imageGen.s.wavelength *= 1.5;
-        imageGen.NewImageNeeded();
-        qDebug("Image regenerated. Wavelength = %.2f", imageGen.s.wavelength);
+        previewScene->OverlayTextSlot("Text 1");
         break;
     case Qt::Key_2:
-        imageGen.testVal *= 2;
-        qDebug("TestVal = %.3f", imageGen.testVal);
+        previewScene->OverlayTextSlot("Text Key 2");
         break;
     case Qt::Key_3:
-        imageGen.testVal *= 0.5;
-        qDebug("TestVal = %.3f", imageGen.testVal);
+        previewScene->OverlayTextSlot(QString::asprintf("Rendering image %.1fM pixels for %d emitters.",
+                                                         2000000 / 1000000., 15));
         break;
     case Qt::Key_4:
-        previewScene->ListAllItems();
+        previewScene->OverlayTextSlot(QString());
         break;
     case Qt::Key_Plus: // !@# temp
         imageGen.s.distOffsetF *= 1.2;

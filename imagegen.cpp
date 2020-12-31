@@ -6,6 +6,8 @@
 #include <QImage>
 #include <QWidget>
 #include <QGraphicsSceneMouseEvent>
+#include <QFileDialog>
+#include <QCoreApplication>
 #include <previewscene.h>
 
 ImageGen imageGen;
@@ -91,7 +93,7 @@ int ImageGen::InitViewAreas() {
  * @brief ImageGen::setTargetImgPoints
  * @param imgPoints
  */
-void ImageGen::setTargetImgPoints(qint32 imgPoints, GenSettings & genSet) {
+void ImageGen::setTargetImgPoints(qint32 imgPoints, GenSettings & genSet) const {
     // Determine the viewing window in image coordinates
     genSet.targetImgPoints = imgPoints;
     genSet.imgPerSimUnit = sqrt(genSet.targetImgPoints / areaSim.width() / areaSim.height());
@@ -101,6 +103,43 @@ void ImageGen::setTargetImgPoints(qint32 imgPoints, GenSettings & genSet) {
     if (abs(areaSim.width() / areaSim.height() /
             (qreal)genSet.areaImg.width() * (qreal)genSet.areaImg.height() - 1) > 0.02) {
         qFatal("setTargetImgPoints: viewWindow and simWindow are different ratios!");
+    }
+}
+
+/** ****************************************************************************
+ * @brief ImageGen::SaveImage
+ */
+void ImageGen::SaveImage()
+{
+    // !@#$ Fix the errors that occur with this dialog box
+    QString fileName = QFileDialog::getSaveFileName(mainWindow, tr("Save image"),
+                                                    QString(),
+                                                    tr("Images (*.png)"));
+    if (!fileName.isEmpty()) {
+        GenSettings genFinal;
+        setTargetImgPoints(outResolution.width() * outResolution.height(), genFinal);
+        QImage imgFinal;
+
+        QVector<EmitterF> emittersF;
+        if (GetEmitterList(emittersF)) { return; }
+        emit OverlayTextSignal(QString::asprintf("Rendering image %.1fM pixels for %d emitters.",
+                                                 (qreal)genFinal.targetImgPoints / 1000000., emittersF.length()));
+        QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents); // Render the new overlay text immediately (somewhat risky)
+
+        if (GenerateImage(imgFinal, genFinal) == 0) {
+            if (colourMap.MaskIsEnabled() && !saveWithTransparency) {
+                QImage imgComplete(imgFinal.size(), imgFinal.format());
+                QPainter painter(&imgComplete);
+                //painter.setBackground(QBrush(colourMap.GetMaskConfig().backColour));
+                painter.fillRect(imgFinal.rect(), colourMap.GetMaskConfig().backColour);
+                painter.drawImage(0,0, imgFinal);
+                imgComplete.save(fileName);
+            }
+            else {
+                imgFinal.save(fileName);
+            }
+        }
+        emit OverlayTextSignal(QString());
     }
 }
 
@@ -171,7 +210,7 @@ void ImageDataDealloc(void * info) {
  * @param imgRect - the range that the result will be generated for, in image coordinates
  * @param emitters
  * @param imageOut is the output
- * @return
+ * @returns 0 for pass
  */
 int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
     QElapsedTimer fnTimer;
@@ -248,9 +287,6 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
     qint64 timePostColorIndex, timePostPhasorMag;
 
     // COLOUR MAP
-
-    // Scaler will be 1/[emitter amplitude at half the simulation width]
-    double scaler = 1/genSet.templateAmp.arr->getPoint(genSet.areaImg.width() / 2, 0);
 
     // Use the resultant amplitude to fill in the pixel data
     Rgb2D_C* pixArr = new Rgb2D_C(genSet.areaImg);

@@ -17,6 +17,7 @@ class PreviewScene : public QGraphicsScene
 private:
     QGraphicsLineItem yAxisItem;
     QGraphicsLineItem xAxisItem;
+    QGraphicsTextItem textOverlay;
     void Cancel();
 public:
     explicit PreviewScene(QObject *parent = nullptr);
@@ -25,6 +26,7 @@ public:
 
 public slots:
     void OnEmitterArngmtChange();
+    void OverlayTextSlot(QString text);
 
     // QGraphicsScene interface
 protected:

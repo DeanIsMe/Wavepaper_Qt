@@ -6,6 +6,10 @@
 #include <QGraphicsItem>
 #include <QGradient>
 
+/** ****************************************************************************
+ * @brief PreviewScene::PreviewScene
+ * @param parent
+ */
 PreviewScene::PreviewScene(QObject *parent) :
     QGraphicsScene(parent)
 {
@@ -192,4 +196,25 @@ void PreviewScene::OnEmitterArngmtChange()
 {
     EmitterArngmtToList(imageGen);
 }
+
+/** ****************************************************************************
+ * @brief PreviewScene::OverlayTextSlot displays text on top of the scene
+ * @param text
+ */
+void PreviewScene::OverlayTextSlot(QString text)
+{
+    if (text.isEmpty()) {
+        textOverlay.setVisible(false);
+        return;
+    }
+    textOverlay.setPlainText(text);
+    textOverlay.setVisible(true);
+    textOverlay.setTextWidth(sceneRect().width() * 0.9);
+    textOverlay.setPos(sceneRect().left() + sceneRect().width() * 0.05, -10);
+    QFont font = textOverlay.font();
+    font.setPointSize(7);
+    textOverlay.setFont(font);
+    textOverlay.setDefaultTextColor(Qt::gray);
+    this->addItem(&textOverlay);
+ }
 
