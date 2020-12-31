@@ -119,24 +119,32 @@ PreviewView::PreviewView(QWidget *parent) : QGraphicsView(parent)
  * @param event
  */
 void PreviewView::resizeEvent(QResizeEvent *event) {
-    qDebug("resizeEvent IN");
     // Enforce the aspect ratio
     // 2020-12-29 This causes jerky behaviour as it triggers this resizeEvent again. Does not work well.
     //qreal newWidth = std::min((qreal)event->size().height() * imageGen.aspectRatio(), (qreal)event->size().width());
-    //qDebug("resizeEvent. size=(%dx%d)px. newWidth=%.2f. viewWidth=%d",
-//           event->size().width(), event->size().height(), newWidth, this->width());
+    //qDebug("resizeEvent. size=(%dx%d)px. newWidth=%.2f. viewWidth=%d", event->size().width(), event->size().height(), (qreal)event->size().height() * imageGen.s.view.aspectRatio, this->width());
     // this->resize(newWidth, newWidth / imageGen.aspectRatio());
 
     // Ensure that the viewable section of the screen stays the same
-    this->fitInView(imageGen.areaSim, Qt::KeepAspectRatio);
+    bool expanded;
     if (widthFromHeight) {
-        this->setMinimumWidth((qreal)event->size().height() * imageGen.s.view.aspectRatio);
+        qreal newWidth = (qreal)event->size().height() * imageGen.s.view.aspectRatio;
+        expanded = newWidth > this->minimumWidth();
+        this->setMinimumWidth(newWidth);
     }
     else {
-        this->setMinimumHeight((qreal)event->size().width() / imageGen.s.view.aspectRatio);
+        qreal newHeight = (qreal)event->size().width() / imageGen.s.view.aspectRatio;
+        expanded = newHeight > this->minimumHeight();
+        this->setMinimumHeight(newHeight);
     }
+
+    if (expanded) {
+        this->fitInView(imageGen.areaSim, Qt::KeepAspectRatioByExpanding);
+    }else {
+        this->fitInView(imageGen.areaSim, Qt::KeepAspectRatio);
+    }
+
     QGraphicsView::resizeEvent(event);
-    qDebug("resizeEvent OUT");
     // Background redraw will be triggered
 }
 
@@ -168,7 +176,8 @@ void PreviewView::drawBackground(QPainter *painter, const QRectF &rect)
     // Image coordinates map to the scene / simulation coordinates with
     // a factor of imgPerSimUnit. The image itself has dimensions that start at 0,0,
     // whilst the scene can start at any point.
-    //qDebug("drawBackground. rect=(%.2fx%.2f). @(%.2f, %.2f)", rect.width(), rect.height(), rect.x(), rect.y());
+
+    // qDebug("drawBackground. rect=(%.2fx%.2f). @(%.2f, %.2f)", rect.width(), rect.height(), rect.x(), rect.y());
 
     QRectF imgSourceRect((rect.topLeft() - sceneRect().topLeft()) * patternImgPerSimUnit,
                       rect.size() * patternImgPerSimUnit);

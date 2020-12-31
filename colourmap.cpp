@@ -654,7 +654,9 @@ void ColourMapEditorWidget::DrawColourBars()
     // The background of the mask is set to the dataBarResult
     maskSeries.replace(chartData);
     maskChart.legend()->hide();
-    maskChart.addSeries(&maskSeries);
+    if (!maskChart.series().contains(&maskSeries)) {
+        maskChart.addSeries(&maskSeries);
+    }
 
     maskChart.setBackgroundBrush(QBrush(imgBarResult));
     maskChart.setMargins(QMargins(0,0,0,0));
@@ -672,7 +674,7 @@ void ColourMapEditorWidget::DrawColourBars()
     maskChartView.setFixedHeight(heightClrBar * 3);
     maskChartView.setContentsMargins(0,0,0,0);
     maskChartView.setRenderHint(QPainter::Antialiasing);
-    qDebug("maskChartView.x=%d,   maskChart.x=%.2f. chartViewWidth=%d, lblColourWidth=%d", maskChartView.x(), maskChart.x(), maskChartView.width(), lblClrBarBase.width());
+    // qDebug("maskChartView.x=%d,   maskChart.x=%.2f. chartViewWidth=%d, lblColourWidth=%d", maskChartView.x(), maskChart.x(), maskChartView.width(), lblClrBarBase.width());
 }
 
 /** ****************************************************************************
