@@ -647,21 +647,56 @@ void ColourMapEditorWidget::DrawColourBars()
     lblClrBarMask.setVisible(colourMap.MaskIsEnabled());
     lblClrBarResult.setVisible(colourMap.MaskIsEnabled());
 
+    if (1) {
+        // Plot RGB channels of the colour index
+        // This makes it easier to check the colours are expected
+        /*
+        qint32 len = colourMap.clrIndexed.length();
+        QVector<QPointF> clrR(len);
+        QVector<QPointF> clrG(len);
+        QVector<QPointF> clrB(len);
+        for (int i = 0; i < len; i++) {
+            qreal loc = (qreal)i / len;
+            clrR[i] = QPointF(loc, colourMap.clrIndexed[i].redF() / 255.);
+            clrG[i] = QPointF(loc, colourMap.clrIndexed[i].greenF() / 255.);
+            clrB[i] = QPointF(loc, colourMap.clrIndexed[i].blueF() / 255.);
+        }
+        QLineSeries * clrRSeries = new QLineSeries();
+        QLineSeries * clrGSeries = new QLineSeries();
+        QLineSeries * clrBSeries = new QLineSeries();
+        for (auto ser : maskChart.series()) { // Remove all series except maskSeries
+            if (ser != maskSeries) {maskChart.removeSeries(ser);}
+        }
+        clrRSeries->replace(clrR);
+        clrRSeries->setColor(Qt::red);
+        maskChart.addSeries(clrRSeries);
+        clrGSeries->replace(clrG);
+        clrGSeries->setColor(Qt::darkGreen);
+        maskChart.addSeries(clrGSeries);
+        clrBSeries->replace(clrB);
+        clrBSeries->setColor(Qt::blue);
+        maskChart.addSeries(clrBSeries);
+        */
+    }
+
     // MASK CHART VIEW
     // The maskChartView has an annoying border of 9 pixels that prevents it
     // from lining up with the labels. I tried many methods to get rid of this,
     // but I eventually gave up.
     // The background of the mask is set to the dataBarResult
-    maskSeries.replace(chartData);
+    if (!maskSeries) {
+        maskSeries = new QLineSeries();
+    }
+    maskSeries->replace(chartData);
     maskChart.legend()->hide();
-    if (!maskChart.series().contains(&maskSeries)) {
-        maskChart.addSeries(&maskSeries);
+    if (!maskChart.series().contains(maskSeries)) {
+        maskChart.addSeries(maskSeries);
     }
 
     maskChart.setBackgroundBrush(QBrush(imgBarResult));
     maskChart.setMargins(QMargins(0,0,0,0));
     maskChart.setBackgroundRoundness(0);
-    maskSeries.setColor(Qt::gray);
+    maskSeries->setColor(Qt::gray);
 
     maskChart.createDefaultAxes();
     maskChart.axes(Qt::Horizontal)[0]->setRange(0, 1.0);

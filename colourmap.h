@@ -89,7 +89,6 @@ public:
 protected:
     QList<ClrFix> clrList;
     MaskCfg m;
-
     QVector<QColor> clrIndexed; // All colours from locations 0 to 1.0 (indices 0 to clrIndexMax)
     QVector<qreal> maskIndexed; // All mask values from locations 0 to 1.0 (indices 0 to clrIndexMax). Values are 0 to 1.0.
     bool pendingRecalcClrIndex = true;
@@ -197,7 +196,7 @@ private:
     ClrFixTableView tableClrFix; // Table for editing the colours
 
     // Line chart to display the mask
-    QLineSeries maskSeries;
+    QLineSeries * maskSeries = nullptr;
     QChart maskChart;
     QChartView maskChartView;
 
