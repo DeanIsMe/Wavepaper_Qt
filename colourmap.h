@@ -14,6 +14,12 @@
 #include <QLineSeries>
 using namespace QtCharts;
 
+enum class ClrMapPreset {
+    hot,
+    cool,
+    jet,
+};
+
 /** ****************************************************************************
  * @brief The ClrFix struct is just a combination of colour + location (0 to 1)
  */
@@ -79,6 +85,12 @@ public:
     void SetMaskConfig(MaskCfg& maskCfgIn) {m = maskCfgIn; MaskSettingChanged();}
 
     bool RecalcIsPending() const {return pendingRecalcClrIndex || pendingRecalcMaskIndex;}
+
+    void SetPreset(ClrMapPreset preset);
+public slots:
+    void SetPresetHot() {SetPreset(ClrMapPreset::hot);}
+    void SetPresetCool() {SetPreset(ClrMapPreset::cool);}
+    void SetPresetJet() {SetPreset(ClrMapPreset::jet);}
 
 private:
     void CalcColourIndex();

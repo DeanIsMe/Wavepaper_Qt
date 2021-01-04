@@ -122,6 +122,34 @@ void ColourMap::EditColour(qint32 listIdx, QRgb newClr)
 }
 
 /** ****************************************************************************
+ * @brief ColourMap::SetPreset replaces the entire colour list with a preset list
+ * @param preset
+ */
+void ColourMap::SetPreset(ClrMapPreset preset)
+{
+    // !@# enter the correct colour maps
+    clrList.clear();
+    switch (preset) {
+    case ClrMapPreset::hot:
+        clrList.append(ClrFix(QColor(0,0,0), 0));
+        clrList.append(ClrFix(QColor(255,0,0), 1.0));
+        break;
+    case ClrMapPreset::cool:
+        clrList.append(ClrFix(QColor(215,104,237), 0));
+        clrList.append(ClrFix(QColor(104,237,217), 1.0));
+        break;
+    case ClrMapPreset::jet:
+        clrList.append(ClrFix(QColor(215,104,237), 0));
+        clrList.append(ClrFix(QColor(104,237,217), 0.25));
+        clrList.append(ClrFix(QColor(0,255,0), 0.25));
+        clrList.append(ClrFix(QColor(255,0,0), 0.75));
+        clrList.append(ClrFix(QColor(0,0,0), 1.0));
+        break;
+    }
+    ClrListChanged();
+}
+
+/** ****************************************************************************
  * @brief ColourMap::GetColourValue calculates the colour, using the location and interpolation
  * @param loc is a number from 0 (min) to 1 (max)
  * @return a QRgb, using the alpha layer
@@ -570,6 +598,23 @@ ColourMapEditorWidget::ColourMapEditorWidget(QWidget *parent) : modelClrFix(&col
     clrMapLayout->addWidget(&maskChartView);
     maskChartView.setVisible(false);
 
+    // Colourmap presets
+    QHBoxLayout * layoutClrPresets = new QHBoxLayout();
+
+    QPushButton * btnPresetHot = new QPushButton(QString("Hot"));
+    QObject::connect(btnPresetHot, QPushButton::clicked, &colourMap, ColourMap::SetPresetHot);
+    layoutClrPresets->addWidget(btnPresetHot);
+
+    QPushButton * btnPresetCool = new QPushButton(QString("Cool"));
+    QObject::connect(btnPresetCool, QPushButton::clicked, &colourMap, ColourMap::SetPresetCool);
+    layoutClrPresets->addWidget(btnPresetCool);
+
+    QPushButton * btnPresetJet = new QPushButton(QString("Jet"));
+    QObject::connect(btnPresetJet, QPushButton::clicked, &colourMap, ColourMap::SetPresetJet);
+    layoutClrPresets->addWidget(btnPresetJet);
+
+    clrMapLayout->addLayout(layoutClrPresets);
+
     // Table
     tableClrFix.setModel(&modelClrFix);
     tableClrFix.setColumnWidth(modelClrFix.colClrBox, 50);
@@ -733,6 +778,9 @@ void ColourMapEditorWidget::resizeEvent(QResizeEvent *event)
     }
 }
 
+/** ************************************************************************ **/
+/** ************************************************************************ **/
+/** ************************************************************************ **/
 
 /** ****************************************************************************
  * @brief ClrFixTableView::keyPressEvent
@@ -750,11 +798,18 @@ void ClrFixTableView::RemoveSelectedRows()
     }
 }
 
+/** ****************************************************************************
+ * @brief ClrFixTableView::AddRow
+ */
 void ClrFixTableView::AddRow()
 {
     this->model()->insertRow(this->model()->rowCount());
 }
 
+/** ****************************************************************************
+ * @brief ClrFixTableView::keyPressEvent
+ * @param event
+ */
 void ClrFixTableView::keyPressEvent(QKeyEvent *event)
 {
     if (event->key() == Qt::Key_Delete) {
