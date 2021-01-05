@@ -98,7 +98,7 @@ MainWindow::MainWindow(QWidget *parent)
     ColourMapEditorWidget* colourMapEditor = new ColourMapEditorWidget(&colourMap);
     layoutCentral->addWidget(colourMapEditor);
 
-    // Note: the 'triggered' signal is NOT sent when the value is changed with 'setChecked'.
+    // Note: the 'triggered' signal is NOT sent when the value is changed with 'setChecked()'.
     //       So, I use 'toggled' instead
     QObject::connect(ui->actionMaskEdit, QAction::toggled,
                      &imageGen, &ImageGen::OnMaskEditChange);

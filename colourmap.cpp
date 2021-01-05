@@ -624,21 +624,9 @@ ColourMapEditorWidget::ColourMapEditorWidget(ColourMap* clrMapIn) : clrMap(clrMa
     // Colourmap presets
     QHBoxLayout * layoutClrPresets = new QHBoxLayout();
 
-    QPushButton * btnPresetHot = new QPushButton(QString("Hot"));
-    QObject::connect(btnPresetHot, QPushButton::clicked, clrMap, ColourMap::SetPresetHot);
-    layoutClrPresets->addWidget(btnPresetHot);
-
-    QPushButton * btnPresetCool = new QPushButton(QString("Cool"));
-    QObject::connect(btnPresetCool, QPushButton::clicked, clrMap, ColourMap::SetPresetCool);
-    layoutClrPresets->addWidget(btnPresetCool);
-
     QPushButton * btnPresetJet = new QPushButton(QString("Jet"));
     QObject::connect(btnPresetJet, QPushButton::clicked, clrMap, ColourMap::SetPresetJet);
     layoutClrPresets->addWidget(btnPresetJet);
-
-    QPushButton * btnPresetBone = new QPushButton(QString("Bone"));
-    QObject::connect(btnPresetBone, QPushButton::clicked, clrMap, ColourMap::SetPresetBone);
-    layoutClrPresets->addWidget(btnPresetBone);
 
     QPushButton * btnPresetParula = new QPushButton(QString("Parula"));
     QObject::connect(btnPresetParula, QPushButton::clicked, clrMap, ColourMap::SetPresetParula);
@@ -647,6 +635,18 @@ ColourMapEditorWidget::ColourMapEditorWidget(ColourMap* clrMapIn) : clrMap(clrMa
     QPushButton * btnPresetHsv = new QPushButton(QString("Hsv"));
     QObject::connect(btnPresetHsv, QPushButton::clicked, clrMap, ColourMap::SetPresetHsv);
     layoutClrPresets->addWidget(btnPresetHsv);
+
+    QPushButton * btnPresetHot = new QPushButton(QString("Hot"));
+    QObject::connect(btnPresetHot, QPushButton::clicked, clrMap, ColourMap::SetPresetHot);
+    layoutClrPresets->addWidget(btnPresetHot);
+
+    QPushButton * btnPresetCool = new QPushButton(QString("Cool"));
+    QObject::connect(btnPresetCool, QPushButton::clicked, clrMap, ColourMap::SetPresetCool);
+    layoutClrPresets->addWidget(btnPresetCool);
+
+    QPushButton * btnPresetBone = new QPushButton(QString("Bone"));
+    QObject::connect(btnPresetBone, QPushButton::clicked, clrMap, ColourMap::SetPresetBone);
+    layoutClrPresets->addWidget(btnPresetBone);
 
     clrMapLayout->addLayout(layoutClrPresets);
 
