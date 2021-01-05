@@ -18,6 +18,9 @@ enum class ClrMapPreset {
     hot,
     cool,
     jet,
+    bone,
+    parula,
+    hsv,
 };
 
 /** ****************************************************************************
@@ -53,10 +56,12 @@ struct MaskCfg { // Mask settings
 /** ****************************************************************************
  * @brief The ColourMap class performs that actual mapping from value to colour
  * for generating the images and previews.
+ * It also implements QAbstractTableModel to interface with the colour map table
  */
-class ColourMap : public QObject
+class ColourMap : public QAbstractTableModel
 {
     Q_OBJECT;
+    friend class ColourMapEditorWidget;
     // ColourMap class performs that actual mapping from value to colour
     // for generating the images and previews
 public:
@@ -91,6 +96,9 @@ public slots:
     void SetPresetHot() {SetPreset(ClrMapPreset::hot);}
     void SetPresetCool() {SetPreset(ClrMapPreset::cool);}
     void SetPresetJet() {SetPreset(ClrMapPreset::jet);}
+    void SetPresetBone() {SetPreset(ClrMapPreset::bone);}
+    void SetPresetParula() {SetPreset(ClrMapPreset::parula);}
+    void SetPresetHsv() {SetPreset(ClrMapPreset::hsv);}
 
 private:
     void CalcColourIndex();
@@ -121,22 +129,16 @@ public slots:
 signals:
     void RecalcSignal(); // Emitted any time an edit is made to the mask
     void NewClrMapReady(); // Emitted after the new colour index is made - ready to be used by other parts of the program
-};
 
-
-/** ****************************************************************************
- * @brief The ClrFixModel class is a model (see Qt Model/View structures)
- * that tells the view what to display
- */
-class ClrFixModel : public QAbstractTableModel
-{
-    friend class ColourMapEditorWidget;
-    Q_OBJECT;
+    // *************************************************************************
+    // QAbstractTableModel MODEL
+private:
+    // Column numbers
     static constexpr int colClrBox = 0;
     static constexpr int colClrHex = 1;
     static constexpr int colLoc = 2;
+    static constexpr int colCount = 3;
 public:
-    ClrFixModel(ColourMap *clrMapIn);
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
@@ -145,9 +147,6 @@ public:
 public slots:
     void TableClicked(const QModelIndex & index);
 private:
-    ColourMap * clrMap;
-
-
     // QAbstractItemModel interface
 public:
     bool insertRows(int row, int count, const QModelIndex &parent) override;
@@ -158,8 +157,7 @@ public:
 };
 
 /** ****************************************************************************
- * @brief The ClrFixModel class is a model (see Qt Model/View structures)
- * that tells the view what to display
+ * @brief The ClrFixTableView class displays the colour map in a table
  */
 class ClrFixTableView : public QTableView {
     Q_OBJECT
@@ -184,7 +182,7 @@ class ColourMapEditorWidget : public QWidget {
 private:
     static constexpr int heightClrBar = 30;
 public:
-    ColourMapEditorWidget(QWidget *parent = nullptr);
+    ColourMapEditorWidget(ColourMap* clrMapIn);
     ~ColourMapEditorWidget();
 
 private slots:
@@ -194,11 +192,12 @@ public slots:
     void SetMaskChartVisible(bool on);
 
 private:
+    ColourMap * clrMap;
+
     qint32 barWidth; // The width of the colour bar image
     QImage imgBarBase; // Image for the colour bar that represents the base colour map
     QImage imgBarMask; // Image for the colour bar that represents the colour map mask
     QImage imgBarResult; // Image for the colour bar that represents the resultant colour map
-    ClrFixModel modelClrFix; // Table model (interacts with colourMap for the data)
 
     // Labels are used as a colour bar to demonstrate the colour map
     QLabel lblClrBarBase;

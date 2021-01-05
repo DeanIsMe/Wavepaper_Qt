@@ -95,7 +95,7 @@ MainWindow::MainWindow(QWidget *parent)
     imageGen.NewImageNeeded();
 
     // Add colour map UI
-    ColourMapEditorWidget* colourMapEditor = new ColourMapEditorWidget();
+    ColourMapEditorWidget* colourMapEditor = new ColourMapEditorWidget(&colourMap);
     layoutCentral->addWidget(colourMapEditor);
 
     // Note: the 'triggered' signal is NOT sent when the value is changed with 'setChecked'.

@@ -21,9 +21,7 @@ ColourMap::ColourMap()
 
     // !@# temporary data
     AddColour(ClrFix(Qt::green,   0.0));
-    //AddColour(ClrFix(Qt::black,  0.25));
     AddColour(ClrFix(Qt::cyan,  0.50));
-    //AddColour(ClrFix(Qt::black,  0.75));
     AddColour(ClrFix(Qt::blue, 1.00));
 
     CalcColourIndex();
@@ -127,26 +125,59 @@ void ColourMap::EditColour(qint32 listIdx, QRgb newClr)
  */
 void ColourMap::SetPreset(ClrMapPreset preset)
 {
+    this->beginResetModel();
+
     // !@# enter the correct colour maps
     clrList.clear();
     switch (preset) {
+    //clrList.append(ClrFix(QColor(), /64.));
+
     case ClrMapPreset::hot:
-        clrList.append(ClrFix(QColor(0,0,0), 0));
-        clrList.append(ClrFix(QColor(255,0,0), 1.0));
+        clrList.append(ClrFix(QColor(10,0,0), 0));
+        clrList.append(ClrFix(QColor(255,0,0), 23./63.));
+        clrList.append(ClrFix(QColor(255,255,0), 47./63.));
+        clrList.append(ClrFix(QColor(255,255,255), 1.0));
         break;
     case ClrMapPreset::cool:
-        clrList.append(ClrFix(QColor(215,104,237), 0));
-        clrList.append(ClrFix(QColor(104,237,217), 1.0));
+        clrList.append(ClrFix(QColor(0,255,255), 0));
+        clrList.append(ClrFix(QColor(255,0,255), 1.0));
         break;
     case ClrMapPreset::jet:
-        clrList.append(ClrFix(QColor(215,104,237), 0));
-        clrList.append(ClrFix(QColor(104,237,217), 0.25));
-        clrList.append(ClrFix(QColor(0,255,0), 0.25));
-        clrList.append(ClrFix(QColor(255,0,0), 0.75));
-        clrList.append(ClrFix(QColor(0,0,0), 1.0));
+        clrList.append(ClrFix(QColor(0,0,143), 0.));
+        clrList.append(ClrFix(QColor(0,0,255), 7./63.));
+        clrList.append(ClrFix(QColor(0,255,255), 23./63.));
+        clrList.append(ClrFix(QColor(255,255,0), 39./63.));
+        clrList.append(ClrFix(QColor(255,0,0), 55./63.));
+        clrList.append(ClrFix(QColor(128,0,0), 63./63.));
+        break;
+    case ClrMapPreset::bone:
+        clrList.append(ClrFix(QColor(0,0,1), 0));
+        clrList.append(ClrFix(QColor(81,81,113), 23./63.));
+        clrList.append(ClrFix(QColor(166,198,198), 47./63.));
+        clrList.append(ClrFix(QColor(255,255,255), 1.0));
+        break;
+    case ClrMapPreset::parula:
+        clrList.append(ClrFix(QColor(62,38,168), 0));
+        clrList.append(ClrFix(QColor(48,125,251), 66./255.));
+        clrList.append(ClrFix(QColor(48,125,251), 66./255.));
+        clrList.append(ClrFix(QColor(0,185,199), 119./255.));
+        clrList.append(ClrFix(QColor(202,193,40), 192./255.));
+        clrList.append(ClrFix(QColor(253,189,61), 214./255.));
+        clrList.append(ClrFix(QColor(249,251,20), 1.));
+        break;
+    case ClrMapPreset::hsv:
+        clrList.append(ClrFix(QColor(255,0,0), 0));
+        clrList.append(ClrFix(QColor(255,255,0), 1./6.));
+        clrList.append(ClrFix(QColor(0,255,0), 2./6.));
+        clrList.append(ClrFix(QColor(0,255,255), 3./6.));
+        clrList.append(ClrFix(QColor(0,0,255), 4./6.));
+        clrList.append(ClrFix(QColor(255,0,255), 5./6.));
+        clrList.append(ClrFix(QColor(255,0,0), 6./6.));
         break;
     }
     ClrListChanged();
+
+    this->endResetModel();
 }
 
 /** ****************************************************************************
@@ -378,50 +409,43 @@ QRgb ColourMap::RgbInterpolate(qreal loc, const ClrFix &before, const ClrFix &af
 /** ************************************************************************ **/
 /** ************************************************************************ **/
 /** ************************************************************************ **/
-
-
-ClrFixModel::ClrFixModel(ColourMap * clrMapIn) : clrMap(clrMapIn)
-{
-
-}
-
-int ClrFixModel::rowCount(const QModelIndex &parent) const
+int ColourMap::rowCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
-    return clrMap->GetColourFixCount();
+    return this->GetColourFixCount();
 }
 
-int ClrFixModel::columnCount(const QModelIndex &parent) const
+int ColourMap::columnCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
-    return 3;
+    return colCount;
 }
 
 /** ****************************************************************************
- * @brief ClrFixModel::data
+ * @brief ColourMap::data
  * @param index
  * @param role
  * @return
  */
-QVariant ClrFixModel::data(const QModelIndex &index, int role) const
+QVariant ColourMap::data(const QModelIndex &index, int role) const
 {
-    if (index.row() >= clrMap->GetColourFixCount()) {
+    if (index.row() >= this->GetColourFixCount()) {
         return QVariant();
     }
     switch (role) {
     case Qt::DisplayRole:
     case Qt::EditRole: // What is displayed when editing text
         if (index.column() == colClrHex) {
-            const QColor& clr = clrMap->GetClrFix(index.row()).clr;
+            const QColor& clr = this->GetClrFix(index.row()).clr;
             return QString::asprintf("%02X %02X %02X", clr.red(), clr.green(), clr.blue());
         }
         else if (index.column() == colLoc) {
-            return QString::asprintf("%.1f", clrMap->GetClrFix(index.row()).loc);
+            return QString::asprintf("%.1f", this->GetClrFix(index.row()).loc);
         }
         break;
     case Qt::BackgroundRole:
         if (index.column() == colClrBox) {
-            return QBrush(clrMap->GetClrFix(index.row()).clr);
+            return QBrush(this->GetClrFix(index.row()).clr);
         }
         break;
     }
@@ -430,18 +454,18 @@ QVariant ClrFixModel::data(const QModelIndex &index, int role) const
 }
 
 /** ****************************************************************************
- * @brief ClrFixModel::setData
+ * @brief ColourMap::setData
  * @param index
  * @param value
  * @param role
  * @return
  */
-bool ClrFixModel::setData(const QModelIndex &index, const QVariant &value, int role)
+bool ColourMap::setData(const QModelIndex &index, const QVariant &value, int role)
 {
     if (role == Qt::EditRole) {
         if (!checkIndex(index)) { return false; }
         if (index.column() == colLoc) {
-            clrMap->EditColourLoc(index.row(), value.toReal());
+            this->EditColourLoc(index.row(), value.toReal());
             emit dataChanged(index, index);
             return true;
         }
@@ -450,11 +474,11 @@ bool ClrFixModel::setData(const QModelIndex &index, const QVariant &value, int r
 }
 
 /** ****************************************************************************
- * @brief ClrFixModel::flags
+ * @brief ColourMap::flags
  * @param index
  * @return
  */
-Qt::ItemFlags ClrFixModel::flags(const QModelIndex &index) const
+Qt::ItemFlags ColourMap::flags(const QModelIndex &index) const
 {
     if (index.column() == colLoc) {
         return QAbstractTableModel::flags(index) | Qt::ItemIsEditable;
@@ -469,16 +493,16 @@ Qt::ItemFlags ClrFixModel::flags(const QModelIndex &index) const
 }
 
 /** ****************************************************************************
- * @brief ClrFixModel::TableClicked
+ * @brief ColourMap::TableClicked
  * @param index
  */
-void ClrFixModel::TableClicked(const QModelIndex &index)
+void ColourMap::TableClicked(const QModelIndex &index)
 {
     if (index.column() == colClrBox) {
-        QColor clrNew = QColorDialog::getColor(clrMap->GetClrFix(index.row()).clr);
+        QColor clrNew = QColorDialog::getColor(this->GetClrFix(index.row()).clr);
         if (!clrNew.isValid()) {return;} // User cancelled
         QRgb clrRgbNew = clrNew.rgb();
-        clrMap->EditColour(index.row(), clrRgbNew);
+        this->EditColour(index.row(), clrRgbNew);
 
         emit dataChanged(index, index);
         QModelIndex idxHex = createIndex(index.row(), colClrHex);
@@ -487,7 +511,7 @@ void ClrFixModel::TableClicked(const QModelIndex &index)
 }
 
 /** ****************************************************************************
- * @brief ClrFixModel::removeRows
+ * @brief ColourMap::removeRows
  * @param startRow
  * @param rowCount
  * @param parent
@@ -495,50 +519,50 @@ void ClrFixModel::TableClicked(const QModelIndex &index)
  */
 
 /** ****************************************************************************
- * @brief ClrFixModel::removeRows
+ * @brief ColourMap::removeRows
  */
-bool ClrFixModel::removeRows(int startRow, int rowCount, const QModelIndex &parent)
+bool ColourMap::removeRows(int startRow, int rowCount, const QModelIndex &parent)
 {
     Q_UNUSED(parent);
     beginRemoveRows(QModelIndex(), startRow, startRow+rowCount-1);
     for (int i = 0; i < rowCount; i++) {
-        clrMap->RemoveColour(startRow);
+        this->RemoveColour(startRow);
     }
     endRemoveRows();
     return true;
 }
 
 /** ****************************************************************************
- * @brief ClrFixModel::insertRows
+ * @brief ColourMap::insertRows
  */
-bool ClrFixModel::insertRows(int startRow, int rowCount, const QModelIndex &parent)
+bool ColourMap::insertRows(int startRow, int rowCount, const QModelIndex &parent)
 {
     Q_UNUSED(parent);
     beginInsertRows(QModelIndex(), startRow, startRow+rowCount-1);
     for (int i = 0; i < rowCount; i++) {
-        clrMap->AddColour(ClrFix(Qt::white, 100.0), startRow);
+        this->AddColour(ClrFix(Qt::white, 100.0), startRow);
     }
     endInsertRows();
     return true;
 }
 
 /** ****************************************************************************
- * @brief ClrFixModel::moveRows
+ * @brief ColourMap::moveRows
  */
-bool ClrFixModel::moveRows(const QModelIndex &sourceParent, int sourceRow, int count, const QModelIndex &destinationParent, int destinationChild)
+bool ColourMap::moveRows(const QModelIndex &sourceParent, int sourceRow, int count, const QModelIndex &destinationParent, int destinationChild)
 {
     beginMoveRows(sourceParent, sourceRow, sourceRow + count, destinationParent, destinationChild);
     int destRow = destinationChild;
     if (sourceRow < destRow) {
         // Moving row(s) forward
         for (int i = 0; i < count; i++) {
-            clrMap->MoveColour(sourceRow, destRow);
+            this->MoveColour(sourceRow, destRow);
         }
     }
     else {
         // Moving row(s) backwards
         for (int i = count - 1; i >= 0; i--) {
-            clrMap->MoveColour(sourceRow + i, destRow);
+            this->MoveColour(sourceRow + i, destRow);
         }
     }
     endMoveRows();
@@ -546,13 +570,13 @@ bool ClrFixModel::moveRows(const QModelIndex &sourceParent, int sourceRow, int c
 }
 
 /** ****************************************************************************
- * @brief ClrFixModel::headerData
+ * @brief ColourMap::headerData
  * @param section
  * @param orientation
  * @param role
  * @return
  */
-QVariant ClrFixModel::headerData(int section, Qt::Orientation orientation, int role) const
+QVariant ColourMap::headerData(int section, Qt::Orientation orientation, int role) const
 {
     if (role != Qt::DisplayRole) {
         return QVariant();
@@ -580,9 +604,8 @@ QVariant ClrFixModel::headerData(int section, Qt::Orientation orientation, int r
  * @brief ColourMapEditorWidget::ColourMapEditorWidget
  * @param parent
  */
-ColourMapEditorWidget::ColourMapEditorWidget(QWidget *parent) : modelClrFix(&colourMap)
+ColourMapEditorWidget::ColourMapEditorWidget(ColourMap* clrMapIn) : clrMap(clrMapIn)
 {
-    Q_UNUSED(parent);
     this->setMinimumWidth(200);
     this->setMaximumWidth(500);
     // Create the widget
@@ -602,28 +625,40 @@ ColourMapEditorWidget::ColourMapEditorWidget(QWidget *parent) : modelClrFix(&col
     QHBoxLayout * layoutClrPresets = new QHBoxLayout();
 
     QPushButton * btnPresetHot = new QPushButton(QString("Hot"));
-    QObject::connect(btnPresetHot, QPushButton::clicked, &colourMap, ColourMap::SetPresetHot);
+    QObject::connect(btnPresetHot, QPushButton::clicked, clrMap, ColourMap::SetPresetHot);
     layoutClrPresets->addWidget(btnPresetHot);
 
     QPushButton * btnPresetCool = new QPushButton(QString("Cool"));
-    QObject::connect(btnPresetCool, QPushButton::clicked, &colourMap, ColourMap::SetPresetCool);
+    QObject::connect(btnPresetCool, QPushButton::clicked, clrMap, ColourMap::SetPresetCool);
     layoutClrPresets->addWidget(btnPresetCool);
 
     QPushButton * btnPresetJet = new QPushButton(QString("Jet"));
-    QObject::connect(btnPresetJet, QPushButton::clicked, &colourMap, ColourMap::SetPresetJet);
+    QObject::connect(btnPresetJet, QPushButton::clicked, clrMap, ColourMap::SetPresetJet);
     layoutClrPresets->addWidget(btnPresetJet);
+
+    QPushButton * btnPresetBone = new QPushButton(QString("Bone"));
+    QObject::connect(btnPresetBone, QPushButton::clicked, clrMap, ColourMap::SetPresetBone);
+    layoutClrPresets->addWidget(btnPresetBone);
+
+    QPushButton * btnPresetParula = new QPushButton(QString("Parula"));
+    QObject::connect(btnPresetParula, QPushButton::clicked, clrMap, ColourMap::SetPresetParula);
+    layoutClrPresets->addWidget(btnPresetParula);
+
+    QPushButton * btnPresetHsv = new QPushButton(QString("Hsv"));
+    QObject::connect(btnPresetHsv, QPushButton::clicked, clrMap, ColourMap::SetPresetHsv);
+    layoutClrPresets->addWidget(btnPresetHsv);
 
     clrMapLayout->addLayout(layoutClrPresets);
 
     // Table
-    tableClrFix.setModel(&modelClrFix);
-    tableClrFix.setColumnWidth(modelClrFix.colClrBox, 50);
-    tableClrFix.setColumnWidth(modelClrFix.colClrHex, 60);
-    tableClrFix.setColumnWidth(modelClrFix.colLoc, 40);
+    tableClrFix.setModel(clrMap);
+    tableClrFix.setColumnWidth(clrMap->colClrBox, 50);
+    tableClrFix.setColumnWidth(clrMap->colClrHex, 60);
+    tableClrFix.setColumnWidth(clrMap->colLoc, 40);
     clrMapLayout->addWidget(&tableClrFix);
 
-    connect(&tableClrFix, ClrFixTableView::clicked, &modelClrFix, ClrFixModel::TableClicked);
-    connect(&colourMap, ColourMap::NewClrMapReady, this, DrawColourBars, Qt::QueuedConnection);
+    connect(&tableClrFix, ClrFixTableView::clicked, clrMap, ColourMap::TableClicked);
+    connect(clrMap, ColourMap::NewClrMapReady, this, DrawColourBars, Qt::QueuedConnection);
 
     // Buttons for add and delete
     QPushButton * btnAddRow = new QPushButton("Add");
@@ -662,11 +697,11 @@ void ColourMapEditorWidget::DrawColourBars()
     for (qint32 x = dataBarBase->xLeft, i = 0; x < dataBarBase->xLeft + dataBarBase->width; x++, i++) {
         qreal loc = (qreal)i / (qreal)sizeClrBar.width();
         // !@# Make this more efficient
-        QRgb clrBase = colourMap.GetBaseColourValue(loc);
-        qreal valMask = colourMap.GetMaskValue(loc);
+        QRgb clrBase = clrMap->GetBaseColourValue(loc);
+        qreal valMask = clrMap->GetMaskValue(loc);
         QRgb clrMask = qRgb(valMask*255, valMask*255, valMask*255);
         chartData[i] = QPointF(loc, valMask);
-        QRgb clrResult = colourMap.GetBlendedColourValue(loc);
+        QRgb clrResult = clrMap->GetBlendedColourValue(loc);
 
         for (int y = dataBarBase->yTop; y < dataBarBase->yTop + dataBarBase->height; y++) {
             dataBarBase->setPoint(x, y,  clrBase);
@@ -689,22 +724,22 @@ void ColourMapEditorWidget::DrawColourBars()
     lblClrBarMask.setPixmap(QPixmap::fromImage(imgBarMask));
     lblClrBarResult.setPixmap(QPixmap::fromImage(imgBarResult));
 
-    lblClrBarMask.setVisible(colourMap.MaskIsEnabled());
-    lblClrBarResult.setVisible(colourMap.MaskIsEnabled());
+    lblClrBarMask.setVisible(clrMap->MaskIsEnabled());
+    lblClrBarResult.setVisible(clrMap->MaskIsEnabled());
 
     if (1) {
         // Plot RGB channels of the colour index
         // This makes it easier to check the colours are expected
         /*
-        qint32 len = colourMap.clrIndexed.length();
+        qint32 len = clrMap->clrIndexed.length();
         QVector<QPointF> clrR(len);
         QVector<QPointF> clrG(len);
         QVector<QPointF> clrB(len);
         for (int i = 0; i < len; i++) {
             qreal loc = (qreal)i / len;
-            clrR[i] = QPointF(loc, colourMap.clrIndexed[i].redF() / 255.);
-            clrG[i] = QPointF(loc, colourMap.clrIndexed[i].greenF() / 255.);
-            clrB[i] = QPointF(loc, colourMap.clrIndexed[i].blueF() / 255.);
+            clrR[i] = QPointF(loc, clrMap->clrIndexed[i].redF() / 255.);
+            clrG[i] = QPointF(loc, clrMap->clrIndexed[i].greenF() / 255.);
+            clrB[i] = QPointF(loc, clrMap->clrIndexed[i].blueF() / 255.);
         }
         QLineSeries * clrRSeries = new QLineSeries();
         QLineSeries * clrGSeries = new QLineSeries();
