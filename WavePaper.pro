@@ -19,6 +19,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
     colourmap.cpp \
     imagegen.cpp \
+    interact.cpp \
     main.cpp \
     mainwindow.cpp \
     previewscene.cpp
@@ -27,6 +28,7 @@ HEADERS += \
     colourmap.h \
     datatypes.h \
     imagegen.h \
+    interact.h \
     mainwindow.h \
     previewscene.h
 

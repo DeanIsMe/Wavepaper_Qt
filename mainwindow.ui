@@ -54,6 +54,7 @@
    <addaction name="actionMaskEdit"/>
    <addaction name="actionShowMaskChart"/>
    <addaction name="separator"/>
+   <addaction name="actionColoursEdit"/>
   </widget>
   <action name="actionMore">
    <property name="icon">
@@ -209,6 +210,21 @@
    </property>
    <property name="toolTip">
     <string>Generate a full quality image and save it</string>
+   </property>
+  </action>
+  <action name="actionColoursEdit">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/colourWheel</normaloff>:/icons/colourWheel</iconset>
+   </property>
+   <property name="text">
+    <string>ColoursEdit</string>
+   </property>
+   <property name="toolTip">
+    <string>Edit colours by dragging</string>
    </property>
   </action>
  </widget>

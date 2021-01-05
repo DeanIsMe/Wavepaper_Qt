@@ -5,6 +5,7 @@
 #include <QGraphicsView>
 #include <QGraphicsItemGroup>
 #include "imagegen.h"
+#include "interact.h"
 
 /** ****************************************************************************
  * @brief The PreviewScene class is the canvas upon which the preview is painted
@@ -31,16 +32,16 @@ public slots:
     // QGraphicsScene interface
 protected:
     void mousePressEvent(QGraphicsSceneMouseEvent *event) override {
-        imageGen.act.mousePressEvent(event, this);}
+        interact.mousePressEvent(event, this);}
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override {
-        imageGen.act.mouseReleaseEvent(event, this);}
+        interact.mouseReleaseEvent(event, this);}
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override {
-        imageGen.act.mouseMoveEvent(event, this);}
+        interact.mouseMoveEvent(event, this);}
 
     // Custom
 public:
     void EmitterArngmtToList(ImageGen &imgGen);
-    void AddAxesLines(ImageGen &imgGen);
+    void AddAxesLines(Interact &act);
 
 };
 

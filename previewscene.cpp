@@ -60,7 +60,7 @@ void PreviewScene::EmitterArngmtToList(ImageGen & imgGen) {
     this->removeItem(&emItemGroup);
     this->addItem(&emItemGroup);
 
-    AddAxesLines(imgGen);
+    AddAxesLines(interact);
 
     invalidate(this->sceneRect(), QGraphicsScene::ItemLayer);
     // The scene and background are automatically redrawn
@@ -70,12 +70,12 @@ void PreviewScene::EmitterArngmtToList(ImageGen & imgGen) {
  * @brief PreviewScene::AddAxesLines
  * @param imageGen
  */
-void PreviewScene::AddAxesLines(ImageGen & imgGen) {
+void PreviewScene::AddAxesLines(Interact & act) {
     this->removeItem(&yAxisItem);
     this->removeItem(&xAxisItem);
     // Axes are drawn only when interacting with an arrangement that's mirrored
-    if (imgGen.act.IsActive() && imgGen.act.GetActiveGroup()) {
-        EmArrangement* group = imgGen.act.GetActiveGroup();
+    if (act.IsActive() && act.GetActiveArrangement()) {
+        EmArrangement* group = act.GetActiveArrangement();
         if (group->mirrorHor) {
             yAxisItem.setLine(QLineF(0, sceneRect().top(), 0, sceneRect().bottom()));
             this->addItem(&yAxisItem);

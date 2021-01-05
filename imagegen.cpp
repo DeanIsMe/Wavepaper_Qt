@@ -1,5 +1,7 @@
+#include "datatypes.h"
 #include "imagegen.h"
 #include "colourmap.h"
+#include "interact.h"
 #include "mainwindow.h"
 #include <QList>
 #include <QElapsedTimer>
@@ -10,12 +12,13 @@
 #include <QCoreApplication>
 #include <previewscene.h>
 
+
 ImageGen imageGen;
 
 /** ****************************************************************************
  * @brief ImageGen::ImageGen
  */
-ImageGen::ImageGen() : act(this) {
+ImageGen::ImageGen() {
     QObject::connect(this, &ImageGen::GenerateImageSignal,
                      this, &ImageGen::GenerateImageSlot, Qt::QueuedConnection);
     InitViewAreas();
@@ -106,6 +109,14 @@ void ImageGen::setTargetImgPoints(qint32 imgPoints, GenSettings & genSet) const 
     }
 }
 
+/**
+ * @brief ImageGen::EmittersHidden
+ * @return
+ */
+bool ImageGen::EmittersHidden() {
+    return hideEmitters && !interact.TypeIsActive(Interact::Type::arrangement);
+}
+
 /** ****************************************************************************
  * @brief ImageGen::SaveImage
  */
@@ -183,15 +194,6 @@ void ImageGen::WavelengthIncrease()
 {
     this->s.wavelength *= 1.25;
     NewImageNeeded();
-}
-
-/** ****************************************************************************
- * @brief ImageGen::OnMaskEditChange
- */
-void ImageGen::OnMaskEditChange(bool state)
-{
-    maskEditEn = state;
-    qDebug("maskEditEn = %d", state);
 }
 
 /** ****************************************************************************
@@ -769,160 +771,6 @@ EmArrangement ImageGen::DefaultArrangement() {
 }
 
 /** ****************************************************************************
- * @brief ImageGen::Interact::mousePressEvent
- * @param event
- */
-void ImageGen::Interact::mousePressEvent(QGraphicsSceneMouseEvent *event, PreviewScene *scene)
-{
-    Q_UNUSED(scene);
-    qDebug("Scene press   event (%7.2f, %7.2f)", event->scenePos().x(), event->scenePos().y());
-    Cancel();
-
-
-    ctrlPressed = (event->modifiers() & Qt::ControlModifier);
-    pressPos = event->scenePos();
-
-    if (parent->maskEditEn) {
-        // Interact with the mask
-        active = Type::mask;
-        maskConfigBackup = colourMap.GetMaskConfig();
-    }
-    else {
-        // Interact with the emitter arrangement
-        grpActive = parent->GetActiveArrangement();
-        if (!grpActive) {
-            // No active groups
-            return;
-        }
-        grpBackup = *grpActive; // Save, so that it can be reverted
-        active = Type::arrangement;
-    }
-}
-
-/** ****************************************************************************
- * @brief ImageGen::Interact::mouseReleaseEvent
- * @param event
- * @param scene
- */
-void ImageGen::Interact::mouseReleaseEvent(QGraphicsSceneMouseEvent *event, PreviewScene *scene)
-{
-    Q_UNUSED(scene);
-    qDebug("Scene release event (%7.2f, %7.2f)", event-> scenePos().x(), event->scenePos().y());
-
-    switch (active) {
-    case Type::null:
-        break;
-
-    case Type::arrangement:
-        emit parent->EmitterArngmtChanged(); // Just need to redraw the axes lines when mirroring
-        break;
-
-    case Type::mask:
-        break;
-    }
-
-    active = Type::null;
-    parent->NewPreviewImageNeeded();
-}
-
-/** ****************************************************************************
- * @brief ImageGen::Interact::mouseMoveEvent
- * @param event
- * @param scene
- */
-void ImageGen::Interact::mouseMoveEvent(QGraphicsSceneMouseEvent *event, PreviewScene *scene) {
-    Q_UNUSED(scene);
-    qDebug("Scene move    event (%7.2f, %7.2f)", event->scenePos().x(), event->scenePos().y());
-    if (!IsActive()) {return;}
-    // Determine how much the mouse has moved while clicked
-    QPointF deltaScene = event->scenePos() - pressPos;
-    // deltaRatio: the movement in X & Y directions as a ratio of the scene dimensions
-    QPointF deltaRatio = QPointF(deltaScene.x() / parent->areaSim.width(), deltaScene.y() / parent->areaSim.height());
-
-    if (active == Type::arrangement) {
-        // *********************************************************************
-        // Arrangement edit
-
-        // Alt disables snapping
-        bool snapEn = (event->modifiers() & Qt::AltModifier) == 0;
-
-        if (ctrlPressed) {
-            // Change location
-            grpActive->center = grpBackup.center + deltaScene;
-            if (snapEn) {
-                grpActive->center.setX(Snap(grpActive->center.x(), 9e9, parent->areaSim.width() * 0.05));
-                grpActive->center.setY(Snap(grpActive->center.y(), 9e9, parent->areaSim.width() * 0.05));
-            }
-        }
-        else {
-            // Change arrangement
-            switch (grpActive->type) {
-            case EmType::arc: {
-                // Arc: change arcRadius and arcSpan
-                grpActive->arcRadius = std::max(0.0, grpBackup.arcRadius - deltaScene.y());
-                qreal spanDelta = deltaRatio.x() * 3.1415926 * 2;
-
-                grpActive->arcSpan = std::max(0.0, grpBackup.arcSpan + spanDelta);
-                if (snapEn) {
-                    grpActive->arcSpan = Snap(grpActive->arcSpan, PI, PI * 0.1);
-                }
-                break;
-            }
-            case EmType::line:
-                // Line: change length
-                grpActive->lenTotal = std::max(0.0, grpBackup.lenTotal - deltaScene.y());
-                break;
-            default:
-                return;
-            }
-        }
-
-        emit parent->EmitterArngmtChanged();
-    }
-
-    else if (active == Type::mask) {
-        // *********************************************************************
-        // Mask edit
-        auto newMaskCfg = maskConfigBackup;
-        if (ctrlPressed) {
-            // X:Offset. Y: Transition width/sharpness
-            newMaskCfg.offset = maskConfigBackup.offset + deltaRatio.x();
-            newMaskCfg.numRevs = qBound(0.1, maskConfigBackup.numRevs + deltaRatio.y() * 5., 200.0);
-
-        }
-        else {
-            // X:Ripple Count. Y:Duty Cycle
-            newMaskCfg.smooth = qBound(0.0, maskConfigBackup.smooth + deltaRatio.x(), 2.0);
-            newMaskCfg.dutyCycle = qBound(0.0, maskConfigBackup.dutyCycle - deltaRatio.y() * 1.0, 1.0);
-        }
-        colourMap.SetMaskConfig(newMaskCfg);
-    }
-    parent->NewQuickImageNeeded();
-}
-
-/** ****************************************************************************
- * @brief ImageGen::Interact::Cancel
- */
-void ImageGen::Interact::Cancel() {
-    // Restore the backup
-    switch (active) {
-    case Type::null:
-        break;
-
-    case Type::arrangement:
-        if (grpActive) {
-            *grpActive = grpBackup;
-        }
-        break;
-
-    case Type::mask:
-        colourMap.SetMaskConfig(maskConfigBackup);
-        break;
-    }
-    active = Type::null;
-}
-
-/** ****************************************************************************
  * @brief ImageGen::TemplatePhasor::MakeNew
  * @param size
  * @param wavelengthIn
@@ -934,3 +782,5 @@ void ImageGen::TemplatePhasor::MakeNew(QRect size, qreal wavelengthIn, qreal img
     this->wavelength = wavelengthIn;
     this->imgPerSimUnit = imgPerSimUnitIn;
 }
+
+

@@ -8,6 +8,7 @@
 #include "previewscene.h"
 #include "imagegen.h"
 #include "colourmap.h"
+#include "interact.h"
 
 /** ****************************************************************************
  * @brief MainWindow::MainWindow
@@ -78,6 +79,7 @@ MainWindow::MainWindow(QWidget *parent)
     QObject::connect(ui->actionSaveImage, QAction::triggered,
                      &imageGen, &ImageGen::SaveImage);
 
+
     previewScene->EmitterArngmtToList(imageGen);
 
     qDebug() << "Preview view rect " << RectToQString(previewView->rect());
@@ -98,15 +100,13 @@ MainWindow::MainWindow(QWidget *parent)
     ColourMapEditorWidget* colourMapEditor = new ColourMapEditorWidget(&colourMap);
     layoutCentral->addWidget(colourMapEditor);
 
-    // Note: the 'triggered' signal is NOT sent when the value is changed with 'setChecked()'.
-    //       So, I use 'toggled' instead
-    QObject::connect(ui->actionMaskEdit, QAction::toggled,
-                     &imageGen, &ImageGen::OnMaskEditChange);
-
     QObject::connect(ui->actionShowMaskChart, QAction::toggled,
                      colourMapEditor, &ColourMapEditorWidget::SetMaskChartVisible);
 
     // actionMaskEnable is handled by the funtion on_actionMaskEnable_triggered
+
+    QObject::connect(&interact, &Interact::InteractTypeChanged,
+                     this, &MainWindow::OnInteractChange, Qt::QueuedConnection);
 
     // Text window for debugging
     layoutCentral->addWidget(textWindow);
@@ -215,4 +215,30 @@ void MainWindow::on_actionMaskEnable_triggered(bool checked)
         ui->actionShowMaskChart->setChecked(false);
     }
     ui->actionMaskEdit->setChecked(checked);
+}
+
+/** ****************************************************************************
+ * @brief MainWindow::OnInteractChange slot is called when the interaction type
+ * is changed. It sets the UI buttons accordingly
+ * @param type
+ */
+void MainWindow::OnInteractChange(QVariant interactType) {
+    ui->actionColoursEdit->setChecked(interactType == (Interact::Type::colours));
+    ui->actionMaskEdit->setChecked(interactType == (Interact::Type::mask));
+}
+
+// Note: the 'triggered' signal is NOT sent when the value is changed with 'setChecked()'.
+//       So, I use 'toggled' instead
+void MainWindow::on_actionMaskEdit_toggled(bool arg1)
+{
+    interact.SetTypeSelect(Interact::Type::mask, arg1);
+}
+
+void MainWindow::on_actionColoursEdit_toggled(bool arg1)
+{
+    interact.SetTypeSelect(Interact::Type::colours, arg1);
+}
+
+void MainWindow::on_actionHideEmitters_toggled(bool unused) {
+    Q_UNUSED(unused);
 }

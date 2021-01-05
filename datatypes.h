@@ -86,6 +86,65 @@ typedef Array2D_C<complex> Complex2D_C;
 typedef Array2D_C<double> Double2D_C;
 typedef Array2D_C<QRgb> Rgb2D_C;
 
+/** ************************************************************************ **/
+/// Emitters
+
+/**
+ * @brief The EmType enum
+ */
+enum class EmType {
+    // Emitter arrangement types
+    blank,
+    arc,
+    square,
+    line,
+    custom,
+};
+
+struct EmArrangement {
+    EmType type = EmType::blank;
+    QPointF center = QPointF(0,0);
+    int count = 1;
+    double rotation = 0; // in radians
+    bool mirrorHor = false;
+    bool mirrorVert = false;
+
+    // Circular specific
+    double arcRadius = 20;
+    double arcSpan = 1.5708; // Radians
+    // Linear specific
+    double lenTotal = 40; // The total length of the line
+    QVector<QPointF> customLocs;
+};
+
+struct EmitterF { // Emitter, floating point coords
+    QPointF loc; // Simulation coordinates
+    double distOffset; // determines the phase. default 0. NOT SUPPORTED (for efficiency)!
+    double amplitude; // default of 1
+    EmitterF() : loc(0,0), distOffset(0), amplitude(1) {}
+    EmitterF(QPointF p) : loc(p), distOffset(0), amplitude(1) {}
+    EmitterF(QPointF p, double distOffset_, double amp) : loc(p), distOffset(distOffset_), amplitude(amp) {}
+    QString ToString() {return QString::asprintf("Em_f @(%5.1f, %5.1f). o=%.1f. a=%.2f.",
+                                                 loc.x(), loc.y(), distOffset, amplitude);}
+};
+
+struct EmitterI { // Emitter, integer coords
+    QPoint loc; // Image coordinates (integers)
+    double distOffset; // determines the phase. NOT SUPPORTED!
+    double amplitude; // default of 1
+    EmitterI() : loc(0,0), distOffset(0), amplitude(1) {}
+    EmitterI(QPoint p) : loc(p), distOffset(0), amplitude(1) {}
+    EmitterI(QPoint p, double distOffset_, double amp) : loc(p), distOffset(distOffset_), amplitude(amp) {}
+    EmitterI(EmitterF e, double imgPerSimUnit) :
+        loc((e.loc * imgPerSimUnit).toPoint()),
+                              distOffset(e.distOffset), amplitude(e.amplitude) {}
+    QString ToString() {return QString::asprintf("Em_I @(%4d, %4d). o=%.1f. a=%.2f.",
+                                                 loc.x(), loc.y(), distOffset, amplitude);}
+};
+
+/** ************************************************************************ **/
+/** ************************************************************************ **/
+/** ************************************************************************ **/
 
 inline QString RectToQString(const QRect & r) {
     return QString::asprintf("%d x %d @(%d, %d)", r.width(), r.height(), r.x(), r.y());

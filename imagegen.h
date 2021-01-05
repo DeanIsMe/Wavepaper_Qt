@@ -8,58 +8,8 @@
 #include <QPainter>
 #include <QGraphicsView>
 #include "datatypes.h"
-#include "colourmap.h"
 
 void ImageDataDealloc(void * info);
-
-enum class EmType {
-    blank,
-    arc,
-    square,
-    line,
-    custom,
-};
-
-struct EmArrangement {
-    EmType type = EmType::blank;
-    QPointF center = QPointF(0,0);
-    int count = 1;
-    double rotation = 0; // in radians
-    bool mirrorHor = false;
-    bool mirrorVert = false;
-
-    // Circular specific
-    double arcRadius = 20;
-    double arcSpan = 1.5708; // Radians
-    // Linear specific
-    double lenTotal = 40; // The total length of the line
-    QVector<QPointF> customLocs;
-};
-
-struct EmitterF { // Emitter, floating point coords
-    QPointF loc; // Simulation coordinates
-    double distOffset; // determines the phase. default 0. NOT SUPPORTED (for efficiency)!
-    double amplitude; // default of 1
-    EmitterF() : loc(0,0), distOffset(0), amplitude(1) {}
-    EmitterF(QPointF p) : loc(p), distOffset(0), amplitude(1) {}
-    EmitterF(QPointF p, double distOffset_, double amp) : loc(p), distOffset(distOffset_), amplitude(amp) {}
-    QString ToString() {return QString::asprintf("Em_f @(%5.1f, %5.1f). o=%.1f. a=%.2f.",
-                                                 loc.x(), loc.y(), distOffset, amplitude);}
-};
-
-struct EmitterI { // Emitter, integer coords
-    QPoint loc; // Image coordinates (integers)
-    double distOffset; // determines the phase. NOT SUPPORTED!
-    double amplitude; // default of 1
-    EmitterI() : loc(0,0), distOffset(0), amplitude(1) {}
-    EmitterI(QPoint p) : loc(p), distOffset(0), amplitude(1) {}
-    EmitterI(QPoint p, double distOffset_, double amp) : loc(p), distOffset(distOffset_), amplitude(amp) {}
-    EmitterI(EmitterF e, double imgPerSimUnit) :
-        loc((e.loc * imgPerSimUnit).toPoint()),
-                              distOffset(e.distOffset), amplitude(e.amplitude) {}
-    QString ToString() {return QString::asprintf("Em_I @(%4d, %4d). o=%.1f. a=%.2f.",
-                                                 loc.x(), loc.y(), distOffset, amplitude);}
-};
 
 struct Settings {
     double wavelength = 40; // Wavelength. Simulation units
@@ -74,9 +24,10 @@ struct Settings {
         QPointF center{0,0};
     } view;
     // Controlling information displayed
+    // (Doesn't affect the actual patten)
     double emitterRadius = 2.; // Emitter radius, simulation units
-
 };
+
 
 /** ****************************************************************************
  * @brief The ImageGen class
@@ -89,39 +40,6 @@ public:
     static constexpr qint32 imgPointsQuick = 100000;
     static constexpr qint32 imgPointsPreview = 500000;
     static constexpr qreal templateOversizeFactor = 1.2; // The amount of extra length that the templates are calculated for (to prevent repeated recalculations)
-
-    class Interact {
-        enum class Type {
-            null,
-            arrangement,
-            mask,
-        };
-
-    public:
-        Interact(ImageGen * parentIn) : parent(parentIn) {}
-        void mousePressEvent(QGraphicsSceneMouseEvent *event, PreviewScene * scene);
-        void mouseReleaseEvent(QGraphicsSceneMouseEvent *event, PreviewScene * scene);
-        void mouseMoveEvent(QGraphicsSceneMouseEvent *event, PreviewScene * scene);
-        bool IsActive() {return active != Type::null;}
-        bool IsEmitterEditActive() {return active == Type::arrangement;}
-        EmArrangement * GetActiveGroup() { return grpActive; }
-
-
-    private:
-        void Cancel();
-        ImageGen * const parent;
-        Type active = Type::null;
-
-        QPointF pressPos; // Where the interaction started
-        bool ctrlPressed; // If the 'control' key was pressed at the start of the interaction
-        // For emitter arrangement changes:
-        EmArrangement grpBackup;
-        EmArrangement * grpActive;
-        // For mask changes
-        MaskCfg maskConfigBackup;
-
-    } act; // Interaction
-
 
 private:
     MainWindow * mainWindow = nullptr;
@@ -167,7 +85,6 @@ public:
     QImage imgPreview;
     QImage imgQuick;
     qreal testVal = 1;
-    bool maskEditEn = false; // True when mask edit is toggled ON
 
 public:
     ImageGen();
@@ -187,7 +104,7 @@ public:
 
     void setDistOffsetF(qreal in) {s.distOffsetF = in;}
     qreal getDistOffsetF() const {return s.distOffsetF;}
-    bool EmittersHidden() {return hideEmitters && !act.IsEmitterEditActive();}
+    bool EmittersHidden();
 
     void SaveImage();
 
@@ -202,7 +119,6 @@ public slots:
     void EmitterCountIncrease();
     void WavelengthDecrease();
     void WavelengthIncrease();
-    void OnMaskEditChange(bool state);
     void HideEmitters(bool hide) {
         hideEmitters = hide;
         emit EmitterArngmtChanged();
