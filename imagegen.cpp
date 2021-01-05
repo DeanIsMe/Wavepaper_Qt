@@ -893,7 +893,7 @@ void ImageGen::Interact::mouseMoveEvent(QGraphicsSceneMouseEvent *event, Preview
         else {
             // X:Ripple Count. Y:Duty Cycle
             newMaskCfg.smooth = qBound(0.0, maskConfigBackup.smooth + deltaRatio.x(), 2.0);
-            newMaskCfg.dutyCycle = qBound(0.0, maskConfigBackup.dutyCycle - deltaRatio.y() * 0.5, 1.0);
+            newMaskCfg.dutyCycle = qBound(0.0, maskConfigBackup.dutyCycle - deltaRatio.y() * 1.0, 1.0);
         }
         colourMap.SetMaskConfig(newMaskCfg);
     }

@@ -316,31 +316,33 @@ void ColourMap::CalcMaskIndex()
     }
 
     qint32 period = std::max(2, (qint32)(maskLen/m.numRevs)); // period as #points
-    qint32 highLen = qBound(1, (int) (m.dutyCycle * period), period);
-    qint32 lowLen = period - highLen;
-    qint32 transitionLen = std::max(1, (int)(m.smooth*0.5*maskLen/m.numRevs));
+    qint32 highLen = qBound(1, (int) (m.dutyCycle * period), period); // #points in high(1) (including 0 to 1 transition)
+    qint32 lowLen = period - highLen; // #points in low(0)
 
-    // Pre-calculate the transition
-    QVector<double> transition;
-    transition.resize(transitionLen);
-    if (transitionLen == 1) {transition[0] = 0;}
+    // Pre-calculate the transitions
+    qint32 desTransLen = (int)(m.smooth*0.5*maskLen/m.numRevs);
+    qint32 transitionLen0 = qBound(1, desTransLen, lowLen);
+    qint32 transitionLen1 = qBound(1, desTransLen, highLen);
+    QVector<double> transition0(transitionLen0);
+    if (transitionLen0 == 1) {transition0[0] = 0;}
     else {
-        double delta = 3.1415926 / (double) (transitionLen - 1);
-        for (qint32 i = 0; i < transition.size(); i++) {
-            transition[i] = cos(i * delta)*0.5 + 0.5; // 1 to 0
+        double delta = 3.1415926 / (double) (transitionLen0 - 1);
+        for (qint32 i = 0; i < transition0.size(); i++) {
+            transition0[i] = 0.5 + 0.5 * cos(i * delta); // 1 to 0
         }
     }
-    // If the transition is greater than the period, pop values from
-    // the back
-    // Note this this can result in discontinuous lines. This is intentional;
-    // To avoid discontinuities, I would seperately calculate the transition[]
-    // for both high and low states. However, the discontinuities look pretty cool
-    while (transitionLen * 2 > period) {
-        transition.pop_back();
-        transitionLen--;
+    QVector<double> transition1(transitionLen1);
+    if (transitionLen1 == 1) {transition1[0] = 0;}
+    else {
+        double delta = 3.1415926 / (double) (transitionLen1 - 1);
+        for (qint32 i = 0; i < transition1.size(); i++) {
+            transition1[i] = 0.5 - 0.5 * cos(i * delta); // 1 to 0
+        }
     }
-
-    qint32 activeTransIdx = m.offset * (qreal) period - transitionLen/2; // Transition start location (as an index). Should always be <= thisIdx
+    // Transition start location (as an index). Should always be <= thisIdx
+    // The start location is chosen such that the peaks are at roughly the same location
+    // as the transition width/smoothin factor is changed
+    qint32 activeTransIdx = m.offset * (qreal) period - transitionLen1 + (highLen - transitionLen1) / 2;
     while (activeTransIdx > 0) { activeTransIdx -= period; }
     qint8 transVal = 1; // The value that this transition is moving to.  0: high to low.  1: low to high.
     qint32 thisIdx = 0;
@@ -364,18 +366,23 @@ void ColourMap::CalcMaskIndex()
         // Calculate the value for this index
         const qint32 thisTransIdx = thisIdx - activeTransIdx;
         qreal thisVal;
-        if (thisTransIdx < transitionLen) {
-            // Currently in a transition
-            if (transVal) { // 0 to 1
-                thisVal = 1.0 - transition[thisTransIdx];
+
+        // Currently in a transition
+        if (transVal) { // 0 to 1
+            if (thisTransIdx < transitionLen1) {
+                thisVal = transition1[thisTransIdx]; // Transitioning
             }
-            else { // 1 to 0
-                thisVal = transition[thisTransIdx];
+            else {
+                thisVal = 1; // Finished transition
             }
         }
-        else {
-            // Not in a transition. Constant value
-            thisVal = transVal ? 1.0 : 0.0;
+        else { // 1 to 0
+            if (thisTransIdx < transitionLen0) {
+                thisVal = transition0[thisTransIdx]; // Transitioning
+            }
+            else {
+                thisVal = 0; // Finished transition
+            }
         }
         maskIndexed[thisIdx++] = thisVal;
     }
