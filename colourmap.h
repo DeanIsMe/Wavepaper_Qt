@@ -41,6 +41,8 @@ struct ClrFix {
     }
 };
 
+typedef QList<ClrFix> ColourList;
+
 /** ****************************************************************************
  * @brief The MaskCfg struct
  */
@@ -85,6 +87,8 @@ public:
     void EditColour(qint32 listIdx, QRgb newClr);
 
     const MaskCfg& GetMaskConfig() {return m;}
+    const ColourList& GetColourList() {return clrList;}
+    void SetColourList(ColourList& clrListIn);
     bool MaskIsEnabled() const {return m.enabled;}
 
     void SetMaskConfig(MaskCfg& maskCfgIn) {m = maskCfgIn; MaskSettingChanged();}
@@ -107,7 +111,7 @@ private:
 public:
     static const int clrIndexMax = 200; // The colour indices span from 0 to this number
 protected:
-    QList<ClrFix> clrList;
+    ColourList clrList;
     MaskCfg m;
     QVector<QColor> clrIndexed; // All colours from locations 0 to 1.0 (indices 0 to clrIndexMax)
     QVector<qreal> maskIndexed; // All mask values from locations 0 to 1.0 (indices 0 to clrIndexMax). Values are 0 to 1.0.

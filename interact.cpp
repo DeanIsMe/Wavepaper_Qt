@@ -17,7 +17,7 @@ void Interact::SelectType(Type type) {
     if (typeSelected != type) {
         typeSelected = type;
         emit InteractTypeChanged(QVariant(typeSelected));
-        qDebug("Interact type changed!");
+        qDebug("Interact type changed! = %d", typeSelected);
     }
 }
 
@@ -45,6 +45,10 @@ void Interact::mousePressEvent(QGraphicsSceneMouseEvent *event, PreviewScene *sc
         // Interact with the mask
         maskConfigBackup = colourMap.GetMaskConfig();
         break;
+    case Type::colours:
+        // No backup required
+        clrListBackup = colourMap.GetColourList();
+        break;
     case Type::arrangement:
         // Interact with the emitter arrangement
         grpActive = imgGen->GetActiveArrangement();
@@ -54,6 +58,7 @@ void Interact::mousePressEvent(QGraphicsSceneMouseEvent *event, PreviewScene *sc
         }
         grpBackup = *grpActive; // Save, so that it can be reverted
         break;
+
     case Type::null:
         return;
         break;
@@ -79,8 +84,12 @@ void Interact::mouseReleaseEvent(QGraphicsSceneMouseEvent *event, PreviewScene *
         emit imgGen->EmitterArngmtChanged(); // Just need to redraw the axes lines when mirroring
         break;
 
+    case Type::colours:
+        break;
+
     case Type::mask:
         break;
+
     }
 
     active = Type::null;
@@ -141,8 +150,22 @@ void Interact::mouseMoveEvent(QGraphicsSceneMouseEvent *event, PreviewScene *sce
 
         emit imgGen->EmitterArngmtChanged();
     }
+    else if (active == Type::colours) {
+        ColourList newList = clrListBackup;
+        // Change the hue of every colour in the list
+        struct {
+            void adjustHue(QColor & clr, int hueOffset) {
+                clr = clr.toHsv();
+                clr.setHsv(modPos(clr.hue() + hueOffset, 360), clr.saturation(), clr.value());
+            }
+        } fn;
 
-    else if (active == Type::mask) {
+        int hueOffset = -deltaRatio.x() * 359; // 359 is max scale for hue
+        for (ClrFix& clrFix : newList) {
+            fn.adjustHue(clrFix.clr, hueOffset);
+        }
+        colourMap.SetColourList(newList);
+    }else if (active == Type::mask) {
         // *********************************************************************
         // Mask edit
         auto newMaskCfg = maskConfigBackup;
@@ -159,6 +182,7 @@ void Interact::mouseMoveEvent(QGraphicsSceneMouseEvent *event, PreviewScene *sce
         }
         colourMap.SetMaskConfig(newMaskCfg);
     }
+
     imgGen->NewQuickImageNeeded();
 }
 
@@ -175,6 +199,10 @@ void Interact::Cancel() {
         if (grpActive) {
             *grpActive = grpBackup;
         }
+        break;
+
+    case Type::colours:
+        colourMap.SetColourList(clrListBackup);
         break;
 
     case Type::mask:

@@ -39,11 +39,10 @@
    </attribute>
    <addaction name="actionSaveImage"/>
    <addaction name="separator"/>
+   <addaction name="actionEditGroup"/>
    <addaction name="actionHideEmitters"/>
-   <addaction name="separator"/>
    <addaction name="actionMore"/>
    <addaction name="actionFewer"/>
-   <addaction name="separator"/>
    <addaction name="actionMirrorHor"/>
    <addaction name="actionMirrorVert"/>
    <addaction name="separator"/>
@@ -225,6 +224,21 @@
    </property>
    <property name="toolTip">
     <string>Edit colours by dragging</string>
+   </property>
+  </action>
+  <action name="actionEditGroup">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/moveDots</normaloff>:/icons/moveDots</iconset>
+   </property>
+   <property name="text">
+    <string>Edit Group</string>
+   </property>
+   <property name="toolTip">
+    <string>Move the emitter group</string>
    </property>
   </action>
  </widget>

@@ -32,6 +32,8 @@ private:
     EmArrangement * grpActive;
     // For mask changes
     MaskCfg maskConfigBackup;
+    // For colour list changes
+    ColourList clrListBackup;
 
 private:
     void Cancel();
@@ -41,7 +43,7 @@ public:
     void mousePressEvent(QGraphicsSceneMouseEvent *event, PreviewScene * scene);
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event, PreviewScene * scene);
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event, PreviewScene * scene);
-    bool IsActive() {return active == Type::null;}
+    bool IsActive() {return active != Type::null;}
     bool TypeIsSelected(Type type) {return typeSelected == type;}
     bool TypeIsActive(Type type) {return active == type;}
     void SelectType(Type type);

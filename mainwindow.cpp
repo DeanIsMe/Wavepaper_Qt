@@ -223,6 +223,7 @@ void MainWindow::on_actionMaskEnable_triggered(bool checked)
  * @param type
  */
 void MainWindow::OnInteractChange(QVariant interactType) {
+    ui->actionEditGroup->setChecked(interactType == (Interact::Type::arrangement));
     ui->actionColoursEdit->setChecked(interactType == (Interact::Type::colours));
     ui->actionMaskEdit->setChecked(interactType == (Interact::Type::mask));
 }
@@ -239,6 +240,13 @@ void MainWindow::on_actionColoursEdit_toggled(bool arg1)
     interact.SetTypeSelect(Interact::Type::colours, arg1);
 }
 
+void MainWindow::on_actionEditGroup_toggled(bool arg1)
+{
+    interact.SetTypeSelect(Interact::Type::arrangement, arg1);
+}
+
 void MainWindow::on_actionHideEmitters_toggled(bool unused) {
     Q_UNUSED(unused);
 }
+
+

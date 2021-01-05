@@ -14,5 +14,6 @@
         <file alias="visibleOn">Resources/visibility-24px.svg</file>
         <file alias="save">Resources/save-24px.svg</file>
         <file alias="colourWheel">Resources/RGB_color_wheel_72.svg</file>
+        <file alias="moveDots">Resources/settings_ethernet-24px.svg</file>
     </qresource>
 </RCC>

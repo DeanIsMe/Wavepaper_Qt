@@ -119,6 +119,13 @@ void ColourMap::EditColour(qint32 listIdx, QRgb newClr)
     ClrListChanged();
 }
 
+void ColourMap::SetColourList(ColourList &clrListIn) {
+    this->beginResetModel();
+    clrList = clrListIn;
+    ClrListChanged();
+    this->endResetModel();
+}
+
 /** ****************************************************************************
  * @brief ColourMap::SetPreset replaces the entire colour list with a preset list
  * @param preset
@@ -719,7 +726,6 @@ void ColourMapEditorWidget::DrawColourBars()
 
     imgBarBase = QImage((uchar*)dataBarBase->getDataPtr(), barWidth, sizeClrBar.height(), QImage::Format_ARGB32,
                        ImageDataDealloc, dataBarBase);
-
 
     imgBarMask = QImage((uchar*)dataBarMask->getDataPtr(), barWidth, sizeClrBar.height(), QImage::Format_ARGB32,
                        ImageDataDealloc, dataBarMask);

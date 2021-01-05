@@ -42,5 +42,6 @@ private slots:
     void on_actionHideEmitters_toggled(bool arg1);
     void on_actionMaskEdit_toggled(bool arg1);
     void on_actionColoursEdit_toggled(bool arg1);
+    void on_actionEditGroup_toggled(bool arg1);
 };
 #endif // MAINWINDOW_H
