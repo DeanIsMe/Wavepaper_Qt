@@ -151,21 +151,34 @@ void Interact::mouseMoveEvent(QGraphicsSceneMouseEvent *event, PreviewScene *sce
         emit imgGen->EmitterArngmtChanged();
     }
     else if (active == Type::colours) {
+        // *********************************************************************
+        // Colour list edit
+        // Adjust Hue
         ColourList newList = clrListBackup;
         // Change the hue of every colour in the list
-        struct {
-            void adjustHue(QColor & clr, int hueOffset) {
-                clr = clr.toHsv();
-                clr.setHsv(modPos(clr.hue() + hueOffset, 360), clr.saturation(), clr.value());
-            }
-        } fn;
-
-        int hueOffset = -deltaRatio.x() * 359; // 359 is max scale for hue
+        int hueOffset = -deltaRatio.y() * 359; // 359 is max scale for hue
         for (ClrFix& clrFix : newList) {
-            fn.adjustHue(clrFix.clr, hueOffset);
+            clrFix.clr = clrFix.clr.toHsv();
+            clrFix.clr.setHsv(modPos(clrFix.clr.hue() + hueOffset, 360),
+                              clrFix.clr.saturation(), clrFix.clr.value());
+            clrFix.clr = clrFix.clr.toRgb();
         }
+
+        // Adjust Dynamic range (by pushing colours towards one side)
+        // f(x) = x(ax + b)
+        // f(1) = 1 = a + b        b = 1 - a
+        // f'(0) >= 0        b >= 0
+        // a: non-linearity. 0: no change. 1: maximum (to avoid negative values breaking things)
+        qreal b = std::max(0., 1 - deltaRatio.x());
+        qreal a = 1 - b;
+        for (ClrFix& clrFix : newList) {
+            const auto x = clrFix.loc;
+            clrFix.loc = a * x * x + b * x;
+        }
+
         colourMap.SetColourList(newList);
-    }else if (active == Type::mask) {
+    }
+    else if (active == Type::mask) {
         // *********************************************************************
         // Mask edit
         auto newMaskCfg = maskConfigBackup;
