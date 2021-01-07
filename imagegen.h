@@ -62,8 +62,11 @@ private:
         qreal imgPerSimUnit; // The imgPerSimUnit that this template was generated with
         void MakeNew(QRect size, qreal wavelengthIn, qreal imgPerSimUnitIn);
     };
-    struct PhasorSumArr {
-        Complex2D_C * arr = nullptr; // Resultant phasor of all emitters summed together
+    struct SumArray {
+        Complex2D_C * phasorArr = nullptr; // Resultant phasor of all emitters summed together
+        Double2D_C * ampArr = nullptr; // Amplitude of each point in sumArr
+        double ampMax = 0;
+        double ampMin = 999999;
         qint32 checkSum = 0;
     };
 
@@ -77,7 +80,7 @@ public:
         TemplateDist templateDist;
         TemplateAmp templateAmp;
         TemplatePhasor templatePhasor;
-        PhasorSumArr phasorSumArr;
+        SumArray combinedArr;
     };
     // The block below must be kept in sync
     GenSettings genPreview;

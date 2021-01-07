@@ -293,20 +293,39 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
     sum.Add((void*)&genSet.templatePhasor, sizeof(genSet.templatePhasor));
     sum.Add((void*)emittersImg.data(), sizeof(emittersImg[0]) * emittersImg.length());
     bool phasorSumChanged = false;
-    if (templatePhasorChanged || genSet.phasorSumArr.arr == nullptr ||
-            genSet.phasorSumArr.checkSum != sum.Get()) {
+    if (templatePhasorChanged || genSet.combinedArr.phasorArr == nullptr ||
+            genSet.combinedArr.checkSum != sum.Get()) {
         // Recalculate the phasor sum array
-        if (genSet.phasorSumArr.arr) {delete genSet.phasorSumArr.arr;}
-        genSet.phasorSumArr.arr = new Complex2D_C(genSet.areaImg);
-        genSet.phasorSumArr.checkSum = sum.Get();
+        if (genSet.combinedArr.phasorArr) {delete genSet.combinedArr.phasorArr;}
+        genSet.combinedArr.phasorArr = new Complex2D_C(genSet.areaImg);
+        genSet.combinedArr.checkSum = sum.Get();
         for (const EmitterI& e : emittersImg) {
-            AddPhasorArr(e, *genSet.templateDist.arr, *genSet.templateAmp.arr, *genSet.templatePhasor.arr, *genSet.phasorSumArr.arr);
+            AddPhasorArr(e, *genSet.templateDist.arr, *genSet.templateAmp.arr, *genSet.templatePhasor.arr, *genSet.combinedArr.phasorArr);
         }
+
+        // Calculate amplitudes, min and max values
+        if (genSet.combinedArr.ampArr) {delete genSet.combinedArr.ampArr;}
+        genSet.combinedArr.ampArr = new Double2D_C(genSet.combinedArr.phasorArr->rect());
+        genSet.combinedArr.ampMax = 0;
+        genSet.combinedArr.ampMin = genSet.templateAmp.arr->getPoint(1,1);
+
+        qint32 y0 = genSet.combinedArr.ampArr->yTop;
+        qint32 ye = genSet.combinedArr.ampArr->yTop + genSet.combinedArr.ampArr->height;
+        qint32 x0 = genSet.combinedArr.ampArr->xLeft;
+        qint32 xe = genSet.combinedArr.ampArr->xLeft + genSet.combinedArr.ampArr->width;
+        for (qint32 y = y0; y < ye; y++) {
+            for (int x = x0; x < xe; x++) {
+                qreal amp = std::abs(genSet.combinedArr.phasorArr->getPoint(x, y));
+                genSet.combinedArr.ampArr->setPoint(x, y, amp);
+                genSet.combinedArr.ampMin = std::min(genSet.combinedArr.ampMin, amp);
+                genSet.combinedArr.ampMax = std::max(genSet.combinedArr.ampMax, amp);
+            }
+        }
+
         phasorSumChanged = true;
     }
 
     auto timePostPhasors = fnTimer.elapsed();
-    qint64 timePostColorIndex, timePostPhasorMag;
 
     // COLOUR MAP
 
@@ -314,29 +333,13 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
     Rgb2D_C* pixArr = new Rgb2D_C(genSet.areaImg);
 
     // Colour map
-    timePostColorIndex = fnTimer.elapsed();
-
-    // Find max and min values
-    Double2D_C amplitude(genSet.phasorSumArr.arr->rect());
-    qreal maxAmp = 0;
-    qreal minAmp = genSet.templateAmp.arr->getPoint(1,1);
-
-    for (int y = pixArr->yTop; y < pixArr->yTop + pixArr->height; y++) {
-        for (int x = pixArr->xLeft; x < pixArr->xLeft + pixArr->width; x++) {
-            qreal amp = std::abs(genSet.phasorSumArr.arr->getPoint(x, y));
-            amplitude.setPoint(x, y, amp);
-            minAmp = std::min(minAmp, amp);
-            maxAmp = std::max(maxAmp, amp);
-        }
-    }
-
-    timePostPhasorMag = fnTimer.elapsed();
-
+    qreal maxAmp = genSet.combinedArr.ampMax;
+    qreal minAmp = genSet.combinedArr.ampMin;
     qreal mult = 1. / (maxAmp - minAmp);
     for (int y = pixArr->yTop; y < pixArr->yTop + pixArr->height; y++) {
         for (int x = pixArr->xLeft; x < pixArr->xLeft + pixArr->width; x++) {
             // Calculate location in range 0 to 1;
-            qreal loc = (amplitude.getPoint(x, y) - minAmp) * mult;
+            qreal loc = (genSet.combinedArr.ampArr->getPoint(x, y) - minAmp) * mult;
             pixArr->setPoint(x, y, colourMap.GetColourValue(loc));
         }
     }
@@ -368,12 +371,6 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
                               timePostImage - timePostClrMap);
     qDebug() << imgGenTime;
 
-
-//    QString clrTime = QString::asprintf("Colouring=%4lldms. %4lldms index, %4lldms mag, %4lldms clrMap",
-//                      timePostClrMap - timePostPhasors,
-//                      timePostColorIndex - timePostPhasors,
-//                      timePostPhasorMag - timePostColorIndex,
-//                      timePostClrMap - timePostPhasorMag);
 
     mainWindow->textWindow->appendPlainText(imgGenTime);
 
