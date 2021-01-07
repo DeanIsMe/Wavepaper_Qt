@@ -62,6 +62,10 @@ private:
         qreal imgPerSimUnit; // The imgPerSimUnit that this template was generated with
         void MakeNew(QRect size, qreal wavelengthIn, qreal imgPerSimUnitIn);
     };
+    struct PhasorSumArr {
+        Complex2D_C * arr = nullptr; // Resultant phasor of all emitters summed together
+        qint32 checkSum = 0;
+    };
 
 public:
     Settings s;
@@ -73,6 +77,7 @@ public:
         TemplateDist templateDist;
         TemplateAmp templateAmp;
         TemplatePhasor templatePhasor;
+        PhasorSumArr phasorSumArr;
     };
     // The block below must be kept in sync
     GenSettings genPreview;
@@ -135,7 +140,7 @@ private:
     static QRgb ColourAngleToQrgb(int32_t angle, uint8_t alpha = 255);
     void AddPhasorArr(double imgPerSimUnit, double wavelength, EmitterI e, const Double2D_C & templateDist,
                       const Double2D_C & templateAmp, Complex2D_C & phasorArr);
-    static void AddPhasorArr(EmitterI e, const Double2D_C &templateDist, const Double2D_C &templateAmp, const Complex2D_C &templatePhasor, Complex2D_C &phasorArr);
+    static void AddPhasorArr(const EmitterI& e, const Double2D_C &templateDist, const Double2D_C &templateAmp, const Complex2D_C &templatePhasor, Complex2D_C &phasorArr);
     static int EmitterArrangementToLocs(const EmArrangement &arngmt, QVector<QPointF> &emLocsOut);
     void CalcDistTemplate(QRect templateRect, GenSettings &genSet);
     void CalcAmpTemplate(qreal distOffset, GenSettings &genSet);

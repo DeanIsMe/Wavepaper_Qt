@@ -181,5 +181,47 @@ qreal Snap(qreal val, qreal snapInc, qreal snapWithin);
 qreal Snap(qreal val, qreal snapInc);
 qint32 Snap(qint32 val, qint32 snapInc, qint32 snapWithin);
 
+/** ****************************************************************************
+ * @brief The CheckSum class performs a very simple sum over data
+ * ranges, treating all data as arrays of uint8_t. Used to compare data.
+ */
+class CheckSum {
+public:
+    qint32 sum = 0;
+    CheckSum() {}
+    CheckSum(void* ptr, int byteCount) {
+        Add(ptr, byteCount);
+    }
+    inline void Add(quint8 val) {
+        sum += val;
+    }
+    void Add(void* ptr, int byteCount) {
+        quint8 * ptr8 = (quint8 *) ptr;
+        quint8 * ptrEnd = ptr8 + byteCount;
+        while (ptr8 < ptrEnd) {
+            Add(*ptr8++);
+        }
+    }
+    void Add(qint8 val) {
+        return Add((quint8)val);
+    }
+    void Add(qint16 val) {
+        return Add((void *) &val, sizeof(val));
+    }
+    void Add(quint16 val) {
+        return Add((void *) &val, sizeof(val));
+    }
+    void Add(qint32 val) {
+        return Add((void *) &val, sizeof(val));
+    }
+    void Add(quint32 val) {
+        return Add((void *) &val, sizeof(val));
+    }
+    qint32 Get() {return sum;}
+    operator ==(CheckSum b) {return sum == b.sum;}
+    operator !=(CheckSum b) {return sum != b.sum;}
+    operator int() const {return sum;}
+};
+
 
 #endif // DATATYPES_H

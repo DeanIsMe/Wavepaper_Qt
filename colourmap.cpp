@@ -49,7 +49,7 @@ void ColourMap::MaskSettingChanged() {
  */
 void ColourMap::RecalcSlot()
 {
-    // This slot exists to prevent unnecessary extra recalculation
+    // This signal-slot pair exists to prevent unnecessary extra recalculation
     if (pendingRecalcClrIndex) {
         CalcColourIndex();
     }

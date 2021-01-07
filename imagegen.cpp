@@ -246,6 +246,7 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
         // !@# need to upgrade the use of this template function to avoid crazy big arrays
     }
 
+    // *************************************************************************
     // Distance template
     bool templatDistChanged = false;
     if (!genSet.templateDist.arr || !genSet.templateDist.arr->rect().contains(templateRect) ||
@@ -255,7 +256,8 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
         templatDistChanged = true;
     }
 
-    // Amplitude template
+    // *************************************************************************
+    // Single emiiter amplitude template
     bool templatAmpChanged = false;
     qreal distOffset = (qreal)(genSet.areaImg.height() + genSet.areaImg.width()) / 2. * s.distOffsetF / genSet.imgPerSimUnit;
     if (templatDistChanged || !genSet.templateAmp.arr ||
@@ -266,12 +268,15 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
         templatAmpChanged = true;
     }
 
-    // Phasor template
+    // *************************************************************************
+    // Single emitter phasor template
+    bool templatePhasorChanged = false;
     if (templatAmpChanged || !genSet.templatePhasor.arr ||
             genSet.imgPerSimUnit != genSet.templatePhasor.imgPerSimUnit ||
             s.wavelength != genSet.templatePhasor.wavelength ||
             !genSet.templatePhasor.arr->rect().contains(templateRect)) {
         CalcPhasorTemplate(templateRect, genSet);
+        templatePhasorChanged = true;
     }
 
     auto timePostTemplates = fnTimer.elapsed();
@@ -280,9 +285,24 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
 
     // Generate a map of the phasors for each emitter, and sum together
     // Use the distance and amplitude templates
-    Complex2D_C * phasorSumArr = new Complex2D_C(genSet.areaImg);
-    for (EmitterI e : emittersImg) {
-        AddPhasorArr(e, *genSet.templateDist.arr, *genSet.templateAmp.arr, *genSet.templatePhasor.arr, *phasorSumArr);
+
+    // First, determine if it needs to be recalculated
+    CheckSum sum;
+    sum.Add((void*)&genSet.templateDist, sizeof(genSet.templateDist));
+    sum.Add((void*)&genSet.templateAmp, sizeof(genSet.templateAmp));
+    sum.Add((void*)&genSet.templatePhasor, sizeof(genSet.templatePhasor));
+    sum.Add((void*)emittersImg.data(), sizeof(emittersImg[0]) * emittersImg.length());
+    bool phasorSumChanged = false;
+    if (templatePhasorChanged || genSet.phasorSumArr.arr == nullptr ||
+            genSet.phasorSumArr.checkSum != sum.Get()) {
+        // Recalculate the phasor sum array
+        if (genSet.phasorSumArr.arr) {delete genSet.phasorSumArr.arr;}
+        genSet.phasorSumArr.arr = new Complex2D_C(genSet.areaImg);
+        genSet.phasorSumArr.checkSum = sum.Get();
+        for (const EmitterI& e : emittersImg) {
+            AddPhasorArr(e, *genSet.templateDist.arr, *genSet.templateAmp.arr, *genSet.templatePhasor.arr, *genSet.phasorSumArr.arr);
+        }
+        phasorSumChanged = true;
     }
 
     auto timePostPhasors = fnTimer.elapsed();
@@ -297,13 +317,13 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
     timePostColorIndex = fnTimer.elapsed();
 
     // Find max and min values
-    Double2D_C amplitude(phasorSumArr->rect());
+    Double2D_C amplitude(genSet.phasorSumArr.arr->rect());
     qreal maxAmp = 0;
     qreal minAmp = genSet.templateAmp.arr->getPoint(1,1);
 
     for (int y = pixArr->yTop; y < pixArr->yTop + pixArr->height; y++) {
         for (int x = pixArr->xLeft; x < pixArr->xLeft + pixArr->width; x++) {
-            qreal amp = std::abs(phasorSumArr->getPoint(x, y));
+            qreal amp = std::abs(genSet.phasorSumArr.arr->getPoint(x, y));
             amplitude.setPoint(x, y, amp);
             minAmp = std::min(minAmp, amp);
             maxAmp = std::max(maxAmp, amp);
@@ -339,21 +359,23 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
 
     auto timePostImage = fnTimer.elapsed();
 
-    delete phasorSumArr;
-    qDebug("ImageGen::GenerateImage took %4lld ms. Setup=%4lldms, PhasorMap=%4lldms, Colouring=%4lldms, Image=%4lldms",
-           fnTimer.elapsed(), timePostTemplates, timePostPhasors - timePostTemplates,
-           timePostClrMap - timePostPhasors,
-           timePostImage - timePostClrMap);
+    QString imgGenTime = \
+            QString::asprintf("ImageGen %4lld ms. Templates=%4lldms (%d,%d,%d), PhasorMap=%4lldms (%d), Colouring=%4lldms, Image=%4lldms",
+                              fnTimer.elapsed(), timePostTemplates,
+                              templatDistChanged, templatAmpChanged, templatePhasorChanged,
+                              timePostPhasors - timePostTemplates, phasorSumChanged,
+                              timePostClrMap - timePostPhasors,
+                              timePostImage - timePostClrMap);
+    qDebug() << imgGenTime;
 
 
+//    QString clrTime = QString::asprintf("Colouring=%4lldms. %4lldms index, %4lldms mag, %4lldms clrMap",
+//                      timePostClrMap - timePostPhasors,
+//                      timePostColorIndex - timePostPhasors,
+//                      timePostPhasorMag - timePostColorIndex,
+//                      timePostClrMap - timePostPhasorMag);
 
-    QString clrTime = QString::asprintf("Colouring=%4lldms. %4lldms index, %4lldms mag, %4lldms clrMap",
-                      timePostClrMap - timePostPhasors,
-                      timePostColorIndex - timePostPhasors,
-                      timePostPhasorMag - timePostColorIndex,
-                      timePostClrMap - timePostPhasorMag);
-    qDebug() << clrTime; // !@#$
-    mainWindow->textWindow->appendPlainText(clrTime);
+    mainWindow->textWindow->appendPlainText(imgGenTime);
 
     return 0;
 }
@@ -554,7 +576,7 @@ void ImageGen::AddPhasorArr(double imgPerSimUnit, double wavelength, EmitterI e,
     return;
 }
 
-void ImageGen::AddPhasorArr(EmitterI e, const Double2D_C & templateDist,
+void ImageGen::AddPhasorArr(const EmitterI& e, const Double2D_C & templateDist,
                             const Double2D_C & templateAmp, const Complex2D_C & templatePhasor,
                             Complex2D_C & phasorArr) {
     // phasorArray dimensions are that of the image. emLoc is the location we're calculating for
