@@ -14,46 +14,6 @@
 #include <QLineSeries>
 using namespace QtCharts;
 
-enum class ClrMapPreset {
-    hot,
-    cool,
-    jet,
-    bone,
-    parula,
-    hsv,
-};
-
-/** ****************************************************************************
- * @brief The ClrFix struct is just a combination of colour + location (0 to 1)
- */
-struct ClrFix {
-    QColor clr; // Colour at this location
-    qreal loc; // 0.0 to 1.0
-    ClrFix(QColor _clr, qreal _loc) : clr(_clr), loc(_loc) {}
-    bool operator <(const ClrFix& other) const {
-        return loc < other.loc;
-    }
-    bool operator >(const ClrFix& other) const {
-        return loc > other.loc;
-    }
-    bool operator==(const ClrFix& other) const {
-        return loc == other.loc;
-    }
-};
-
-typedef QList<ClrFix> ColourList;
-
-/** ****************************************************************************
- * @brief The MaskCfg struct
- */
-struct MaskCfg { // Mask settings
-    bool enabled = false; // True if the mask is on
-    qreal numRevs = 3; // How many ripples from from min to max
-    qreal offset = 0; // Phase offset, as a count of periods. Should be 0 to 1.
-    qreal dutyCycle = 0.3; // 0.5 for even (50%). Must be 0 to 1.0
-    qreal smooth = 0.5; // Width factor of transition. 0=immediate transition. 1.0=transition is 50% of period.
-    QColor backColour = QColor(0,0,0); // When mask is 0%, what the colour will be
-};
 
 /** ****************************************************************************
  * @brief The ColourMap class performs that actual mapping from value to colour
@@ -67,36 +27,29 @@ class ColourMap : public QAbstractTableModel
     // ColourMap class performs that actual mapping from value to colour
     // for generating the images and previews
 public:
+    ColourMap(ColourList & clrListIn, MaskCfg & maskCfgIn, ImageGen& imgGenIn);
 
-public:
-    ColourMap();
+    QRgb GetColourValue(const GenSettings &genSet, qreal loc) const;
+    QRgb GetBaseColourValue(const GenSettings &genSet, qreal loc) const;
+    qreal GetMaskValue(const GenSettings &genSet, qreal loc) const;
+    QRgb GetColourValueIndexed(const GenSettings &genSet, qreal loc) const;
+    QRgb GetBlendedColourValue(const GenSettings &genSet, qreal loc) const;
 
-    QRgb GetColourValue(qreal loc) const;
-    QRgb GetBlendedColourValue(qreal loc) const;
-    QRgb GetBaseColourValue(qreal loc) const;
-    qreal GetMaskValue(qreal loc) const;
-    QRgb GetColourValueIndexed(qreal loc) const;
-
-    ClrFix GetClrFix(qint32 index) const;
+    static ClrFix GetClrFix(ColourList &colourList, qint32 index);
     qint32 GetColourFixCount() const {return clrList.length();}
 
     void AddColour(QColor clr, qreal loc, qint32 listIdx = -1);
     void AddColour(ClrFix clrFix, qint32 listIdx = -1);
-    bool RemoveColour(qint32 listIdx);
-    void MoveColour(qint32 listIdxFrom, qint32 listIdxTo) {clrList.move(listIdxFrom, listIdxTo);}
-    void EditColourLoc(qint32 listIdx, qreal newLoc);
+    static void EditColourLoc(ColourList &colourList, qint32 listIdx, qreal newLoc);
     void EditColour(qint32 listIdx, QRgb newClr);
 
-    const MaskCfg& GetMaskConfig() {return m;}
-    const ColourList& GetColourList() {return clrList;}
     void SetColourList(ColourList& clrListIn);
-    bool MaskIsEnabled() const {return m.enabled;}
-
-    void SetMaskConfig(MaskCfg& maskCfgIn) {m = maskCfgIn; MaskSettingChanged();}
-
-    bool RecalcIsPending() const {return pendingRecalcClrIndex || pendingRecalcMaskIndex;}
 
     void SetPreset(ClrMapPreset preset);
+
+    void CalcColourIndex(GenSettings &genSet);
+    void CalcMaskIndex(GenSettings &genSet);
+
 public slots:
     void SetPresetHot() {SetPreset(ClrMapPreset::hot);}
     void SetPresetCool() {SetPreset(ClrMapPreset::cool);}
@@ -105,21 +58,10 @@ public slots:
     void SetPresetParula() {SetPreset(ClrMapPreset::parula);}
     void SetPresetHsv() {SetPreset(ClrMapPreset::hsv);}
 
-private:
-    void CalcColourIndex();
-    void CalcMaskIndex();
-
-public:
-    static const int clrIndexMax = 200; // The colour indices span from 0 to this number
 protected:
-    ColourList clrList;
-    MaskCfg m;
-    QVector<QColor> clrIndexed; // All colours from locations 0 to 1.0 (indices 0 to clrIndexMax)
-    QVector<QRgb> clrIndexedRgb; // All colours from locations 0 to 1.0 (indices 0 to clrIndexMax)
-    QVector<qreal> maskIndexed; // All mask values from locations 0 to 1.0 (indices 0 to clrIndexMax). Values are 0 to 1.0.
-    QVector<quint32> maskIndexedInt; // All mask values from locations 0 to 1.0 (indices 0 to clrIndexMax). Values are (0 to 255) << 24
-    bool pendingRecalcClrIndex = true;
-    bool pendingRecalcMaskIndex = true;
+    ColourList & clrList; // Used for QAbstractTableModel
+    MaskCfg & maskCfg;
+    ImageGen & imgGen;
 
 protected:
     static QColor Interpolate(qreal loc, const ClrFix& before, const ClrFix& after);
@@ -128,13 +70,7 @@ protected:
     void ClrListChanged(); // Called any time an edit is made to the colour list
     void MaskSettingChanged(); // Called any time an edit is made to the mask
 
-private slots:
-    void RecalcSlot();
-public slots:
-    bool SetMaskEnable(bool on);
-
 signals:
-    void RecalcSignal(); // Emitted any time an edit is made to the mask
     void NewClrMapReady(); // Emitted after the new colour index is made - ready to be used by other parts of the program
 
     // *************************************************************************
@@ -189,16 +125,18 @@ class ColourMapEditorWidget : public QWidget {
 private:
     static constexpr int heightClrBar = 30;
 public:
-    ColourMapEditorWidget(ColourMap* clrMapIn);
+    ColourMapEditorWidget(ImageGen& imgGenIn);
     ~ColourMapEditorWidget();
+    void DrawColourBars(GenSettings &genSet);
 
 private slots:
-    void DrawColourBars();
+    void DrawColourBarsPreview();
 
 public slots:
     void SetMaskChartVisible(bool on);
 
 private:
+    ImageGen& imgGen;
     ColourMap * clrMap;
 
     qint32 barWidth; // The width of the colour bar image
@@ -222,7 +160,5 @@ private:
 protected:
     void resizeEvent(QResizeEvent *event) override;
 };
-
-extern ColourMap colourMap;
 
 #endif // COLOURMAP_H

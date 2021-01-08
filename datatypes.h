@@ -6,6 +6,7 @@
 #include <QRect>
 #include <QRgb>
 #include <QDebug>
+#include <QColor>
 #include <complex>
 
 #define FP_TO_INT(fp) (fp + 0.5 - (fp<0))
@@ -222,6 +223,128 @@ public:
     operator !=(CheckSum b) {return sum != b.sum;}
     operator int() const {return sum;}
 };
+
+
+
+/** ************************************************************************ **/
+struct TemplateDist {
+    Double2D_C * arr = nullptr; // Index is image units. Values are scene units
+    qreal imgPerSimUnit; // The imgPerSimUnit that this template was generated with
+};
+struct TemplateAmp {
+    Double2D_C * arr = nullptr; // Index is image units
+    qreal distOffset; // the distOffset used in the template amp calculation
+};
+struct TemplatePhasor {
+    // Use the MakeNew function to make any changes to these variables (ensures that variables are in sync)
+    Complex2D_C * arr = nullptr; // Simulation units. Depends on imgPerSimUnit or wavelength.
+    qreal wavelength; // The wavelength that this template was generated with
+    qreal imgPerSimUnit; // The imgPerSimUnit that this template was generated with
+    void MakeNew(QRect size, qreal wavelengthIn, qreal imgPerSimUnitIn);
+};
+struct SumArray {
+    Complex2D_C * phasorArr = nullptr; // Resultant phasor of all emitters summed together
+    Double2D_C * ampArr = nullptr; // Amplitude of each point in sumArr
+    double ampMax = 0;
+    double ampMin = 999999;
+    qint32 checkSum = 0;
+};
+
+/** ****************************************************************************
+ * @brief The GenSettings struct
+ */
+struct GenSettings {
+    static constexpr qint32 dfltImgPointsQuick = 100000;
+    static constexpr qint32 dfltImgPointsPreview = 500000;
+    double targetImgPoints = dfltImgPointsPreview; // Total number of points in the preview. Change with setTargetImgPoints()
+    double imgPerSimUnit; // The imgPerSimUnit that this template was generated with
+    QRect areaImg; // The rectangle of the image view area (image coordinates)
+    bool indexedClr = true; // True for faster (but less accurate) colour map
+    // Cached data
+    TemplateDist templateDist;
+    TemplateAmp templateAmp;
+    TemplatePhasor templatePhasor;
+    SumArray combinedArr;
+    // Colour index
+    int clrIndexMax = 200; // The colour indices span from 0 to this number
+    // Colour map
+    QVector<QColor> clrIndexed; // All colours from locations 0 to 1.0 (indices 0 to clrIndexMax)
+    QVector<QRgb> clrIndexedRgb; // All colours from locations 0 to 1.0 (indices 0 to clrIndexMax)
+    // Mask map
+    QVector<qreal> maskIndexed; // All mask values from locations 0 to 1.0 (indices 0 to clrIndexMax). Values are 0 to 1.0.
+    QVector<quint32> maskIndexedInt; // All mask values from locations 0 to 1.0 (indices 0 to clrIndexMax). Values are (0 to 255) << 24
+};
+
+
+/** ****************************************************************************
+ * @brief The ClrMapPreset enum lists the available preset types
+ * For any added type, a button should be added.
+ */
+enum class ClrMapPreset {
+    hot,
+    cool,
+    jet,
+    bone,
+    parula,
+    hsv,
+};
+
+/** ****************************************************************************
+ * @brief The ClrFix struct is just a combination of colour + location (0 to 1)
+ */
+struct ClrFix {
+    QColor clr; // Colour at this location
+    qreal loc; // 0.0 to 1.0
+    ClrFix(QColor _clr, qreal _loc) : clr(_clr), loc(_loc) {}
+    bool operator <(const ClrFix& other) const {
+        return loc < other.loc;
+    }
+    bool operator >(const ClrFix& other) const {
+        return loc > other.loc;
+    }
+    bool operator==(const ClrFix& other) const {
+        return loc == other.loc;
+    }
+};
+
+typedef QList<ClrFix> ColourList;
+
+/** ****************************************************************************
+ * @brief The MaskCfg struct
+ */
+struct MaskCfg { // Mask settings
+    bool enabled = false; // True if the mask is on
+    qreal numRevs = 3; // How many ripples from from min to max
+    qreal offset = 0; // Phase offset, as a count of periods. Should be 0 to 1.
+    qreal dutyCycle = 0.3; // 0.5 for even (50%). Must be 0 to 1.0
+    qreal smooth = 0.5; // Width factor of transition. 0=immediate transition. 1.0=transition is 50% of period.
+    QColor backColour = QColor(0,0,0); // When mask is 0%, what the colour will be
+};
+
+
+/** ****************************************************************************
+ * @brief The Settings struct holds all of the settings that describe the
+ * current pattern
+ */
+struct Settings {
+    double wavelength = 40; // Wavelength. Simulation units
+    double distOffsetF = 0.1; // controls linearity. Range 0 to 1+, normally 0.1. Amplitude drops off at rate of 1/(r + sceneLength * distOffsetF).
+    // as distOffsetF approaches 0, the amplitude at each emitter approaches infinity.
+    bool emittersInSync; // If true then all emitters are in phase with the same amplitude. If false, then the energizer determines phase & amplitude
+    QPointF energizerLoc; // The location of the energizer that determines amplitude and phase by the distance to each emitter
+    QList<EmArrangement> emArrangements;
+    ColourList clrList; // Editing this should be handled through the ColourMap class, to update the table accordingly
+    MaskCfg maskCfg;
+    struct {
+        double aspectRatio = 1080./1920.; // width / height of the preview window, simulation area, generated image, ...
+        double zoomLevel = 1; //
+        QPointF center{0,0};
+    } view;
+    // Controlling information displayed
+    // (Doesn't affect the actual patten)
+    double emitterRadius = 2.; // Emitter radius, simulation units
+};
+
 
 
 #endif // DATATYPES_H

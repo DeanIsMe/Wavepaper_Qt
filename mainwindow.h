@@ -7,6 +7,8 @@
 #include "datatypes.h"
 #include "interact.h"
 
+class ColourMapEditorWidget;
+
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
@@ -22,6 +24,7 @@ public:
     PreviewView * previewView;
     PreviewScene * previewScene;
     QPlainTextEdit * textWindow;
+    ColourMapEditorWidget* colourMapEditor;
 
 
     void OnInteractChange(QVariant interactType);

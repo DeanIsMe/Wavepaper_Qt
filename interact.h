@@ -2,8 +2,8 @@
 #define INTERACT_H
 
 #include "datatypes.h"
-#include "colourmap.h"
 #include <QGraphicsView>
+class ColourMap;
 
 /** ****************************************************************************
  * @brief The Interact class
@@ -21,7 +21,8 @@ public:
 private:
     static constexpr Type defaultType = Type::arrangement;
 
-    ImageGen * const imgGen;
+    ImageGen & imgGen;
+    ColourMap & colourMap;
     Type active = Type::null; // Saves the active interact type upon mouse press.
     Type typeSelected = defaultType;
 
@@ -39,7 +40,7 @@ private:
     void Cancel();
 
 public:
-    Interact(ImageGen * imgGenIn) : imgGen(imgGenIn) {}
+    Interact(ImageGen& imgGenIn);
     void mousePressEvent(QGraphicsSceneMouseEvent *event, PreviewScene * scene);
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event, PreviewScene * scene);
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event, PreviewScene * scene);

@@ -8,25 +8,9 @@
 #include <QPainter>
 #include <QGraphicsView>
 #include "datatypes.h"
+#include "colourmap.h"
 
 void ImageDataDealloc(void * info);
-
-struct Settings {
-    double wavelength = 40; // Wavelength. Simulation units
-    double distOffsetF = 0.1; // controls linearity. Range 0 to 1+, normally 0.1. Amplitude drops off at rate of 1/(r + sceneLength * distOffsetF).
-    // as distOffsetF approaches 0, the amplitude at each emitter approaches infinity.
-    bool emittersInSync; // If true then all emitters are in phase with the same amplitude. If false, then the energizer determines phase & amplitude
-    QPointF energizerLoc; // The location of the energizer that determines amplitude and phase by the distance to each emitter
-    QList<EmArrangement> emArrangements;
-    struct {
-        double aspectRatio = 1080./1920.; // width / height of the preview window, simulation area, generated image, ...
-        double zoomLevel = 1; //
-        QPointF center{0,0};
-    } view;
-    // Controlling information displayed
-    // (Doesn't affect the actual patten)
-    double emitterRadius = 2.; // Emitter radius, simulation units
-};
 
 
 /** ****************************************************************************
@@ -37,8 +21,7 @@ class ImageGen : public QObject
     Q_OBJECT
 public:
     // PROGRAM SETTINGS
-    static constexpr qint32 imgPointsQuick = 100000;
-    static constexpr qint32 imgPointsPreview = 500000;
+
     static constexpr qreal templateOversizeFactor = 1.2; // The amount of extra length that the templates are calculated for (to prevent repeated recalculations)
 
 private:
@@ -48,46 +31,15 @@ private:
     bool pendingPreviewImage; // True if a preview image is pending to be generated
     bool hideEmitters = false; // When true, the emitters are not drawn on the preview window
 
-    struct TemplateDist {
-        Double2D_C * arr = nullptr; // Index is image units. Values are scene units
-        qreal imgPerSimUnit; // The imgPerSimUnit that this template was generated with
-    };
-    struct TemplateAmp {
-        Double2D_C * arr = nullptr; // Index is image units
-        qreal distOffset; // the distOffset used in the template amp calculation
-    };
-    struct TemplatePhasor {
-        Complex2D_C * arr = nullptr; // Simulation units. Depends on imgPerSimUnit or wavelength.
-        qreal wavelength; // The wavelength that this template was generated with
-        qreal imgPerSimUnit; // The imgPerSimUnit that this template was generated with
-        void MakeNew(QRect size, qreal wavelengthIn, qreal imgPerSimUnitIn);
-    };
-    struct SumArray {
-        Complex2D_C * phasorArr = nullptr; // Resultant phasor of all emitters summed together
-        Double2D_C * ampArr = nullptr; // Amplitude of each point in sumArr
-        double ampMax = 0;
-        double ampMin = 999999;
-        qint32 checkSum = 0;
-    };
-
 public:
-    Settings s;
-
-    struct GenSettings {
-        double targetImgPoints = imgPointsPreview; // Total number of points in the preview. Change with setTargetImgPoints()
-        double imgPerSimUnit; // The imgPerSimUnit that this template was generated with
-        QRect areaImg; // The rectangle of the image view area (image coordinates)
-        TemplateDist templateDist;
-        TemplateAmp templateAmp;
-        TemplatePhasor templatePhasor;
-        SumArray combinedArr;
-        bool indexedClr = true; // True for faster (but less accurate) colour map
-    };
+    Settings s; // Contains entire setup
 
     // The block below must be kept in sync
     GenSettings genPreview;
     GenSettings genQuick;
     QRectF areaSim; // The rectangle of the image view area (simulation coordinates)
+
+    // For the final rendered image:
     QSize outResolution; // The output will be rendered to this resolution
     bool saveWithTransparency = false; // If true, when an image with a mask is saved, it will be saved with transparency. If false, then the background colour will be rendered into the image
 
@@ -95,6 +47,7 @@ public:
     QImage imgPreview;
     QImage imgQuick;
     qint32 testVal = 1;
+    ColourMap colourMap;
 
 public:
     ImageGen();
@@ -116,7 +69,7 @@ public:
     qreal getDistOffsetF() const {return s.distOffsetF;}
     bool EmittersHidden();
 
-    void SaveImage();
+    void SaveImage(); // Saves to a file
 
 signals:
     void NewImageReady(QImage & image, qreal imgPerSimUnitOut, QColor backgroundClr); // A new image is ready

@@ -7,122 +7,33 @@
 #include <QHeaderView>
 #include <QPushButton>
 
-
-
-ColourMap colourMap;
-
 /** ****************************************************************************
  * @brief ColourMap::ColourMap
+ * @param clrListIn
+ * @param maskCfgIn
  */
-ColourMap::ColourMap()
+ColourMap::ColourMap(ColourList &clrListIn, MaskCfg &maskCfgIn, ImageGen& imgGenIn) :
+    clrList(clrListIn), maskCfg(maskCfgIn), imgGen(imgGenIn)
 {
-    QObject::connect(this, ColourMap::RecalcSignal,
-                     this, ColourMap::RecalcSlot, Qt::QueuedConnection);
 
-    // !@# temporary data
-    AddColour(ClrFix(Qt::green,   0.0));
-    AddColour(ClrFix(Qt::cyan,  0.50));
-    AddColour(ClrFix(Qt::blue, 1.00));
-
-    CalcColourIndex();
-    CalcMaskIndex();
 }
 
 /** ****************************************************************************
- * @brief ColourMap::ClrListChanged
- */
-void ColourMap::ClrListChanged() {
-    pendingRecalcClrIndex = true;
-    emit RecalcSignal();
-}
-
-/** ****************************************************************************
- * @brief ColourMap::MaskSettingChanged
- */
-void ColourMap::MaskSettingChanged() {
-    pendingRecalcMaskIndex = true;
-    emit RecalcSignal();
-}
-
-/** ****************************************************************************
- * @brief ColourMap::RecalcSlot
- */
-void ColourMap::RecalcSlot()
-{
-    // This signal-slot pair exists to prevent unnecessary extra recalculation
-    if (pendingRecalcClrIndex) {
-        CalcColourIndex();
-    }
-    if (pendingRecalcMaskIndex) {
-        CalcMaskIndex();
-    }
-    if (pendingRecalcClrIndex || pendingRecalcMaskIndex) {
-        emit NewClrMapReady();
-    }
-    pendingRecalcClrIndex = false;
-    pendingRecalcMaskIndex = false;
-}
-
-/** ****************************************************************************
- * @brief ColourMap::SetMaskEnable
- * @param on
- * @returns true if the value was changed
- */
-bool ColourMap::SetMaskEnable(bool on)
-{
-    if (m.enabled != on) {
-        m.enabled = on;
-        MaskSettingChanged();
-        return true;
-    }
-    return false;
-}
-
-/** ****************************************************************************
- * @brief ColourMap::AddColour
- * @param clr
- * @param loc
+ * @brief ColourMap::EditColourLoc
+ * @param colourList
  * @param listIdx
+ * @param newLoc
  */
-void ColourMap::AddColour(QColor clr, qreal loc, qint32 listIdx)
+void ColourMap::EditColourLoc(ColourList& colourList, qint32 listIdx, qreal newLoc)
 {
-    AddColour(ClrFix(clr, loc), listIdx);
-    ClrListChanged();
-}
-
-void ColourMap::AddColour(ClrFix clrFix, qint32 listIdx)
-{
-    clrList.insert(listIdx, clrFix);
-    ClrListChanged();
-}
-
-bool ColourMap::RemoveColour(qint32 listIdx)
-{
-    if (listIdx > clrList.length()) { return false; }
-    if (clrList.length() <= 2) { return false; } // Must have at least 2 colours
-    clrList.removeAt(listIdx);
-    ClrListChanged();
-    return true;
-}
-
-void ColourMap::EditColourLoc(qint32 listIdx, qreal newLoc)
-{
-    if (listIdx > clrList.length()) { return; }
-    clrList[listIdx].loc = qBound(0., newLoc, 1.0);
-    ClrListChanged();
-}
-
-void ColourMap::EditColour(qint32 listIdx, QRgb newClr)
-{
-    if (listIdx > clrList.length()) { return; }
-    clrList[listIdx].clr = newClr;
-    ClrListChanged();
+    if (listIdx > colourList.length()) { return; }
+    (colourList)[listIdx].loc = qBound(0., newLoc, 1.0);
 }
 
 void ColourMap::SetColourList(ColourList &clrListIn) {
+    // !@#$ CHANGE THIS
     this->beginResetModel();
     clrList = clrListIn;
-    ClrListChanged();
     this->endResetModel();
 }
 
@@ -182,9 +93,8 @@ void ColourMap::SetPreset(ClrMapPreset preset)
         clrList.append(ClrFix(QColor(255,0,0), 6./6.));
         break;
     }
-    ClrListChanged();
-
     this->endResetModel();
+    imgGen.NewImageNeeded();
 }
 
 /** ****************************************************************************
@@ -192,20 +102,20 @@ void ColourMap::SetPreset(ClrMapPreset preset)
  * @param loc is a number from 0 (min) to 1 (max)
  * @return a QRgb, using the alpha layer
  */
-QRgb ColourMap::GetColourValue(qreal loc) const {
-    qreal locAsIndex = (loc * (qreal)clrIndexMax);
-    int idxBefore = std::min(clrIndexMax-1, std::max(0,(int)locAsIndex));
+QRgb ColourMap::GetColourValue(const GenSettings& genSet, qreal loc) const {
+    qreal locAsIndex = (loc * (qreal)genSet.clrIndexMax);
+    int idxBefore = std::min(genSet.clrIndexMax-1, std::max(0,(int)locAsIndex));
     const qreal fb = (locAsIndex - idxBefore) * 255.;
     const qreal fa = (255. - fb);
     // fa and fb are multiplied by 255 because qRgba expects values in the range
     // 0 to 255, but redF and such return values in the range 0 to 1.0.
 
-    const QColor& before = clrIndexed[idxBefore];
-    const QColor& after = clrIndexed[idxBefore + 1];
+    const QColor& before = genSet.clrIndexed[idxBefore];
+    const QColor& after = genSet.clrIndexed[idxBefore + 1];
     return qRgba(fa * before.redF() + fb * after.redF(),
              fa * before.greenF() + fb * after.greenF(),
                 fa * before.blueF() + fb * after.blueF(),
-                 fa * maskIndexed[idxBefore] + fb * maskIndexed[idxBefore + 1]);
+                 fa * genSet.maskIndexed[idxBefore] + fb * genSet.maskIndexed[idxBefore + 1]);
 }
 
 /** ****************************************************************************
@@ -213,11 +123,11 @@ QRgb ColourMap::GetColourValue(qreal loc) const {
  * @param loc is a number from 0 (min) to 1 (max)
  * @return a QRgb, using the alpha layer
  */
-QRgb ColourMap::GetColourValueIndexed(qreal loc) const {
-    int locAsIndex = (loc * (qreal)clrIndexMax) + 0.5;
-    int idx = std::min(clrIndexMax-1, std::max(0, locAsIndex));
+QRgb ColourMap::GetColourValueIndexed(const GenSettings& genSet, qreal loc) const {
+    int locAsIndex = (loc * (qreal)genSet.clrIndexMax) + 0.5;
+    int idx = std::min(genSet.clrIndexMax-1, std::max(0, locAsIndex));
 
-    return (clrIndexedRgb[idx] & 0xFFFFFF) | (maskIndexedInt[idx]);
+    return (genSet.clrIndexedRgb[idx] & 0xFFFFFF) | (genSet.maskIndexedInt[idx]);
 }
 
 /** ****************************************************************************
@@ -225,20 +135,20 @@ QRgb ColourMap::GetColourValueIndexed(qreal loc) const {
  * @param loc is a number from 0 (min) to 1 (max)
  * @returns a QRgb with alpha layer off - the background is pre-blended into the colour
  */
-QRgb ColourMap::GetBlendedColourValue(qreal loc) const {
-    qreal locAsIndex = (loc * (qreal)clrIndexMax);
-    int idxBefore = std::min(clrIndexMax-1, std::max(0,(int)locAsIndex));
+inline QRgb ColourMap::GetBlendedColourValue(const GenSettings& genSet, qreal loc) const {
+    qreal locAsIndex = (loc * (qreal)genSet.clrIndexMax);
+    int idxBefore = std::min(genSet.clrIndexMax-1, std::max(0,(int)locAsIndex));
     const qreal fb = (locAsIndex - idxBefore);
     const qreal fa = 1. - fb;
 
-    const QColor& before = clrIndexed[idxBefore];
-    const QColor& after = clrIndexed[idxBefore + 1];
+    const QColor& before = genSet.clrIndexed[idxBefore];
+    const QColor& after = genSet.clrIndexed[idxBefore + 1];
 
-    qreal mask = (fa * maskIndexed[idxBefore] + fb * maskIndexed[idxBefore + 1]) * 255.;
+    qreal mask = (fa * genSet.maskIndexed[idxBefore] + fb * genSet.maskIndexed[idxBefore + 1]) * 255.;
     qreal maskInv = (255. - mask);
-    return qRgb(mask * (fa * before.redF() + fb * after.redF()) + maskInv * m.backColour.redF(),
-                mask * (fa * before.greenF() + fb * after.greenF()) + maskInv * m.backColour.greenF(),
-                mask * (fa * before.blueF() + fb * after.blueF()) + maskInv * m.backColour.blueF());
+    return qRgb(mask * (fa * before.redF() + fb * after.redF()) + maskInv * maskCfg.backColour.redF(),
+                mask * (fa * before.greenF() + fb * after.greenF()) + maskInv * maskCfg.backColour.greenF(),
+                mask * (fa * before.blueF() + fb * after.blueF()) + maskInv * maskCfg.backColour.blueF());
 }
 
 
@@ -247,17 +157,17 @@ QRgb ColourMap::GetBlendedColourValue(qreal loc) const {
  * @param loc
  * @return
  */
-QRgb ColourMap::GetBaseColourValue(qreal loc) const
+inline QRgb ColourMap::GetBaseColourValue(const GenSettings& genSet, qreal loc) const
 {
-    qreal locAsIndex = (loc * (qreal)clrIndexMax);
-    int idxBefore = std::min(clrIndexMax-1, std::max(0,(int)locAsIndex));
+    qreal locAsIndex = (loc * (qreal)genSet.clrIndexMax);
+    int idxBefore = std::min(genSet.clrIndexMax-1, std::max(0,(int)locAsIndex));
     const qreal fb = (locAsIndex - idxBefore) * 255.;
     const qreal fa = (255. - fb);
     // fa and fb are multiplied by 255 because qRgba expects values in the range
     // 0 to 255, but redF and such return values in the range 0 to 1.0.
 
-    const QColor& before = clrIndexed[idxBefore];
-    const QColor& after = clrIndexed[idxBefore + 1];
+    const QColor& before = genSet.clrIndexed[idxBefore];
+    const QColor& after = genSet.clrIndexed[idxBefore + 1];
     return qRgb(fa * before.redF() + fb * after.redF(),
              fa * before.greenF() + fb * after.greenF(),
                 fa * before.blueF() + fb * after.blueF());
@@ -268,14 +178,14 @@ QRgb ColourMap::GetBaseColourValue(qreal loc) const
  * @param loc
  * @return the mask value in the range 0 to 1
  */
-qreal ColourMap::GetMaskValue(qreal loc) const
+inline qreal ColourMap::GetMaskValue(const GenSettings& genSet, qreal loc) const
 {
-    if (!m.enabled) {return 1.0;}
-    qreal locAsIndex = (loc * (qreal)clrIndexMax);
-    int idxBefore = std::min(clrIndexMax-1, std::max(0,(int)locAsIndex));
+    if (!maskCfg.enabled) {return 1.0;}
+    qreal locAsIndex = (loc * (qreal)genSet.clrIndexMax);
+    int idxBefore = std::min(genSet.clrIndexMax-1, std::max(0,(int)locAsIndex));
     const qreal fb = (locAsIndex - idxBefore);
     const qreal fa = 1. - fb;
-    return fa * maskIndexed[idxBefore] + fb * maskIndexed[idxBefore + 1];
+    return fa * genSet.maskIndexed[idxBefore] + fb * genSet.maskIndexed[idxBefore + 1];
 }
 
 /** ****************************************************************************
@@ -283,29 +193,32 @@ qreal ColourMap::GetMaskValue(qreal loc) const
  * @param index
  * @return
  */
-ClrFix ColourMap::GetClrFix(qint32 index) const
+ClrFix ColourMap::GetClrFix(ColourList& colourList, qint32 index)
 {
-    if (index > clrList.length()) { return ClrFix(QRgb(), 0); }
-    return clrList[index];
+    if (index > colourList.length()) { return ClrFix(QRgb(), 0); }
+    return (colourList)[index];
 }
 
 /** ****************************************************************************
  * @brief ColourMap::CalcColourIndex
  */
-void ColourMap::CalcColourIndex()
+void ColourMap::CalcColourIndex(GenSettings& genSet)
 {
+
     qDebug("CalcColourIndex");
-    if (clrList.size() < 2) {
+    if (clrList.length() < 2) {
         qFatal("ColourMap::CreateIndexed() not enough colours in list!");
     }
-    std::sort(clrList.begin(), clrList.end());
+    QVector<QColor>& clrIndexed = genSet.clrIndexed;
+    QVector<QRgb>& clrIndexedRgb = genSet.clrIndexedRgb;
 
+    std::sort(clrList.begin(), clrList.end());
 
     // Calculate colour index
     clrIndexed.clear();
-    clrIndexed.resize(clrIndexMax + 1);
+    clrIndexed.resize(genSet.clrIndexMax + 1);
     for (qint32 i = 0; i < clrIndexed.size(); i++) {
-        qreal loc = (qreal)i / clrIndexMax;
+        qreal loc = (qreal)i / genSet.clrIndexMax;
         // Find the colours on either side
         ClrFix before(Qt::transparent, 0), after(Qt::transparent, 1.0);
         ClrFix thisClr(Qt::transparent, loc);
@@ -319,7 +232,7 @@ void ColourMap::CalcColourIndex()
     }
 
     clrIndexedRgb.clear();
-    clrIndexedRgb.resize(clrIndexMax + 1);
+    clrIndexedRgb.resize(genSet.clrIndexMax + 1);
     for (qint32 i = 0; i < clrIndexedRgb.size(); i++) {
         clrIndexedRgb[i] =  clrIndexed[i].rgb();
     }
@@ -328,26 +241,30 @@ void ColourMap::CalcColourIndex()
 /** ****************************************************************************
  * @brief ColourMap::CalcMaskIndex
  */
-void ColourMap::CalcMaskIndex()
+void ColourMap::CalcMaskIndex(GenSettings& genSet)
 {
-    qDebug("CalcMaskIndex. Revs=%.2f, Duty=%.2f, Smooth=%.2f, Offset=%.2f", m.numRevs, m.dutyCycle, m.smooth, m.offset);
-    qint32 maskLen = this->clrIndexMax + 1;
+    qDebug("CalcMaskIndex. Revs=%.2f, Duty=%.2f, Smooth=%.2f, Offset=%.2f", maskCfg.numRevs, maskCfg.dutyCycle, maskCfg.smooth, maskCfg.offset);
+
+    QVector<qreal>& maskIndexed = genSet.maskIndexed; // All mask values from locations 0 to 1.0 (indices 0 to clrIndexMax). Values are 0 to 1.0.
+    QVector<quint32>& maskIndexedInt = genSet.maskIndexedInt; // All mask values from locations 0 to 1.0 (indices 0 to clrIndexMax). Values are (0 to 255) << 24
+
+    qint32 maskLen = genSet.clrIndexMax + 1;
     maskIndexed.clear();
     maskIndexed.resize(maskLen);
     maskIndexedInt.clear();
     maskIndexedInt.resize(maskLen);
-    if (!m.enabled) {
+    if (!maskCfg.enabled) {
         maskIndexed.fill(1.0);
         maskIndexedInt.fill(0xFF000000);
         return;
     }
 
-    qint32 period = std::max(2, (qint32)(maskLen/m.numRevs)); // period as #points
-    qint32 highLen = qBound(1, (int) (m.dutyCycle * period), period); // #points in high(1) (including 0 to 1 transition)
+    qint32 period = std::max(2, (qint32)(maskLen/maskCfg.numRevs)); // period as #points
+    qint32 highLen = qBound(1, (int) (maskCfg.dutyCycle * period), period); // #points in high(1) (including 0 to 1 transition)
     qint32 lowLen = period - highLen; // #points in low(0)
 
     // Pre-calculate the transitions
-    qint32 desTransLen = (int)(m.smooth*0.5*maskLen/m.numRevs);
+    qint32 desTransLen = (int)(maskCfg.smooth*0.5*maskLen/maskCfg.numRevs);
     qint32 transitionLen0 = qBound(1, desTransLen, lowLen);
     qint32 transitionLen1 = qBound(1, desTransLen, highLen);
     QVector<double> transition0(transitionLen0);
@@ -369,7 +286,7 @@ void ColourMap::CalcMaskIndex()
     // Transition start location (as an index). Should always be <= thisIdx
     // The start location is chosen such that the peaks are at roughly the same location
     // as the transition width/smoothin factor is changed
-    qint32 activeTransIdx = m.offset * (qreal) period - transitionLen1 + (highLen - transitionLen1) / 2;
+    qint32 activeTransIdx = maskCfg.offset * (qreal) period - transitionLen1 + (highLen - transitionLen1) / 2;
     while (activeTransIdx > 0) { activeTransIdx -= period; }
     qint8 transVal = 1; // The value that this transition is moving to.  0: high to low.  1: low to high.
     qint32 thisIdx = 0;
@@ -449,7 +366,7 @@ QRgb ColourMap::RgbInterpolate(qreal loc, const ClrFix &before, const ClrFix &af
 int ColourMap::rowCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
-    return this->GetColourFixCount();
+    return clrList.length();
 }
 
 int ColourMap::columnCount(const QModelIndex &parent) const
@@ -473,16 +390,16 @@ QVariant ColourMap::data(const QModelIndex &index, int role) const
     case Qt::DisplayRole:
     case Qt::EditRole: // What is displayed when editing text
         if (index.column() == colClrHex) {
-            const QColor& clr = this->GetClrFix(index.row()).clr;
+            const QColor& clr = this->GetClrFix(clrList, index.row()).clr;
             return QString::asprintf("%02X %02X %02X", clr.red(), clr.green(), clr.blue());
         }
         else if (index.column() == colLoc) {
-            return QString::asprintf("%.1f", this->GetClrFix(index.row()).loc);
+            return QString::asprintf("%.1f", this->GetClrFix(clrList, index.row()).loc);
         }
         break;
     case Qt::BackgroundRole:
         if (index.column() == colClrBox) {
-            return QBrush(this->GetClrFix(index.row()).clr);
+            return QBrush(this->GetClrFix(clrList, index.row()).clr);
         }
         break;
     }
@@ -502,7 +419,7 @@ bool ColourMap::setData(const QModelIndex &index, const QVariant &value, int rol
     if (role == Qt::EditRole) {
         if (!checkIndex(index)) { return false; }
         if (index.column() == colLoc) {
-            this->EditColourLoc(index.row(), value.toReal());
+            this->EditColourLoc(clrList, index.row(), value.toReal());
             emit dataChanged(index, index);
             return true;
         }
@@ -536,11 +453,13 @@ Qt::ItemFlags ColourMap::flags(const QModelIndex &index) const
 void ColourMap::TableClicked(const QModelIndex &index)
 {
     if (index.column() == colClrBox) {
-        QColor clrNew = QColorDialog::getColor(this->GetClrFix(index.row()).clr);
+        QColor clrNew = QColorDialog::getColor(this->GetClrFix(clrList, index.row()).clr);
         if (!clrNew.isValid()) {return;} // User cancelled
         QRgb clrRgbNew = clrNew.rgb();
-        this->EditColour(index.row(), clrRgbNew);
-
+        if (index.row() < clrList.length()) {
+            clrList[index.row()].clr = clrRgbNew;
+            imgGen.NewImageNeeded();
+        }
         emit dataChanged(index, index);
         QModelIndex idxHex = createIndex(index.row(), colClrHex);
         emit dataChanged(idxHex, idxHex);
@@ -554,16 +473,14 @@ void ColourMap::TableClicked(const QModelIndex &index)
  * @param parent
  * @return
  */
-
-/** ****************************************************************************
- * @brief ColourMap::removeRows
- */
 bool ColourMap::removeRows(int startRow, int rowCount, const QModelIndex &parent)
 {
     Q_UNUSED(parent);
     beginRemoveRows(QModelIndex(), startRow, startRow+rowCount-1);
     for (int i = 0; i < rowCount; i++) {
-        this->RemoveColour(startRow);
+        if (startRow < clrList.length()) {
+            clrList.removeAt(startRow);
+        }
     }
     endRemoveRows();
     return true;
@@ -577,7 +494,7 @@ bool ColourMap::insertRows(int startRow, int rowCount, const QModelIndex &parent
     Q_UNUSED(parent);
     beginInsertRows(QModelIndex(), startRow, startRow+rowCount-1);
     for (int i = 0; i < rowCount; i++) {
-        this->AddColour(ClrFix(Qt::white, 100.0), startRow);
+        clrList.insert(startRow, ClrFix(Qt::white, 1.0));
     }
     endInsertRows();
     return true;
@@ -593,13 +510,17 @@ bool ColourMap::moveRows(const QModelIndex &sourceParent, int sourceRow, int cou
     if (sourceRow < destRow) {
         // Moving row(s) forward
         for (int i = 0; i < count; i++) {
-            this->MoveColour(sourceRow, destRow);
+            if (sourceRow < clrList.length()) {
+                clrList.move(sourceRow, destRow);
+            }
         }
     }
     else {
         // Moving row(s) backwards
         for (int i = count - 1; i >= 0; i--) {
-            this->MoveColour(sourceRow + i, destRow);
+            if (sourceRow + i < clrList.length()) {
+                clrList.move(sourceRow + i, destRow);
+            }
         }
     }
     endMoveRows();
@@ -641,7 +562,8 @@ QVariant ColourMap::headerData(int section, Qt::Orientation orientation, int rol
  * @brief ColourMapEditorWidget::ColourMapEditorWidget
  * @param parent
  */
-ColourMapEditorWidget::ColourMapEditorWidget(ColourMap* clrMapIn) : clrMap(clrMapIn)
+ColourMapEditorWidget::ColourMapEditorWidget(ImageGen& imgGenIn) :
+    imgGen(imgGenIn), clrMap(&imgGenIn.colourMap)
 {
     this->setMinimumWidth(200);
     this->setMaximumWidth(500);
@@ -651,7 +573,7 @@ ColourMapEditorWidget::ColourMapEditorWidget(ColourMap* clrMapIn) : clrMap(clrMa
     this->setLayout(clrMapLayout);
 
     // Colour bar
-    DrawColourBars();
+    DrawColourBars(imgGen.genPreview);
     clrMapLayout->addWidget(&lblClrBarBase);
     clrMapLayout->addWidget(&lblClrBarMask);
     clrMapLayout->addWidget(&lblClrBarResult);
@@ -695,7 +617,7 @@ ColourMapEditorWidget::ColourMapEditorWidget(ColourMap* clrMapIn) : clrMap(clrMa
     clrMapLayout->addWidget(&tableClrFix);
 
     connect(&tableClrFix, ClrFixTableView::clicked, clrMap, ColourMap::TableClicked);
-    connect(clrMap, ColourMap::NewClrMapReady, this, DrawColourBars, Qt::QueuedConnection);
+    connect(clrMap, ColourMap::NewClrMapReady, this, DrawColourBarsPreview, Qt::QueuedConnection);
 
     // Buttons for add and delete
     QPushButton * btnAddRow = new QPushButton("Add");
@@ -720,10 +642,16 @@ ColourMapEditorWidget::~ColourMapEditorWidget()
 
 }
 
+/** ************************************************************************ **/
+void ColourMapEditorWidget::DrawColourBarsPreview()
+{
+    DrawColourBars(imgGen.genPreview);
+}
+
 /** ****************************************************************************
  * @brief ColourMapEditorWidget::DrawColourBars redraws the bar that demonstrates the colour map
  */
-void ColourMapEditorWidget::DrawColourBars()
+void ColourMapEditorWidget::DrawColourBars(GenSettings & genSet)
 {
     barWidth = lblClrBarBase.width();
     QSize sizeClrBar(barWidth, heightClrBar);
@@ -731,14 +659,17 @@ void ColourMapEditorWidget::DrawColourBars()
     Rgb2D_C* dataBarMask = new Rgb2D_C(QPoint(0,0), sizeClrBar);
     Rgb2D_C* dataBarResult = new Rgb2D_C(QPoint(0,0), sizeClrBar);
     QVector<QPointF> chartData(sizeClrBar.width());
+
+    // !@#$ Ensure that the indices are calculated here
+
     for (qint32 x = dataBarBase->xLeft, i = 0; x < dataBarBase->xLeft + dataBarBase->width; x++, i++) {
         qreal loc = (qreal)i / (qreal)sizeClrBar.width();
         // !@# Make this more efficient
-        QRgb clrBase = clrMap->GetBaseColourValue(loc);
-        qreal valMask = clrMap->GetMaskValue(loc);
+        QRgb clrBase = clrMap->GetBaseColourValue(genSet, loc);
+        qreal valMask = clrMap->GetMaskValue(genSet, loc);
         QRgb clrMask = qRgb(valMask*255, valMask*255, valMask*255);
         chartData[i] = QPointF(loc, valMask);
-        QRgb clrResult = clrMap->GetBlendedColourValue(loc);
+        QRgb clrResult = clrMap->GetBlendedColourValue(genSet, loc);
 
         for (int y = dataBarBase->yTop; y < dataBarBase->yTop + dataBarBase->height; y++) {
             dataBarBase->setPoint(x, y,  clrBase);
@@ -760,8 +691,8 @@ void ColourMapEditorWidget::DrawColourBars()
     lblClrBarMask.setPixmap(QPixmap::fromImage(imgBarMask));
     lblClrBarResult.setPixmap(QPixmap::fromImage(imgBarResult));
 
-    lblClrBarMask.setVisible(clrMap->MaskIsEnabled());
-    lblClrBarResult.setVisible(clrMap->MaskIsEnabled());
+    lblClrBarMask.setVisible(imgGen.s.maskCfg.enabled);
+    lblClrBarResult.setVisible(imgGen.s.maskCfg.enabled);
 
     if (1) {
         // Plot RGB channels of the colour index
@@ -828,6 +759,7 @@ void ColourMapEditorWidget::DrawColourBars()
     // qDebug("maskChartView.x=%d,   maskChart.x=%.2f. chartViewWidth=%d, lblColourWidth=%d", maskChartView.x(), maskChart.x(), maskChartView.width(), lblClrBarBase.width());
 }
 
+
 /** ****************************************************************************
  * @brief ColourMapEditorWidget::SetMaskChartVisible
  * @param on
@@ -845,7 +777,7 @@ void ColourMapEditorWidget::resizeEvent(QResizeEvent *event)
 {
     QWidget::resizeEvent(event);
     if (lblClrBarBase.width() != barWidth) {
-        DrawColourBars();
+        DrawColourBars(imgGen.genPreview);
     }
 }
 

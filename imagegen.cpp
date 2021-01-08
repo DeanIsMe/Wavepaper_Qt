@@ -18,10 +18,22 @@ ImageGen imageGen;
 /** ****************************************************************************
  * @brief ImageGen::ImageGen
  */
-ImageGen::ImageGen() {
+ImageGen::ImageGen() : colourMap(s.clrList, s.maskCfg, *this) {
     QObject::connect(this, &ImageGen::GenerateImageSignal,
                      this, &ImageGen::GenerateImageSlot, Qt::QueuedConnection);
     InitViewAreas();
+
+    // !@#$ set colour map to a preset
+    colourMap.SetPreset(ClrMapPreset::hot);
+
+    genPreview.clrIndexMax = 511;
+    genQuick.clrIndexMax = 127;
+
+    colourMap.CalcColourIndex(genPreview);
+    colourMap.CalcMaskIndex(genPreview);
+
+    colourMap.CalcColourIndex(genQuick);
+    colourMap.CalcMaskIndex(genQuick);
 }
 
 /** ****************************************************************************
@@ -57,12 +69,11 @@ void ImageGen::NewQuickImageNeeded() {
 void ImageGen::GenerateImageSlot()
 {
     // Draw a 'quick' image with a higher priority than the more detailed 'preview' image
-    if (colourMap.RecalcIsPending()) { return; }
     bool handled = false;
     if (pendingQuickImage) {
         handled = true;
         GenerateImage(imgQuick, genQuick);
-        emit NewImageReady(imgQuick, genQuick.imgPerSimUnit, colourMap.GetMaskConfig().backColour);
+        emit NewImageReady(imgQuick, genQuick.imgPerSimUnit, s.maskCfg.backColour);
         pendingQuickImage = false;
     }
     if (pendingPreviewImage) {
@@ -72,7 +83,7 @@ void ImageGen::GenerateImageSlot()
         else {
             handled = true;
             GenerateImage(imgPreview, genPreview);
-            emit NewImageReady(imgPreview, genPreview.imgPerSimUnit, colourMap.GetMaskConfig().backColour);
+            emit NewImageReady(imgPreview, genPreview.imgPerSimUnit, s.maskCfg.backColour);
             pendingPreviewImage = false;
         }
     }
@@ -87,8 +98,8 @@ int ImageGen::InitViewAreas() {
     areaSim = QRectF(0, 0, 100, 100. / s.view.aspectRatio);
     areaSim.moveCenter(QPoint(0,0));
 
-    setTargetImgPoints(imgPointsPreview, genPreview);
-    setTargetImgPoints(imgPointsQuick, genQuick);
+    setTargetImgPoints(GenSettings::dfltImgPointsPreview, genPreview);
+    setTargetImgPoints(GenSettings::dfltImgPointsQuick, genQuick);
     return 0;
 }
 
@@ -139,11 +150,11 @@ void ImageGen::SaveImage()
         QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents); // Render the new overlay text immediately (somewhat risky)
 
         if (GenerateImage(imgFinal, genFinal) == 0) {
-            if (colourMap.MaskIsEnabled() && !saveWithTransparency) {
+            if (s.maskCfg.enabled && !saveWithTransparency) {
                 QImage imgComplete(imgFinal.size(), imgFinal.format());
                 QPainter painter(&imgComplete);
                 //painter.setBackground(QBrush(colourMap.GetMaskConfig().backColour));
-                painter.fillRect(imgFinal.rect(), colourMap.GetMaskConfig().backColour);
+                painter.fillRect(imgFinal.rect(), s.maskCfg.backColour);
                 painter.drawImage(0,0, imgFinal);
                 imgComplete.save(fileName);
             }
@@ -322,18 +333,25 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
                 genSet.combinedArr.ampMax = std::max(genSet.combinedArr.ampMax, amp);
             }
         }
-
         phasorSumChanged = true;
     }
 
     auto timePostPhasors = fnTimer.elapsed();
+    bool colourIndexChanged;
 
     // COLOUR MAP
+    // !@#$ recalculate the colour map indices if needed
+    colourMap.CalcColourIndex(genSet);
+    colourMap.CalcMaskIndex(genSet);
 
-    // Use the resultant amplitude to fill in the pixel data
+    mainWindow->colourMapEditor->DrawColourBars(genSet);
+
+    auto timePostColourIndices = fnTimer.elapsed();
+
+    // CREATE PIXEL ARRAY
+    // (apply colour map to phasor sum array)
+    // (It's assumed this is always necessary. Otherwise we shouldn't recalculating here)
     Rgb2D_C* pixArr = new Rgb2D_C(genSet.areaImg);
-
-    // Colour map
     qreal maxAmp = genSet.combinedArr.ampMax;
     qreal minAmp = genSet.combinedArr.ampMin;
     qreal mult = 1. / (maxAmp - minAmp);
@@ -341,17 +359,16 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
         for (int x = pixArr->xLeft; x < pixArr->xLeft + pixArr->width; x++) {
             // Calculate location in range 0 to 1;
             qreal loc = (genSet.combinedArr.ampArr->getPoint(x, y) - minAmp) * mult;
-            genSet.indexedClr = (testVal == 1); // !@#$
             if (genSet.indexedClr) {
-                pixArr->setPoint(x, y, colourMap.GetColourValueIndexed(loc)); // Faster
+                pixArr->setPoint(x, y, colourMap.GetColourValueIndexed(genSet, loc)); // Faster
             }
             else {
-                pixArr->setPoint(x, y, colourMap.GetColourValue(loc));
+                pixArr->setPoint(x, y, colourMap.GetColourValue(genSet, loc));
             }
         }
     }
 
-    auto timePostClrMap = fnTimer.elapsed();
+    auto timePostPixArr = fnTimer.elapsed();
 
     if (0) {
         // Test pattern, depends only on location
@@ -370,12 +387,13 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
     auto timePostImage = fnTimer.elapsed();
 
     QString imgGenTime = \
-            QString::asprintf("ImageGen %4lld ms. Templates=%4lldms (%d,%d,%d), PhasorMap=%4lldms (%d), Colouring=%4lldms, Image=%4lldms",
+            QString::asprintf("ImageGen %4lld ms. Templates=%4lldms (%d,%d,%d), PhasorMap=%4lldms (%d), ClrIdx=%4lldms(%d), Colouring=%4lldms, Image=%4lldms",
                               fnTimer.elapsed(), timePostTemplates,
                               templatDistChanged, templatAmpChanged, templatePhasorChanged,
                               timePostPhasors - timePostTemplates, phasorSumChanged,
-                              timePostClrMap - timePostPhasors,
-                              timePostImage - timePostClrMap);
+                              timePostColourIndices - timePostPhasors, colourIndexChanged,
+                              timePostPixArr - timePostColourIndices,
+                              timePostImage - timePostPixArr);
     qDebug() << imgGenTime;
 
 
@@ -797,16 +815,18 @@ EmArrangement ImageGen::DefaultArrangement() {
 }
 
 /** ****************************************************************************
- * @brief ImageGen::TemplatePhasor::MakeNew
+ * @brief TemplatePhasor::MakeNew function ensures that the variables are in sync
+ * and that data is deallocated
  * @param size
  * @param wavelengthIn
  * @param imgPerSimUnitIn
  */
-void ImageGen::TemplatePhasor::MakeNew(QRect size, qreal wavelengthIn, qreal imgPerSimUnitIn) {
+void TemplatePhasor::MakeNew(QRect size, qreal wavelengthIn, qreal imgPerSimUnitIn) {
     if (this->arr) { delete this->arr; }
     this->arr = new Complex2D_C(size);
     this->wavelength = wavelengthIn;
     this->imgPerSimUnit = imgPerSimUnitIn;
 }
+
 
 

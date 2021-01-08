@@ -58,9 +58,6 @@ MainWindow::MainWindow(QWidget *parent)
                      previewScene, &PreviewScene::OnEmitterArngmtChange,
                      Qt::QueuedConnection);
 
-    QObject::connect(&colourMap, &ColourMap::NewClrMapReady,
-                     &imageGen, ImageGen::NewImageNeeded, Qt::DirectConnection);
-
     // Action trigger events
     QObject::connect(ui->actionFewer, QAction::triggered,
                      &imageGen, &ImageGen::EmitterCountDecrease);
@@ -97,7 +94,7 @@ MainWindow::MainWindow(QWidget *parent)
     imageGen.NewImageNeeded();
 
     // Add colour map UI
-    ColourMapEditorWidget* colourMapEditor = new ColourMapEditorWidget(&colourMap);
+    colourMapEditor = new ColourMapEditorWidget(imageGen);
     layoutCentral->addWidget(colourMapEditor);
 
     QObject::connect(ui->actionShowMaskChart, QAction::toggled,
@@ -213,9 +210,11 @@ void MainWindow::on_actionMirrorVert_triggered(bool checked)
  */
 void MainWindow::on_actionMaskEnable_triggered(bool checked)
 {
-    if (colourMap.SetMaskEnable(checked)) {
+    if (checked != imageGen.s.maskCfg.enabled) {
+        imageGen.s.maskCfg.enabled = checked;
         imageGen.NewPreviewImageNeeded();
     }
+    // Change checkboxes
     if (!checked) {
         ui->actionShowMaskChart->setChecked(false);
     }

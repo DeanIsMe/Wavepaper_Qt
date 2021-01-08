@@ -7,7 +7,15 @@
 /** ************************************************************************ **/
 /** ************************************************************************ **/
 /** ************************************************************************ **/
-Interact interact(&imageGen); // Interaction
+Interact interact(imageGen); // Interaction
+
+/** ****************************************************************************
+ * @brief Interact::Interact
+ * @param imgGenIn
+ */
+Interact::Interact(ImageGen& imgGenIn) : imgGen(imgGenIn), colourMap(imgGenIn.colourMap) {
+
+}
 
 /** ****************************************************************************
  * @brief Interact::SelectType
@@ -43,15 +51,15 @@ void Interact::mousePressEvent(QGraphicsSceneMouseEvent *event, PreviewScene *sc
     switch (typeSelected) {
         case Type::mask:
         // Interact with the mask
-        maskConfigBackup = colourMap.GetMaskConfig();
+        maskConfigBackup = imgGen.s.maskCfg;
         break;
     case Type::colours:
         // No backup required
-        clrListBackup = colourMap.GetColourList();
+        clrListBackup = imgGen.s.clrList;
         break;
     case Type::arrangement:
         // Interact with the emitter arrangement
-        grpActive = imgGen->GetActiveArrangement();
+        grpActive = imgGen.GetActiveArrangement();
         if (!grpActive) {
             // No active groups
             return;
@@ -81,7 +89,7 @@ void Interact::mouseReleaseEvent(QGraphicsSceneMouseEvent *event, PreviewScene *
         break;
 
     case Type::arrangement:
-        emit imgGen->EmitterArngmtChanged(); // Just need to redraw the axes lines when mirroring
+        emit imgGen.EmitterArngmtChanged(); // Just need to redraw the axes lines when mirroring
         break;
 
     case Type::colours:
@@ -93,7 +101,7 @@ void Interact::mouseReleaseEvent(QGraphicsSceneMouseEvent *event, PreviewScene *
     }
 
     active = Type::null;
-    imgGen->NewPreviewImageNeeded();
+    imgGen.NewPreviewImageNeeded();
 }
 
 /** ****************************************************************************
@@ -108,7 +116,7 @@ void Interact::mouseMoveEvent(QGraphicsSceneMouseEvent *event, PreviewScene *sce
     // Determine how much the mouse has moved while clicked
     QPointF deltaScene = event->scenePos() - pressPos;
     // deltaRatio: the movement in X & Y directions as a ratio of the scene dimensions
-    QPointF deltaRatio = QPointF(deltaScene.x() / imgGen->areaSim.width(), deltaScene.y() / imgGen->areaSim.height());
+    QPointF deltaRatio = QPointF(deltaScene.x() / imgGen.areaSim.width(), deltaScene.y() / imgGen.areaSim.height());
 
     if (active == Type::arrangement) {
         // *********************************************************************
@@ -121,8 +129,8 @@ void Interact::mouseMoveEvent(QGraphicsSceneMouseEvent *event, PreviewScene *sce
             // Change location
             grpActive->center = grpBackup.center + deltaScene;
             if (snapEn) {
-                grpActive->center.setX(Snap(grpActive->center.x(), 9e9, imgGen->areaSim.width() * 0.05));
-                grpActive->center.setY(Snap(grpActive->center.y(), 9e9, imgGen->areaSim.width() * 0.05));
+                grpActive->center.setX(Snap(grpActive->center.x(), 9e9, imgGen.areaSim.width() * 0.05));
+                grpActive->center.setY(Snap(grpActive->center.y(), 9e9, imgGen.areaSim.width() * 0.05));
             }
         }
         else {
@@ -148,7 +156,7 @@ void Interact::mouseMoveEvent(QGraphicsSceneMouseEvent *event, PreviewScene *sce
             }
         }
 
-        emit imgGen->EmitterArngmtChanged();
+        emit imgGen.EmitterArngmtChanged();
     }
     else if (active == Type::colours) {
         // *********************************************************************
@@ -193,10 +201,10 @@ void Interact::mouseMoveEvent(QGraphicsSceneMouseEvent *event, PreviewScene *sce
             newMaskCfg.smooth = qBound(0.0, maskConfigBackup.smooth + deltaRatio.x(), 2.0);
             newMaskCfg.dutyCycle = qBound(0.0, maskConfigBackup.dutyCycle - deltaRatio.y() * 1.0, 1.0);
         }
-        colourMap.SetMaskConfig(newMaskCfg);
+        imgGen.s.maskCfg = newMaskCfg;
     }
 
-    imgGen->NewQuickImageNeeded();
+    imgGen.NewQuickImageNeeded();
 }
 
 /** ****************************************************************************
@@ -219,7 +227,7 @@ void Interact::Cancel() {
         break;
 
     case Type::mask:
-        colourMap.SetMaskConfig(maskConfigBackup);
+        imgGen.s.maskCfg = maskConfigBackup;
         break;
     }
     active = Type::null;
