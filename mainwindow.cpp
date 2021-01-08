@@ -22,6 +22,10 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Add a text window for debugging info
     textWindow = new QPlainTextEdit;
+    QFont font("Monospace");
+    font.setStyleHint(QFont::TypeWriter);
+    //textWindow->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
+    textWindow->setFont(font);
 
     imageGen.SetMainWindow(this);
 

@@ -268,9 +268,11 @@ struct GenSettings {
     // Colour index
     int clrIndexMax = 200; // The colour indices span from 0 to this number
     // Colour map
+    qint32 clrListCheckSum = 0; // The checksum for the colour list when the index was generated
     QVector<QColor> clrIndexed; // All colours from locations 0 to 1.0 (indices 0 to clrIndexMax)
     QVector<QRgb> clrIndexedRgb; // All colours from locations 0 to 1.0 (indices 0 to clrIndexMax)
     // Mask map
+    qint32 maskCheckSum = 0; // The checksum for the mask when the index was generated
     QVector<qreal> maskIndexed; // All mask values from locations 0 to 1.0 (indices 0 to clrIndexMax). Values are 0 to 1.0.
     QVector<quint32> maskIndexedInt; // All mask values from locations 0 to 1.0 (indices 0 to clrIndexMax). Values are (0 to 255) << 24
 };
@@ -307,7 +309,7 @@ struct ClrFix {
     }
 };
 
-typedef QList<ClrFix> ColourList;
+typedef QVector<ClrFix> ColourList;
 
 /** ****************************************************************************
  * @brief The MaskCfg struct

@@ -143,9 +143,6 @@ public:
     ~ColourMapEditorWidget();
     void DrawColourBars(GenSettings &genSet);
 
-private slots:
-    void DrawColourBarsPreview();
-
 public slots:
     void SetMaskChartVisible(bool on);
 

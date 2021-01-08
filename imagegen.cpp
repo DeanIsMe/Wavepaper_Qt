@@ -23,11 +23,10 @@ ImageGen::ImageGen() : colourMap(s.clrList, s.maskCfg, *this) {
                      this, &ImageGen::GenerateImageSlot, Qt::QueuedConnection);
     InitViewAreas();
 
-    // !@#$ set colour map to a preset
     colourMap.SetPreset(ClrMapPreset::hot);
 
-    genPreview.clrIndexMax = 511;
-    genQuick.clrIndexMax = 127;
+    genPreview.clrIndexMax = 1023;
+    genQuick.clrIndexMax = 255;
 
     colourMap.CalcColourIndex(genPreview);
     colourMap.CalcMaskIndex(genPreview);
@@ -340,11 +339,22 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
     bool colourIndexChanged = false;
 
     // COLOUR MAP
-    // !@#$ recalculate the colour map indices if needed
-    colourMap.CalcColourIndex(genSet);
-    colourMap.CalcMaskIndex(genSet);
-    mainWindow->colourMapEditor->DrawColourBars(genSet);
-    colourIndexChanged = true;
+    // Use simple checksums to determine when data changes
+    CheckSum sumClrList((void*)s.clrList.data(), sizeof(s.clrList[0]) * s.clrList.length());
+    CheckSum sumMask((void*)&s.maskCfg, sizeof(s.maskCfg));
+    if (sumClrList != genSet.clrListCheckSum
+            || genSet.clrIndexed.length() != genSet.clrIndexMax+1
+            || sumMask != genSet.maskCheckSum
+            || genSet.maskIndexed.length() != genSet.clrIndexMax+1) {
+        colourMap.CalcColourIndex(genSet);
+        genSet.clrListCheckSum = sumClrList;
+
+        colourMap.CalcMaskIndex(genSet);
+        genSet.maskCheckSum = sumMask;
+
+        mainWindow->colourMapEditor->DrawColourBars(genSet);
+        colourIndexChanged = true;
+    }
 
     auto timePostColourIndices = fnTimer.elapsed();
 

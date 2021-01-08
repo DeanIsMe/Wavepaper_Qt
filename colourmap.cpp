@@ -31,7 +31,6 @@ void ColourMap::EditColourLoc(ColourList& colourList, qint32 listIdx, qreal newL
 }
 
 void ColourMap::SetColourList(ColourList &clrListIn) {
-    // !@#$ CHANGE THIS
     emit PreColourListReset();
     clrList = clrListIn;
     emit PostColourListReset();
@@ -583,7 +582,6 @@ ColourMapEditorWidget::ColourMapEditorWidget(ImageGen& imgGenIn) :
     this->setLayout(clrMapLayout);
 
     // Colour bar
-    DrawColourBars(imgGen.genPreview);
     clrMapLayout->addWidget(&lblClrBarBase);
     clrMapLayout->addWidget(&lblClrBarMask);
     clrMapLayout->addWidget(&lblClrBarResult);
@@ -657,11 +655,6 @@ ColourMapEditorWidget::~ColourMapEditorWidget()
 
 }
 
-/** ************************************************************************ **/
-void ColourMapEditorWidget::DrawColourBarsPreview()
-{
-    DrawColourBars(imgGen.genPreview);
-}
 
 /** ****************************************************************************
  * @brief ColourMapEditorWidget::DrawColourBars redraws the bar that demonstrates the colour map
