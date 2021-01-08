@@ -20,9 +20,9 @@ using namespace QtCharts;
  * for generating the images and previews.
  * It also implements QAbstractTableModel to interface with the colour map table
  */
-class ColourMap : public QAbstractTableModel
+class ColourMap : public QObject
 {
-    Q_OBJECT;
+    Q_OBJECT
     friend class ColourMapEditorWidget;
     // ColourMap class performs that actual mapping from value to colour
     // for generating the images and previews
@@ -50,6 +50,10 @@ public:
     void CalcColourIndex(GenSettings &genSet);
     void CalcMaskIndex(GenSettings &genSet);
 
+signals:
+    PreColourListReset();
+    PostColourListReset();
+
 public slots:
     void SetPresetHot() {SetPreset(ClrMapPreset::hot);}
     void SetPresetCool() {SetPreset(ClrMapPreset::cool);}
@@ -57,6 +61,7 @@ public slots:
     void SetPresetBone() {SetPreset(ClrMapPreset::bone);}
     void SetPresetParula() {SetPreset(ClrMapPreset::parula);}
     void SetPresetHsv() {SetPreset(ClrMapPreset::hsv);}
+
 
 protected:
     ColourList & clrList; // Used for QAbstractTableModel
@@ -69,19 +74,23 @@ protected:
 
     void ClrListChanged(); // Called any time an edit is made to the colour list
     void MaskSettingChanged(); // Called any time an edit is made to the mask
+};
 
-signals:
-    void NewClrMapReady(); // Emitted after the new colour index is made - ready to be used by other parts of the program
-
-    // *************************************************************************
-    // QAbstractTableModel MODEL
-private:
+/** ****************************************************************************
+ * @brief The ClrListTableModel class
+ */
+class ClrListTableModel : public QAbstractTableModel {
+    Q_OBJECT
+    friend class ClrListTableView;
+    friend class ColourMapEditorWidget;
+protected:
     // Column numbers
     static constexpr int colClrBox = 0;
     static constexpr int colClrHex = 1;
     static constexpr int colLoc = 2;
     static constexpr int colCount = 3;
 public:
+    ClrListTableModel(ImageGen& imgGenIn);
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
@@ -89,7 +98,12 @@ public:
     Qt::ItemFlags flags(const QModelIndex &index) const override;
 public slots:
     void TableClicked(const QModelIndex & index);
+    void PreColourListResetSlot() {this->beginResetModel();}
+    void PostColourListResetSlot() {this->endResetModel();}
+
 private:
+    ImageGen& imgGen;
+    ColourList & clrList;
     // QAbstractItemModel interface
 public:
     bool insertRows(int row, int count, const QModelIndex &parent) override;
@@ -100,12 +114,12 @@ public:
 };
 
 /** ****************************************************************************
- * @brief The ClrFixTableView class displays the colour map in a table
+ * @brief The ClrListTableView class displays the colour map in a table
  */
-class ClrFixTableView : public QTableView {
+class ClrListTableView : public QTableView {
     Q_OBJECT
 public:
-    ClrFixTableView() {}
+    ClrListTableView() {}
 
     void RemoveSelectedRows();
     void AddRow();
@@ -149,7 +163,8 @@ private:
     QLabel lblClrBarMask;
     QLabel lblClrBarResult;
 
-    ClrFixTableView tableClrFix; // Table for editing the colours
+    ClrListTableModel clrListModel;
+    ClrListTableView clrListTable; // Table for editing the colours
 
     // Line chart to display the mask
     QLineSeries * maskSeries = nullptr;

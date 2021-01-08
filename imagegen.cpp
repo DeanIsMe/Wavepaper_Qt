@@ -337,14 +337,14 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
     }
 
     auto timePostPhasors = fnTimer.elapsed();
-    bool colourIndexChanged;
+    bool colourIndexChanged = false;
 
     // COLOUR MAP
     // !@#$ recalculate the colour map indices if needed
     colourMap.CalcColourIndex(genSet);
     colourMap.CalcMaskIndex(genSet);
-
     mainWindow->colourMapEditor->DrawColourBars(genSet);
+    colourIndexChanged = true;
 
     auto timePostColourIndices = fnTimer.elapsed();
 
