@@ -81,7 +81,9 @@ public:
         TemplateAmp templateAmp;
         TemplatePhasor templatePhasor;
         SumArray combinedArr;
+        bool indexedClr = true; // True for faster (but less accurate) colour map
     };
+
     // The block below must be kept in sync
     GenSettings genPreview;
     GenSettings genQuick;
@@ -92,7 +94,7 @@ public:
     qreal aspectRatio() const {return s.view.aspectRatio;} // Width / height
     QImage imgPreview;
     QImage imgQuick;
-    qreal testVal = 1;
+    qint32 testVal = 1;
 
 public:
     ImageGen();

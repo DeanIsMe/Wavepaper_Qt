@@ -128,8 +128,13 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 {
     qDebug() << "Key pressed: " << event->key();
     switch (event->key()) {
+    case Qt::Key_0:
+        imageGen.testVal--;
+        textWindow->appendPlainText(QString::asprintf("TestVal=%4d", imageGen.testVal));
+        break;
     case Qt::Key_1:
-        previewScene->OverlayTextSlot("Text 1");
+        imageGen.testVal++;
+        textWindow->appendPlainText(QString::asprintf("TestVal=%4d", imageGen.testVal));
         break;
     case Qt::Key_2:
         previewScene->OverlayTextSlot("Text Key 2");

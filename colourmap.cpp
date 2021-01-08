@@ -195,15 +195,29 @@ void ColourMap::SetPreset(ClrMapPreset preset)
 QRgb ColourMap::GetColourValue(qreal loc) const {
     qreal locAsIndex = (loc * (qreal)clrIndexMax);
     int idxBefore = std::min(clrIndexMax-1, std::max(0,(int)locAsIndex));
-    const qreal fb = (locAsIndex - idxBefore);
-    const qreal fa = 1. - fb;
+    const qreal fb = (locAsIndex - idxBefore) * 255.;
+    const qreal fa = (255. - fb);
+    // fa and fb are multiplied by 255 because qRgba expects values in the range
+    // 0 to 255, but redF and such return values in the range 0 to 1.0.
 
     const QColor& before = clrIndexed[idxBefore];
     const QColor& after = clrIndexed[idxBefore + 1];
     return qRgba(fa * before.redF() + fb * after.redF(),
              fa * before.greenF() + fb * after.greenF(),
                 fa * before.blueF() + fb * after.blueF(),
-                 255.0 * (fa * maskIndexed[idxBefore] + fb * maskIndexed[idxBefore + 1]));
+                 fa * maskIndexed[idxBefore] + fb * maskIndexed[idxBefore + 1]);
+}
+
+/** ****************************************************************************
+ * @brief ColourMap::GetColourValueIndexed picks the closest index for this colour
+ * @param loc is a number from 0 (min) to 1 (max)
+ * @return a QRgb, using the alpha layer
+ */
+QRgb ColourMap::GetColourValueIndexed(qreal loc) const {
+    int locAsIndex = (loc * (qreal)clrIndexMax) + 0.5;
+    int idx = std::min(clrIndexMax-1, std::max(0, locAsIndex));
+
+    return (clrIndexedRgb[idx] & 0xFFFFFF) | (maskIndexedInt[idx]);
 }
 
 /** ****************************************************************************
@@ -220,8 +234,8 @@ QRgb ColourMap::GetBlendedColourValue(qreal loc) const {
     const QColor& before = clrIndexed[idxBefore];
     const QColor& after = clrIndexed[idxBefore + 1];
 
-    qreal mask = (fa * maskIndexed[idxBefore] + fb * maskIndexed[idxBefore + 1]);
-    qreal maskInv = 1. - mask;
+    qreal mask = (fa * maskIndexed[idxBefore] + fb * maskIndexed[idxBefore + 1]) * 255.;
+    qreal maskInv = (255. - mask);
     return qRgb(mask * (fa * before.redF() + fb * after.redF()) + maskInv * m.backColour.redF(),
                 mask * (fa * before.greenF() + fb * after.greenF()) + maskInv * m.backColour.greenF(),
                 mask * (fa * before.blueF() + fb * after.blueF()) + maskInv * m.backColour.blueF());
@@ -237,8 +251,10 @@ QRgb ColourMap::GetBaseColourValue(qreal loc) const
 {
     qreal locAsIndex = (loc * (qreal)clrIndexMax);
     int idxBefore = std::min(clrIndexMax-1, std::max(0,(int)locAsIndex));
-    const qreal fb = (locAsIndex - idxBefore);
-    const qreal fa = 1. - fb;
+    const qreal fb = (locAsIndex - idxBefore) * 255.;
+    const qreal fa = (255. - fb);
+    // fa and fb are multiplied by 255 because qRgba expects values in the range
+    // 0 to 255, but redF and such return values in the range 0 to 1.0.
 
     const QColor& before = clrIndexed[idxBefore];
     const QColor& after = clrIndexed[idxBefore + 1];
@@ -250,7 +266,7 @@ QRgb ColourMap::GetBaseColourValue(qreal loc) const
 /** ****************************************************************************
  * @brief ColourMap::GetMaskValue
  * @param loc
- * @return
+ * @return the mask value in the range 0 to 1
  */
 qreal ColourMap::GetMaskValue(qreal loc) const
 {
@@ -295,16 +311,17 @@ void ColourMap::CalcColourIndex()
         ClrFix thisClr(Qt::transparent, loc);
         // Find the first element after this location
         auto afterIt = std::upper_bound(clrList.begin(), clrList.end(), thisClr);
-        if (afterIt != clrList.end()) {
-            after = *afterIt;
-        }
-        // Grab the one earlier
-        auto beforeIt = afterIt - 1;
-        if (beforeIt >= clrList.begin()) {
-            before = *beforeIt;
-        }
+        auto beforeIt = afterIt - 1; // The colour fix before that
+        after = afterIt == clrList.end() ? *beforeIt : *afterIt;
+        before = beforeIt >= clrList.begin() ? *beforeIt : *afterIt;
         // Interpolate to find this point (from before and after)
         clrIndexed[i] = Interpolate(loc, before, after);
+    }
+
+    clrIndexedRgb.clear();
+    clrIndexedRgb.resize(clrIndexMax + 1);
+    for (qint32 i = 0; i < clrIndexedRgb.size(); i++) {
+        clrIndexedRgb[i] =  clrIndexed[i].rgb();
     }
 }
 
@@ -317,8 +334,11 @@ void ColourMap::CalcMaskIndex()
     qint32 maskLen = this->clrIndexMax + 1;
     maskIndexed.clear();
     maskIndexed.resize(maskLen);
+    maskIndexedInt.clear();
+    maskIndexedInt.resize(maskLen);
     if (!m.enabled) {
         maskIndexed.fill(1.0);
+        maskIndexedInt.fill(0xFF000000);
         return;
     }
 
@@ -391,7 +411,9 @@ void ColourMap::CalcMaskIndex()
                 thisVal = 0; // Finished transition
             }
         }
-        maskIndexed[thisIdx++] = thisVal;
+        maskIndexed[thisIdx] = thisVal;
+        maskIndexedInt[thisIdx] = ((quint32)(255. * thisVal)) << 24;
+        thisIdx++;
     }
 }
 
@@ -404,11 +426,12 @@ void ColourMap::CalcMaskIndex()
  */
 QColor ColourMap::Interpolate(qreal loc, const ClrFix &before, const ClrFix &after) {
     qreal f = (loc - before.loc) / (after.loc - before.loc);
+    if (qIsNaN(f)) {f = 1.0;}
     qreal f2 = 1 - f;
     QColor ret;
-    ret.setRgbF(f2 * before.clr.red() + f * after.clr.red(),
-                f2 * before.clr.green() + f * after.clr.green(),
-                f2 * before.clr.blue() + f * after.clr.blue());
+    ret.setRgbF(f2 * before.clr.redF() + f * after.clr.redF(),
+                f2 * before.clr.greenF() + f * after.clr.greenF(),
+                f2 * before.clr.blueF() + f * after.clr.blueF());
     return ret;
 }
 

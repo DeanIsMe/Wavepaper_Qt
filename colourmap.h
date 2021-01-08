@@ -75,6 +75,7 @@ public:
     QRgb GetBlendedColourValue(qreal loc) const;
     QRgb GetBaseColourValue(qreal loc) const;
     qreal GetMaskValue(qreal loc) const;
+    QRgb GetColourValueIndexed(qreal loc) const;
 
     ClrFix GetClrFix(qint32 index) const;
     qint32 GetColourFixCount() const {return clrList.length();}
@@ -114,7 +115,9 @@ protected:
     ColourList clrList;
     MaskCfg m;
     QVector<QColor> clrIndexed; // All colours from locations 0 to 1.0 (indices 0 to clrIndexMax)
+    QVector<QRgb> clrIndexedRgb; // All colours from locations 0 to 1.0 (indices 0 to clrIndexMax)
     QVector<qreal> maskIndexed; // All mask values from locations 0 to 1.0 (indices 0 to clrIndexMax). Values are 0 to 1.0.
+    QVector<quint32> maskIndexedInt; // All mask values from locations 0 to 1.0 (indices 0 to clrIndexMax). Values are (0 to 255) << 24
     bool pendingRecalcClrIndex = true;
     bool pendingRecalcMaskIndex = true;
 

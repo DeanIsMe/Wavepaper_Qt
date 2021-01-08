@@ -129,6 +129,7 @@ void ImageGen::SaveImage()
     if (!fileName.isEmpty()) {
         GenSettings genFinal;
         setTargetImgPoints(outResolution.width() * outResolution.height(), genFinal);
+        genFinal.indexedClr = false; // Use accurate colours
         QImage imgFinal;
 
         QVector<EmitterF> emittersF;
@@ -340,7 +341,13 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
         for (int x = pixArr->xLeft; x < pixArr->xLeft + pixArr->width; x++) {
             // Calculate location in range 0 to 1;
             qreal loc = (genSet.combinedArr.ampArr->getPoint(x, y) - minAmp) * mult;
-            pixArr->setPoint(x, y, colourMap.GetColourValue(loc));
+            genSet.indexedClr = (testVal == 1); // !@#$
+            if (genSet.indexedClr) {
+                pixArr->setPoint(x, y, colourMap.GetColourValueIndexed(loc)); // Faster
+            }
+            else {
+                pixArr->setPoint(x, y, colourMap.GetColourValue(loc));
+            }
         }
     }
 
