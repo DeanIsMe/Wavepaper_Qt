@@ -1,5 +1,7 @@
 #include "previewscene.h"
 #include "imagegen.h"
+#include "mainwindow.h"
+#include "interact.h"
 #include <QDebug>
 #include <QResizeEvent>
 #include <QGraphicsEllipseItem>
@@ -10,12 +12,25 @@
  * @brief PreviewScene::PreviewScene
  * @param parent
  */
-PreviewScene::PreviewScene(QObject *parent) :
-    QGraphicsScene(parent)
+PreviewScene::PreviewScene(QObject *parent, MainWindow &mainWindowIn) :
+    QGraphicsScene(parent),
+    mainWindow(mainWindowIn)
 {
 
 }
 
+/** ****************************************************************************
+ * @brief PreviewScene::mousePressEvent
+ * @param event
+ */
+void PreviewScene::mousePressEvent(QGraphicsSceneMouseEvent *event) {
+    mainWindow.interact.mousePressEvent(event, this);}
+
+void PreviewScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *event) {
+    mainWindow.interact.mouseReleaseEvent(event, this);}
+
+void PreviewScene::mouseMoveEvent(QGraphicsSceneMouseEvent *event) {
+    mainWindow.interact.mouseMoveEvent(event, this);}
 
 /** ****************************************************************************
  * @brief PreviewScene::EmitterArngmtToList
@@ -60,7 +75,7 @@ void PreviewScene::EmitterArngmtToList(ImageGen & imgGen) {
     this->removeItem(&emItemGroup);
     this->addItem(&emItemGroup);
 
-    AddAxesLines(interact);
+    AddAxesLines();
 
     invalidate(this->sceneRect(), QGraphicsScene::ItemLayer);
     // The scene and background are automatically redrawn
@@ -70,7 +85,8 @@ void PreviewScene::EmitterArngmtToList(ImageGen & imgGen) {
  * @brief PreviewScene::AddAxesLines
  * @param imageGen
  */
-void PreviewScene::AddAxesLines(Interact & act) {
+void PreviewScene::AddAxesLines() {
+    Interact & act = mainWindow.interact;
     this->removeItem(&yAxisItem);
     this->removeItem(&xAxisItem);
     // Axes are drawn only when interacting with an arrangement that's mirrored

@@ -25,7 +25,7 @@ public:
     PreviewScene * previewScene;
     QPlainTextEdit * textWindow;
     ColourMapEditorWidget* colourMapEditor;
-
+    Interact interact;
 
     void OnInteractChange(QVariant interactType);
 private:

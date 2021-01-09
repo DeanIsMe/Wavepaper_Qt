@@ -285,7 +285,7 @@ void ColourMap::CalcMaskIndex(GenSettings& genSet)
     // Transition start location (as an index). Should always be <= thisIdx
     // The start location is chosen such that the peaks are at roughly the same location
     // as the transition width/smoothin factor is changed
-    qint32 activeTransIdx = maskCfg.offset * (qreal) period - transitionLen1 + (highLen - transitionLen1) / 2;
+    qint32 activeTransIdx = maskLen * 0.5 + maskCfg.offset * (qreal) period - (transitionLen1 + (highLen - transitionLen1) / 2.);
     while (activeTransIdx > 0) { activeTransIdx -= period; }
     qint8 transVal = 1; // The value that this transition is moving to.  0: high to low.  1: low to high.
     qint32 thisIdx = 0;
@@ -659,8 +659,9 @@ ColourMapEditorWidget::~ColourMapEditorWidget()
 /** ****************************************************************************
  * @brief ColourMapEditorWidget::DrawColourBars redraws the bar that demonstrates the colour map
  */
-void ColourMapEditorWidget::DrawColourBars(GenSettings & genSet)
+void ColourMapEditorWidget::DrawColourBars(GenSettings & genSet, qint32 sumClrBarsIn)
 {
+    sumClrBars = sumClrBarsIn;
     barWidth = lblClrBarBase.width();
     QSize sizeClrBar(barWidth, heightClrBar);
     Rgb2D_C* dataBarBase = new Rgb2D_C(QPoint(0,0), sizeClrBar);
@@ -785,7 +786,7 @@ void ColourMapEditorWidget::resizeEvent(QResizeEvent *event)
 {
     QWidget::resizeEvent(event);
     if (lblClrBarBase.width() != barWidth) {
-        DrawColourBars(imgGen.genPreview);
+        DrawColourBars(imgGen.genPreview, 1234);
     }
 }
 

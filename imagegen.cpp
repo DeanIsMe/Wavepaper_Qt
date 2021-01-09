@@ -124,7 +124,7 @@ void ImageGen::setTargetImgPoints(qint32 imgPoints, GenSettings & genSet) const 
  * @return
  */
 bool ImageGen::EmittersHidden() {
-    return hideEmitters && !interact.TypeIsActive(Interact::Type::arrangement);
+    return hideEmitters && !mainWindow->interact.TypeIsActive(Interact::Type::arrangement);
 }
 
 /** ****************************************************************************
@@ -352,8 +352,12 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
         colourMap.CalcMaskIndex(genSet);
         genSet.maskCheckSum = sumMask;
 
-        mainWindow->colourMapEditor->DrawColourBars(genSet);
         colourIndexChanged = true;
+    }
+    qint32 sumClrBars = sumClrList.Get() + sumMask.Get();
+    if (sumClrBars != mainWindow->colourMapEditor->GetSumClrBars()
+            || colourIndexChanged) {
+        mainWindow->colourMapEditor->DrawColourBars(genSet, sumClrBars);
     }
 
     auto timePostColourIndices = fnTimer.elapsed();
@@ -380,16 +384,6 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
 
     auto timePostPixArr = fnTimer.elapsed();
 
-    if (0) {
-        // Test pattern, depends only on location
-        for (int y = pixArr->yTop; y < pixArr->yTop + pixArr->height; y++) {
-            for (int x = pixArr->xLeft; x < pixArr->xLeft + pixArr->width; x++) {
-                pixArr->setPoint(x, y,
-                                 ColourAngleToQrgb(((x - pixArr->xLeft) * 1530) / pixArr->width +
-                                                   ((y - pixArr->yTop) * 1000) / pixArr->height, 255));
-            }
-        }
-    }
     imageOut = QImage((uchar*)pixArr->getDataPtr(), pixArr->width, pixArr->height, QImage::Format_ARGB32,
                       &ImageDataDealloc, pixArr);
                       // QRgb is ARGB32 (8 bits per channel)

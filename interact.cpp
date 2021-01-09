@@ -2,18 +2,21 @@
 #include "interact.h"
 #include "imagegen.h"
 #include "colourmap.h"
+#include "mainwindow.h"
+#include "previewscene.h"
 #include <QGraphicsSceneMouseEvent>
 
 /** ************************************************************************ **/
 /** ************************************************************************ **/
 /** ************************************************************************ **/
-Interact interact(imageGen); // Interaction
+
 
 /** ****************************************************************************
  * @brief Interact::Interact
  * @param imgGenIn
  */
-Interact::Interact(ImageGen& imgGenIn) : imgGen(imgGenIn), colourMap(imgGenIn.colourMap) {
+Interact::Interact(MainWindow &mainWindowIn, ImageGen& imgGenIn) :
+    mainWindow(mainWindowIn), imgGen(imgGenIn), colourMap(imgGenIn.colourMap) {
 
 }
 
@@ -220,6 +223,7 @@ void Interact::Cancel() {
         if (grpActive) {
             *grpActive = grpBackup;
         }
+        emit imgGen.EmitterArngmtChanged();
         break;
 
     case Type::colours:
@@ -230,5 +234,49 @@ void Interact::Cancel() {
         imgGen.s.maskCfg = maskConfigBackup;
         break;
     }
+    imgGen.NewPreviewImageNeeded();
     active = Type::null;
+}
+
+
+/** ****************************************************************************
+ * @brief Interact::KeyPressEvent
+ * @param event
+ */
+void Interact::KeyPressEvent(QKeyEvent *event)
+{
+    qDebug() << "Key pressed: " << event->key();
+    switch (event->key()) {
+    case Qt::Key_0:
+        imgGen.testVal--;
+        break;
+    case Qt::Key_1:
+        imgGen.testVal++;
+        break;
+    case Qt::Key_2:
+        mainWindow.previewScene->OverlayTextSlot("Text Key 2");
+        break;
+    case Qt::Key_3:
+        mainWindow.previewScene->OverlayTextSlot(QString::asprintf("Rendering image %.1fM pixels for %d emitters.",
+                                                         2000000 / 1000000., 15));
+        break;
+    case Qt::Key_4:
+        mainWindow.previewScene->OverlayTextSlot(QString());
+        break;
+    case Qt::Key_Plus: // !@# temp
+        imgGen.s.distOffsetF *= 1.2;
+        qDebug("distOffsetF = %.2f", imgGen.s.distOffsetF);
+        imgGen.NewImageNeeded();
+        break;
+    case Qt::Key_Minus: // !@# temp
+        imgGen.s.distOffsetF *= (1./1.2);
+        qDebug("distOffsetF = %.2f", imgGen.s.distOffsetF);
+        imgGen.NewImageNeeded();
+        break;
+    case Qt::Key_Escape:
+        Cancel();
+        break;
+    default:
+        event->setAccepted(false);
+    }
 }

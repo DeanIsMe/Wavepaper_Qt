@@ -16,12 +16,13 @@ class PreviewScene : public QGraphicsScene
 {
     Q_OBJECT
 private:
+    MainWindow& mainWindow;
     QGraphicsLineItem yAxisItem;
     QGraphicsLineItem xAxisItem;
     QGraphicsTextItem textOverlay;
     void Cancel();
 public:
-    explicit PreviewScene(QObject *parent = nullptr);
+    explicit PreviewScene(QObject *parent, MainWindow& mainWindowIn);
     QGraphicsItemGroup emItemGroup;
     void ListAllItems();
 
@@ -31,17 +32,14 @@ public slots:
 
     // QGraphicsScene interface
 protected:
-    void mousePressEvent(QGraphicsSceneMouseEvent *event) override {
-        interact.mousePressEvent(event, this);}
-    void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override {
-        interact.mouseReleaseEvent(event, this);}
-    void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override {
-        interact.mouseMoveEvent(event, this);}
+    void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
+    void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
+    void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
 
     // Custom
 public:
     void EmitterArngmtToList(ImageGen &imgGen);
-    void AddAxesLines(Interact &act);
+    void AddAxesLines();
 
 };
 

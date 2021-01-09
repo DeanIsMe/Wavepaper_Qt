@@ -141,7 +141,8 @@ private:
 public:
     ColourMapEditorWidget(ImageGen& imgGenIn);
     ~ColourMapEditorWidget();
-    void DrawColourBars(GenSettings &genSet);
+    void DrawColourBars(GenSettings &genSet, qint32 sumClrBarsIn);
+    qint32 GetSumClrBars() {return sumClrBars;}
 
 public slots:
     void SetMaskChartVisible(bool on);
@@ -149,6 +150,8 @@ public slots:
 private:
     ImageGen& imgGen;
     ColourMap * clrMap;
+
+    qint32 sumClrBars; // A checksum to indicate what data is currently displayed on the colour bar
 
     qint32 barWidth; // The width of the colour bar image
     QImage imgBarBase; // Image for the colour bar that represents the base colour map

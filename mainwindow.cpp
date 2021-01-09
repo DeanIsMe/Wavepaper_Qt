@@ -16,6 +16,7 @@
  */
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
+    , interact(*this, imageGen)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
@@ -46,7 +47,7 @@ MainWindow::MainWindow(QWidget *parent)
     previewView = new PreviewView(this);
     layoutCentral->addWidget(previewView);
 
-    previewScene = new PreviewScene(previewView);
+    previewScene = new PreviewScene(previewView, *this);
     previewScene->setSceneRect(imageGen.areaSim);
     previewView->setScene(previewScene);
 
@@ -127,39 +128,7 @@ MainWindow::~MainWindow()
  */
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
-    qDebug() << "Key pressed: " << event->key();
-    switch (event->key()) {
-    case Qt::Key_0:
-        imageGen.testVal--;
-        textWindow->appendPlainText(QString::asprintf("TestVal=%4d", imageGen.testVal));
-        break;
-    case Qt::Key_1:
-        imageGen.testVal++;
-        textWindow->appendPlainText(QString::asprintf("TestVal=%4d", imageGen.testVal));
-        break;
-    case Qt::Key_2:
-        previewScene->OverlayTextSlot("Text Key 2");
-        break;
-    case Qt::Key_3:
-        previewScene->OverlayTextSlot(QString::asprintf("Rendering image %.1fM pixels for %d emitters.",
-                                                         2000000 / 1000000., 15));
-        break;
-    case Qt::Key_4:
-        previewScene->OverlayTextSlot(QString());
-        break;
-    case Qt::Key_Plus: // !@# temp
-        imageGen.s.distOffsetF *= 1.2;
-        qDebug("distOffsetF = %.2f", imageGen.s.distOffsetF);
-        imageGen.NewImageNeeded();
-        break;
-    case Qt::Key_Minus: // !@# temp
-        imageGen.s.distOffsetF *= (1./1.2);
-        qDebug("distOffsetF = %.2f", imageGen.s.distOffsetF);
-        imageGen.NewImageNeeded();
-        break;
-    default:
-        event->setAccepted(false);
-    }
+    return interact.KeyPressEvent(event);
 }
 
 /** ****************************************************************************

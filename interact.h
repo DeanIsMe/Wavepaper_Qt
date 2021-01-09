@@ -21,6 +21,7 @@ public:
 private:
     static constexpr Type defaultType = Type::arrangement;
 
+    MainWindow& mainWindow;
     ImageGen & imgGen;
     ColourMap & colourMap;
     Type active = Type::null; // Saves the active interact type upon mouse press.
@@ -40,7 +41,7 @@ private:
     void Cancel();
 
 public:
-    Interact(ImageGen& imgGenIn);
+    Interact(MainWindow& mainWindowIn, ImageGen& imgGenIn);
     void mousePressEvent(QGraphicsSceneMouseEvent *event, PreviewScene * scene);
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event, PreviewScene * scene);
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event, PreviewScene * scene);
@@ -52,11 +53,10 @@ public:
     void SetTypeSelect(Type type, bool en) {if (en) SelectType(type);
                                            else DeselectType(type);}
     EmArrangement * GetActiveArrangement() { return grpActive; }
+    void KeyPressEvent(QKeyEvent * event);
 
 signals:
     void InteractTypeChanged(QVariant type);
 };
-
-extern Interact interact; // Interaction
 
 #endif // INTERACT_H
