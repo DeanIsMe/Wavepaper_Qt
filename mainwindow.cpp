@@ -9,6 +9,7 @@
 #include "imagegen.h"
 #include "colourmap.h"
 #include "interact.h"
+#include "valueEditors.h"
 
 /** ****************************************************************************
  * @brief MainWindow::MainWindow
@@ -109,6 +110,15 @@ MainWindow::MainWindow(QWidget *parent)
 
     QObject::connect(&interact, &Interact::InteractTypeChanged,
                      this, &MainWindow::OnInteractChange, Qt::QueuedConnection);
+
+    // Value editors
+    EditorGroupWidget * valueEditors = new EditorGroupWidget(&imageGen);
+
+    valueEditors->AddValueEditor(new ValueEditorWidget("Wavelength", &imageGen.s.wavelength, 1, 200, 1));
+
+    QScrollArea * valueEditorsScroll = new QScrollArea();
+    valueEditorsScroll->setWidget(valueEditors);
+    layoutCentral->addWidget(valueEditorsScroll);
 
     // Text window for debugging
     layoutCentral->addWidget(textWindow);

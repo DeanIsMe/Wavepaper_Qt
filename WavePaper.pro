@@ -22,7 +22,8 @@ SOURCES += \
     interact.cpp \
     main.cpp \
     mainwindow.cpp \
-    previewscene.cpp
+    previewscene.cpp \
+    valueEditors.cpp
 
 HEADERS += \
     colourmap.h \
@@ -30,7 +31,8 @@ HEADERS += \
     imagegen.h \
     interact.h \
     mainwindow.h \
-    previewscene.h
+    previewscene.h \
+    valueEditors.h
 
 FORMS += \
     mainwindow.ui
