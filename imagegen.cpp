@@ -230,6 +230,7 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
     fnTimer.start();
     // This function works in image logical coordinates, which are integers
 
+    /*
     QVector<EmitterF> emittersF;
     if (GetEmitterList(emittersF)) {
         return -2;
@@ -401,6 +402,80 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
     qDebug() << imgGenTime;
 
 
+    mainWindow->textWindow->appendPlainText(imgGenTime);
+    */
+
+
+
+    // FOUR-BAR-LINKAGE
+
+    imageOut = QImage(genSet.areaImg.width(), genSet.areaImg.height(), QImage::Format_ARGB32);
+    //imageOut = QImage(500, 500, QImage::Format_ARGB32);
+
+    // Equations:
+    // ta2 = 2*atan(((2*la2^2*(xa - xb + la1*cos(ta1) - lb1*cos(tb1))^2 - (xa - xb + la1*cos(ta1) - lb1*cos(tb1))^4 - (ya - yb + la1*sin(ta1) - lb1*sin(tb1))^4 - 2*(ya - yb + la1*sin(ta1) - lb1*sin(tb1))^2*(xa - xb + la1*cos(ta1) - lb1*cos(tb1))^2 + 2*lb2^2*(xa - xb + la1*cos(ta1) - lb1*cos(tb1))^2 + 2*la2^2*(ya - yb + la1*sin(ta1) - lb1*sin(tb1))^2 + 2*lb2^2*(ya - yb + la1*sin(ta1) - lb1*sin(tb1))^2 - la2^4 - lb2^4 + 2*la2^2*lb2^2)^(1/2) - 2*la2*(ya - yb + la1*sin(ta1) - lb1*sin(tb1)))/((xa - xb + la1*cos(ta1) - lb1*cos(tb1))^2 + (ya - yb + la1*sin(ta1) - lb1*sin(tb1))^2 - 2*la2*(xa - xb + la1*cos(ta1) - lb1*cos(tb1)) + la2^2 - lb2^2))
+    // Simplified to:
+    // ka = xa - xb + la1*cos(ta1) - lb1*cos(tb1)
+    // kb = ya - yb + la1*sin(ta1) - lb1*sin(tb1)
+    // kc = ka^2 + kb^2 - lb2^2
+    // ta2 = 2*atan((((2*la2*lb2)^2 - (kc - la2^2)^2)^(1/2) - 2*la2*kb)/(kc - 2*la2*ka + la2^2))
+
+    auto& fb = s.fourBar;
+    qreal lenScale = 0.4 * (imageOut.width() + imageOut.height()) / (fb.la1 + fb.la2 + fb.lb1 + fb.lb2);
+
+    qreal xa_=fb.xa * lenScale + imageOut.width()/2;
+    qreal ya_=fb.ya * lenScale + imageOut.height()/2;
+    qreal xb_=fb.xb * lenScale + imageOut.width()/2;
+    qreal yb_=fb.yb * lenScale + imageOut.height()/2;
+    qreal la1_=fb.la1 * lenScale;
+    qreal lb1_=fb.lb1 * lenScale;
+    qreal la2_=fb.la2 * lenScale;
+    qreal lb2_=fb.lb2 * lenScale;
+
+    qreal inca = fb.inca;
+    qreal incb = fb.incb;
+    qreal ta1_ = fb.ta1Init;
+    qreal tb1_ = fb.tb1Init;
+    qint32 stepCount = 20000;
+    QVector<QPointF> outPoints(stepCount);
+
+    genSet.paintPath.clear();
+
+
+    for (qint32 step = 0; step < stepCount; step++) {
+        qreal ka_ = xa_ - xb_ + la1_*cos(ta1_) - lb1_*cos(tb1_);
+        qreal kb_ = ya_ - yb_ + la1_*sin(ta1_) - lb1_*sin(tb1_);
+        qreal kc_ = ka_*ka_ + kb_*kb_ - lb2_*lb2_;
+        qreal kd_ = 2*la2_*lb2_;
+        qreal ke_ = kc_ - la2_*la2_;
+        qreal ta2_ = 2*atan((sqrt(kd_*kd_ - ke_*ke_) - 2*la2_*kb_)/(kc_ - 2*la2_*ka_ + la2_*la2_));
+
+        qreal x3_ = xa_ + la1_*cos(ta1_) + la2_*cos(ta2_);
+        qreal y3_ = ya_ + la1_*sin(ta1_) + la2_*sin(ta2_);
+
+        outPoints[step] = QPointF(x3_, y3_);
+        genSet.paintPath.moveTo(QPointF(x3_, y3_));
+
+        // Increment angles
+        ta1_ = ta1_ + inca;
+        tb1_ = tb1_ + incb;
+    }
+
+
+    QPainter imgPainter(&imageOut);
+    imgPainter.setPen(QPen(QColor(Qt::white), lenScale, Qt::SolidLine,
+                        Qt::RoundCap, Qt::RoundJoin));
+    imgPainter.setBackground(QBrush(Qt::black));
+    imgPainter.setBrush(QBrush(Qt::black));
+    imgPainter.fillRect(imageOut.rect(), Qt::black);
+    imgPainter.drawLines(outPoints); // !@#$ this doesn't draw all points
+    //imgPainter.drawPath(genSet.paintPath);
+
+
+
+    QString imgGenTime = \
+            QString::asprintf("ImageGen %4lld ms. (%dx%d)", fnTimer.elapsed(), imageOut.width(), imageOut.height());
+    qDebug() << imgGenTime;
     mainWindow->textWindow->appendPlainText(imgGenTime);
 
     return 0;

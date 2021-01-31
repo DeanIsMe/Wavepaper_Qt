@@ -70,6 +70,16 @@ void Interact::mousePressEvent(QGraphicsSceneMouseEvent *event, PreviewScene *sc
         grpBackup = *grpActive; // Save, so that it can be reverted
         break;
 
+    case Type::lengths:
+        fourBarBackup = imgGen.s.fourBar;
+        break;
+    case Type::angleInc:
+        fourBarBackup = imgGen.s.fourBar;
+        break;
+    case Type::position:
+        fourBarBackup = imgGen.s.fourBar;
+        break;
+
     case Type::null:
         return;
         break;
@@ -99,6 +109,13 @@ void Interact::mouseReleaseEvent(QGraphicsSceneMouseEvent *event, PreviewScene *
         break;
 
     case Type::mask:
+        break;
+
+    case Type::position:
+        break;
+    case Type::angleInc:
+        break;
+    case Type::lengths:
         break;
 
     }
@@ -206,6 +223,33 @@ void Interact::mouseMoveEvent(QGraphicsSceneMouseEvent *event, PreviewScene *sce
         }
         imgGen.s.maskCfg = newMaskCfg;
     }
+    else if (active == Type::lengths) {
+        // *********************************************************************
+        // Four bar lengths edit
+        auto newFbCfg = fourBarBackup;
+        newFbCfg.la2 = fourBarBackup.la2 * (1 + deltaRatio.y());
+        newFbCfg.lb2 = fourBarBackup.lb2 * (1 + deltaRatio.y());
+        newFbCfg.la1 = fourBarBackup.la1 * (1 + deltaRatio.x());
+        newFbCfg.lb1 = fourBarBackup.lb1 * (1 + deltaRatio.x());
+        imgGen.s.fourBar = newFbCfg;
+    }
+    else if (active == Type::angleInc) {
+        // *********************************************************************
+        // Four bar lengths edit
+        auto newFbCfg = fourBarBackup;
+        newFbCfg.inca = fourBarBackup.inca * (1 + deltaRatio.x() * 0.01);
+        newFbCfg.incb = fourBarBackup.incb * (1 + deltaRatio.y() * 0.01);
+        imgGen.s.fourBar = newFbCfg;
+    }
+    else if (active == Type::position) {
+        // *********************************************************************
+        // Four bar position edit
+        auto newFbCfg = fourBarBackup;
+        newFbCfg.xb = fourBarBackup.xb * (1 + deltaRatio.x() * 10);
+        newFbCfg.xb = fourBarBackup.xb * (1 + deltaRatio.y() * 10);
+        imgGen.s.fourBar = newFbCfg;
+    }
+
 
     imgGen.NewQuickImageNeeded();
 }
@@ -233,6 +277,17 @@ void Interact::Cancel() {
     case Type::mask:
         imgGen.s.maskCfg = maskConfigBackup;
         break;
+
+    case Type::lengths:
+        imgGen.s.fourBar = fourBarBackup;
+        break;
+    case Type::angleInc:
+        imgGen.s.fourBar = fourBarBackup;
+        break;
+    case Type::position:
+        imgGen.s.fourBar = fourBarBackup;
+        break;
+
     }
     imgGen.NewPreviewImageNeeded();
     active = Type::null;
@@ -251,14 +306,13 @@ void Interact::KeyPressEvent(QKeyEvent *event)
         imgGen.testVal--;
         break;
     case Qt::Key_1:
-        imgGen.testVal++;
+        SelectType(Type::lengths);
         break;
     case Qt::Key_2:
-        mainWindow.previewScene->OverlayTextSlot("Text Key 2");
+        SelectType(Type::angleInc);
         break;
     case Qt::Key_3:
-        mainWindow.previewScene->OverlayTextSlot(QString::asprintf("Rendering image %.1fM pixels for %d emitters.",
-                                                         2000000 / 1000000., 15));
+        SelectType(Type::position);
         break;
     case Qt::Key_4:
         mainWindow.previewScene->OverlayTextSlot(QString());

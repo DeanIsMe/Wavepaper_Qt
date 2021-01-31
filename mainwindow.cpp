@@ -11,6 +11,7 @@
 #include "interact.h"
 #include "valueEditors.h"
 
+
 /** ****************************************************************************
  * @brief MainWindow::MainWindow
  * @param parent
@@ -99,22 +100,34 @@ MainWindow::MainWindow(QWidget *parent)
     previewScene->EmitterArngmtToList(imageGen);
     imageGen.NewImageNeeded();
 
-    // Add colour map UI
+    // Add colour map editor UI
+    if (0) {
     colourMapEditor = new ColourMapEditorWidget(imageGen);
     layoutCentral->addWidget(colourMapEditor);
 
     QObject::connect(ui->actionShowMaskChart, QAction::toggled,
                      colourMapEditor, &ColourMapEditorWidget::SetMaskChartVisible);
 
-    // actionMaskEnable is handled by the funtion on_actionMaskEnable_triggered
+    // actionMaskEnable is handled by the function on_actionMaskEnable_triggered
 
     QObject::connect(&interact, &Interact::InteractTypeChanged,
                      this, &MainWindow::OnInteractChange, Qt::QueuedConnection);
+    }
 
     // Value editors
     EditorGroupWidget * valueEditors = new EditorGroupWidget(&imageGen);
 
-    valueEditors->AddValueEditor(new ValueEditorWidget("Wavelength", &imageGen.s.wavelength, 1, 200, 1));
+
+    valueEditors->AddValueEditor(new ValueEditorWidget("Pos Bx", &imageGen.s.fourBar.xb, 1, 500, 0));
+    valueEditors->AddValueEditor(new ValueEditorWidget("Pos By", &imageGen.s.fourBar.yb, 1, 500, 0));
+    valueEditors->AddValueEditor(new ValueEditorWidget("Length A1", &imageGen.s.fourBar.la1, 1, 500, 0));
+    valueEditors->AddValueEditor(new ValueEditorWidget("Length A2", &imageGen.s.fourBar.la2, 1, 500, 0));
+    valueEditors->AddValueEditor(new ValueEditorWidget("Length B1", &imageGen.s.fourBar.lb1, 1, 500, 0));
+    valueEditors->AddValueEditor(new ValueEditorWidget("Length B2", &imageGen.s.fourBar.lb2, 1, 500, 0));
+    valueEditors->AddValueEditor(new ValueEditorWidget("Angle increment A", &imageGen.s.fourBar.inca, 0.001, 0.1, 3));
+    valueEditors->AddValueEditor(new ValueEditorWidget("Angle increment B", &imageGen.s.fourBar.incb, 0.001, 0.1, 3));
+    valueEditors->AddValueEditor(new ValueEditorWidget("Init angle A", &imageGen.s.fourBar.ta1Init, -2*PI, 2*PI, 2));
+    valueEditors->AddValueEditor(new ValueEditorWidget("Init angle B", &imageGen.s.fourBar.tb1Init, -2*PI, 2*PI, 2));
 
     QScrollArea * valueEditorsScroll = new QScrollArea();
     valueEditorsScroll->setWidget(valueEditors);
