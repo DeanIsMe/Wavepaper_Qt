@@ -23,7 +23,7 @@ public:
     // PROGRAM SETTINGS
 
     static constexpr qreal templateOversizeFactor = 1.2; // The amount of extra length that the templates are calculated for (to prevent repeated recalculations)
-    static constexpr int trigTableLen = 1000;
+    static constexpr int trigTableLen = 10000;
 
 private:
     MainWindow * mainWindow = nullptr;

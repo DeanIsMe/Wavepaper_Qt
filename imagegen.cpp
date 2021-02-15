@@ -447,11 +447,10 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
     qreal incb = fb.incb;
     qreal ta1_ = fb.ta1Init;
     qreal tb1_ = fb.tb1Init;
-    qint32 stepCount = 20000;
-    QVector<QPointF> outPoints(stepCount);
+    qint32 stepCount = s.fourBar.stepCount;
+    QVector<QPointF> outPoints(stepCount*2-1);
 
     genSet.paintPath.clear();
-
 
     for (qint32 step = 0; step < stepCount; step++) {
         qreal xa2_ = xa_ + + la1_*cosQuick(ta1_);
@@ -466,8 +465,16 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
         qreal x3_ = xa2_ + la2_*cosQuick(ta2_);
         qreal y3_ = ya2_ + la2_*sinQuick(ta2_);
 
-        outPoints[step] = QPointF(x3_, y3_);
-        genSet.paintPath.moveTo(QPointF(x3_, y3_));
+        if (step != 0) {
+            outPoints[step*2-1] = QPointF(x3_, y3_);
+        }
+        outPoints[step*2] = QPointF(x3_, y3_);
+
+//        if (step == 0) {
+//            genSet.paintPath.moveTo(QPointF(x3_, y3_));
+//        }
+//        genSet.paintPath.lineTo(QPointF(x3_, y3_));
+
 
         // Increment angles
         ta1_ = ta1_ + inca;
@@ -482,7 +489,7 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
     imgPainter.setBrush(QBrush(Qt::black));
     imgPainter.fillRect(imageOut.rect(), Qt::black);
     imgPainter.drawLines(outPoints); // !@#$ this doesn't draw all points
-    //imgPainter.drawPath(genSet.paintPath);
+//    imgPainter.drawPath(genSet.paintPath);
 
 
 

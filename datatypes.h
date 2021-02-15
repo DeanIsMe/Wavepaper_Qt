@@ -276,8 +276,9 @@ struct GenSettings {
     qint32 maskCheckSum = 0; // The checksum for the mask when the index was generated
     QVector<qreal> maskIndexed; // All mask values from locations 0 to 1.0 (indices 0 to clrIndexMax). Values are 0 to 1.0.
     QVector<quint32> maskIndexedInt; // All mask values from locations 0 to 1.0 (indices 0 to clrIndexMax). Values are (0 to 255) << 24
+
     // Path
-    QPainterPath paintPath; //
+    QPainterPath paintPath;
 };
 
 
@@ -344,6 +345,7 @@ struct FourBarCfg {
     qreal incb = 0.0102;
     qreal ta1Init = 0;
     qreal tb1Init = 0;
+    qreal stepCount = 10000;
 };
 
 
