@@ -131,6 +131,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     QScrollArea * valueEditorsScroll = new QScrollArea();
     valueEditorsScroll->setWidget(valueEditors);
+    valueEditorsScroll->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Minimum);
     layoutCentral->addWidget(valueEditorsScroll);
 
     // Text window for debugging

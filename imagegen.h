@@ -23,6 +23,7 @@ public:
     // PROGRAM SETTINGS
 
     static constexpr qreal templateOversizeFactor = 1.2; // The amount of extra length that the templates are calculated for (to prevent repeated recalculations)
+    static constexpr int trigTableLen = 1000;
 
 private:
     MainWindow * mainWindow = nullptr;
@@ -30,6 +31,10 @@ private:
     bool pendingQuickImage; // True if a quick image is pending to be generated
     bool pendingPreviewImage; // True if a preview image is pending to be generated
     bool hideEmitters = true; // When true, the emitters are not drawn on the preview window
+    double sinTable[trigTableLen]; // Pre-calculated sin values. Indices 0 to trigTableLen correspond to 0 to 2pi rad
+    double cosTable[trigTableLen]; // Pre-calculated cos values. Indices 0 to trigTableLen correspond to 0 to 2pi rad
+    inline double sinQuick(double rad) {return sinTable[modPos((int)(rad*(double)trigTableLen/(2.*PI)),trigTableLen)];}
+    inline double cosQuick(double rad) {return cosTable[modPos((int)(rad*(double)trigTableLen/(2.*PI)),trigTableLen)];}
 
 public:
     Settings s; // Contains entire setup
@@ -103,6 +108,8 @@ private:
     void CalcDistTemplate(QRect templateRect, GenSettings &genSet);
     void CalcAmpTemplate(qreal distOffset, GenSettings &genSet);
     void CalcPhasorTemplate(QRect templateRect, GenSettings &genSet);
+
+    void PreCalcTrigTables();
 };
 
 extern ImageGen imageGen;

@@ -12,7 +12,6 @@
 #include <QCoreApplication>
 #include <previewscene.h>
 
-
 ImageGen imageGen;
 
 /** ****************************************************************************
@@ -33,6 +32,18 @@ ImageGen::ImageGen() : colourMap(s.clrList, s.maskCfg, *this) {
 
     colourMap.CalcColourIndex(genQuick);
     colourMap.CalcMaskIndex(genQuick);
+
+    PreCalcTrigTables();
+}
+
+/** ****************************************************************************
+ * @brief ImageGen::PreCalcTrigTables
+ */
+void ImageGen::PreCalcTrigTables() {
+    double iToRad = 1. / (double)trigTableLen * 2. * PI;
+    for (int i=0; i < trigTableLen; i++) {
+        sincos(i*iToRad, &sinTable[i], &cosTable[i]);
+    }
 }
 
 /** ****************************************************************************
@@ -119,7 +130,7 @@ void ImageGen::setTargetImgPoints(qint32 imgPoints, GenSettings & genSet) const 
     }
 }
 
-/**
+/** ****************************************************************************
  * @brief ImageGen::EmittersHidden
  * @return
  */
@@ -443,15 +454,17 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
 
 
     for (qint32 step = 0; step < stepCount; step++) {
-        qreal ka_ = xa_ - xb_ + la1_*cos(ta1_) - lb1_*cos(tb1_);
-        qreal kb_ = ya_ - yb_ + la1_*sin(ta1_) - lb1_*sin(tb1_);
+        qreal xa2_ = xa_ + + la1_*cosQuick(ta1_);
+        qreal ya2_ = ya_ + la1_*sinQuick(ta1_);
+        qreal ka_ = xa2_ - xb_ - lb1_*cosQuick(tb1_);
+        qreal kb_ = ya2_ - yb_ - lb1_*sinQuick(tb1_);
         qreal kc_ = ka_*ka_ + kb_*kb_ - lb2_*lb2_;
         qreal kd_ = 2*la2_*lb2_;
         qreal ke_ = kc_ - la2_*la2_;
-        qreal ta2_ = 2*atan((sqrt(kd_*kd_ - ke_*ke_) - 2*la2_*kb_)/(kc_ - 2*la2_*ka_ + la2_*la2_));
+        qreal ta2_ = 2* atan2((sqrt(kd_*kd_ - ke_*ke_) - 2*la2_*kb_),(kc_ - 2*la2_*ka_ + la2_*la2_));
 
-        qreal x3_ = xa_ + la1_*cos(ta1_) + la2_*cos(ta2_);
-        qreal y3_ = ya_ + la1_*sin(ta1_) + la2_*sin(ta2_);
+        qreal x3_ = xa2_ + la2_*cosQuick(ta2_);
+        qreal y3_ = ya2_ + la2_*sinQuick(ta2_);
 
         outPoints[step] = QPointF(x3_, y3_);
         genSet.paintPath.moveTo(QPointF(x3_, y3_));
@@ -536,6 +549,7 @@ void ImageGen::CalcPhasorTemplate(QRect templateRect, GenSettings & genSet) {
     genSet.templatePhasor.MakeNew(templateRect, s.wavelength, genSet.imgPerSimUnit);
     CalcPhasorArr(genSet.templatePhasor, *genSet.templateDist.arr, *genSet.templateAmp.arr);
 }
+
 
 /** ****************************************************************************
  * @brief ImageGen::GetActiveArrangement
