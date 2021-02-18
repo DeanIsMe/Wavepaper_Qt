@@ -256,7 +256,7 @@ struct SumArray {
  */
 struct GenSettings {
     static constexpr qint32 dfltImgPointsQuick = 500000;
-    static constexpr qint32 dfltImgPointsPreview = 2000000;
+    static constexpr qint32 dfltImgPointsPreview = 1000000;
     double targetImgPoints = dfltImgPointsPreview; // Total number of points in the preview. Change with setTargetImgPoints()
     double imgPerSimUnit; // The imgPerSimUnit that this template was generated with
     QRect areaImg; // The rectangle of the image view area (image coordinates)
