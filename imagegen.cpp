@@ -448,10 +448,20 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
     qreal ta1_ = fb.ta1Init;
     qreal tb1_ = fb.tb1Init;
     qint32 stepCount = s.fourBar.stepCount;
-    QVector<QPointF> outPoints(stepCount*2-1);
 
-    genSet.paintPath.clear();
+    qreal widthVaryRatio = 0.8; // !@#$ make configuable
+    qreal widthDflt = lenScale * widthVaryRatio * 1.0; // !@#$ Make configurable
 
+    QPainter imgPainter(&imageOut);
+    QPen imgPen = QPen(QColor(Qt::white), widthDflt, Qt::SolidLine,
+                       Qt::RoundCap, Qt::RoundJoin);
+    imgPainter.setPen(imgPen);
+    imgPainter.setBackground(QBrush(Qt::black));
+    imgPainter.setBrush(QBrush(Qt::black));
+    imgPainter.fillRect(imageOut.rect(), Qt::black);
+
+
+    QPointF prevPoint;
     for (qint32 step = 0; step < stepCount; step++) {
         qreal xa2_ = xa_ + + la1_*cosQuick(ta1_);
         qreal ya2_ = ya_ + la1_*sinQuick(ta1_);
@@ -465,33 +475,20 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
         qreal x3_ = xa2_ + la2_*cosQuick(ta2_);
         qreal y3_ = ya2_ + la2_*sinQuick(ta2_);
 
+        QPointF thisPoint(x3_, y3_);
         if (step != 0) {
-            outPoints[step*2-1] = QPointF(x3_, y3_);
+            QLineF thisLine(prevPoint, thisPoint);
+            // !@#$ scale the divisor according to the plot rate (incA + incB)
+            imgPen.setWidthF((1.-widthVaryRatio) + widthDflt / qMax(1., thisLine.length()));
+            imgPainter.setPen(imgPen);
+            imgPainter.drawLine(prevPoint, thisPoint);
         }
-        outPoints[step*2] = QPointF(x3_, y3_);
-
-//        if (step == 0) {
-//            genSet.paintPath.moveTo(QPointF(x3_, y3_));
-//        }
-//        genSet.paintPath.lineTo(QPointF(x3_, y3_));
-
+        prevPoint = thisPoint;
 
         // Increment angles
         ta1_ = ta1_ + inca;
         tb1_ = tb1_ + incb;
     }
-
-
-    QPainter imgPainter(&imageOut);
-    imgPainter.setPen(QPen(QColor(Qt::white), lenScale, Qt::SolidLine,
-                        Qt::RoundCap, Qt::RoundJoin));
-    imgPainter.setBackground(QBrush(Qt::black));
-    imgPainter.setBrush(QBrush(Qt::black));
-    imgPainter.fillRect(imageOut.rect(), Qt::black);
-    imgPainter.drawLines(outPoints); // !@#$ this doesn't draw all points
-//    imgPainter.drawPath(genSet.paintPath);
-
-
 
     QString imgGenTime = \
             QString::asprintf("ImageGen %4lld ms. (%dx%d)", fnTimer.elapsed(), imageOut.width(), imageOut.height());
