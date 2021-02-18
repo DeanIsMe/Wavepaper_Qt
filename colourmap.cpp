@@ -575,7 +575,8 @@ ColourMapEditorWidget::ColourMapEditorWidget(ImageGen& imgGenIn) :
     imgGen(imgGenIn), clrMap(&imgGenIn.colourMap), clrListModel(imgGenIn)
 {
     this->setMinimumWidth(200);
-    this->setMaximumWidth(500);
+    this->setMaximumWidth(300);
+    this->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     // Create the widget
     // Sliders, then colour map display
     QVBoxLayout * clrMapLayout = new QVBoxLayout();

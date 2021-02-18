@@ -136,22 +136,26 @@ PreviewView::PreviewView(QWidget *parent) : QGraphicsView(parent)
  */
 void PreviewView::resizeEvent(QResizeEvent *event) {
     // Enforce the aspect ratio
-    // 2020-12-29 This causes jerky behaviour as it triggers this resizeEvent again. Does not work well.
-    //qreal newWidth = std::min((qreal)event->size().height() * imageGen.aspectRatio(), (qreal)event->size().width());
-    //qDebug("resizeEvent. size=(%dx%d)px. newWidth=%.2f. viewWidth=%d", event->size().width(), event->size().height(), (qreal)event->size().height() * imageGen.s.view.aspectRatio, this->width());
-    // this->resize(newWidth, newWidth / imageGen.aspectRatio());
 
     // Ensure that the viewable section of the screen stays the same
     bool expanded;
     if (widthFromHeight) {
         qreal newWidth = (qreal)event->size().height() * imageGen.s.view.aspectRatio;
+        // Limit width to 60% of the screen width
+        newWidth = std::min(newWidth, 0.60 * (qreal)QGuiApplication::primaryScreen()->geometry().width());
         expanded = newWidth > this->minimumWidth();
         this->setMinimumWidth(newWidth);
+        //        qDebug("resizeEvent. size=(%dx%d)px. newWidth=%.2f. viewWidth=%d. Expanded=%d",
+        //               event->size().width(), event->size().height(), newWidth, this->width(), expanded);
     }
-    else {
+    else { // Height from width
         qreal newHeight = (qreal)event->size().width() / imageGen.s.view.aspectRatio;
+        // Limit height to 85% of the screen height
+        newHeight = std::min(newHeight, 0.85 * (qreal)QGuiApplication::primaryScreen()->geometry().height());
         expanded = newHeight > this->minimumHeight();
         this->setMinimumHeight(newHeight);
+                qDebug("resizeEvent. size=(%dx%d)px. newHeight=%.2f. height=%d. Expanded=%d",
+                       event->size().width(), event->size().height(), newHeight, this->height(), expanded);
     }
 
     if (expanded) {
@@ -193,12 +197,19 @@ void PreviewView::drawBackground(QPainter *painter, const QRectF &rect)
     // a factor of imgPerSimUnit. The image itself has dimensions that start at 0,0,
     // whilst the scene can start at any point.
 
-    // qDebug("drawBackground. rect=(%.2fx%.2f). @(%.2f, %.2f)", rect.width(), rect.height(), rect.x(), rect.y());
 
-    QRectF imgSourceRect((rect.topLeft() - sceneRect().topLeft()) * patternImgPerSimUnit,
-                      rect.size() * patternImgPerSimUnit);
     painter->fillRect(sceneRect(), backgroundColour);
-    painter->drawImage(rect, *patternImage, imgSourceRect);
+    if (0) { // Draw only the requested portion of the background
+        // This is somewhat unreliable (Dean R 2021-02-17)
+        QRectF imgSourceRect((rect.topLeft() - sceneRect().topLeft()) * patternImgPerSimUnit,
+                             rect.size() * patternImgPerSimUnit);
+        painter->drawImage(rect, *patternImage, imgSourceRect);
+        //        qDebug("drawBackground. rect=(%.2fx%.2f). @(%.2f, %.2f). imgSrcRect=(%.2fx%.2f). viewSz=(%dx%d)",
+        //               rect.width(), rect.height(), rect.x(), rect.y(), imgSourceRect.width(), imgSourceRect.height(),
+        //               this->width(), this->height());
+    }else { // Redraw the entire background (seems more resiliant with various types of resizing)
+        painter->drawImage(sceneRect(), *patternImage, patternImage->rect());
+    }
 }
 
 /** ****************************************************************************
