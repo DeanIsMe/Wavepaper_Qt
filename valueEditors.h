@@ -36,7 +36,7 @@ signals:
     ValueEditedQuickSig();
 private slots:
     void SpinChangedSlot();
-    void SliderChangedSlot(int newSliderVal);
+    void SliderChangedSlot();
 public slots:
     void ApplyExtValue();
 

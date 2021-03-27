@@ -36,6 +36,7 @@ ValueEditorWidget::ValueEditorWidget(QString name, qreal *numberIn, qreal minIn,
     layout->addWidget(&slider);
     slider.setOrientation(Qt::Horizontal);
     QObject::connect(&slider, &QSlider::valueChanged, this, &ValueEditorWidget::SliderChangedSlot);
+    QObject::connect(&slider, &QSlider::sliderReleased, this, &ValueEditorWidget::SliderChangedSlot);
 }
 
 /** ****************************************************************************
@@ -53,11 +54,10 @@ void ValueEditorWidget::SpinChangedSlot()
 
 /** ****************************************************************************
  * @brief ValueEditorWidget::SliderChangedSlot
- * @param newSliderVal
  */
-void ValueEditorWidget::SliderChangedSlot(int newSliderVal)
+void ValueEditorWidget::SliderChangedSlot()
 {
-    *extValue = (qreal)newSliderVal / sliderScaler;
+    *extValue = (qreal)slider.value() / sliderScaler;
     spinBox.blockSignals(true);
     spinBox.setValue(*extValue);
     spinBox.blockSignals(false);
@@ -66,9 +66,13 @@ void ValueEditorWidget::SliderChangedSlot(int newSliderVal)
         emit ValueEditedQuickSig();
     }
     else {
+        qDebug() << "Slider not down. Full image"; // !@#$
         emit ValueEditedSig();
     }
 }
+
+
+
 
 /** ****************************************************************************
  * @brief ValueEditorWidget::ApplyExtValue pulls the external value and applies
