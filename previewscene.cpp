@@ -7,6 +7,8 @@
 #include <QGraphicsEllipseItem>
 #include <QGraphicsItem>
 #include <QGradient>
+#include <QGuiApplication>
+#include <QScreen>
 
 /** ****************************************************************************
  * @brief PreviewScene::PreviewScene
@@ -154,8 +156,8 @@ void PreviewView::resizeEvent(QResizeEvent *event) {
         newHeight = std::min(newHeight, 0.85 * (qreal)QGuiApplication::primaryScreen()->geometry().height());
         expanded = newHeight > this->minimumHeight();
         this->setMinimumHeight(newHeight);
-                qDebug("resizeEvent. size=(%dx%d)px. newHeight=%.2f. height=%d. Expanded=%d",
-                       event->size().width(), event->size().height(), newHeight, this->height(), expanded);
+//                qDebug("resizeEvent. size=(%dx%d)px. newHeight=%.2f. height=%d. Expanded=%d",
+//                       event->size().width(), event->size().height(), newHeight, this->height(), expanded);
     }
 
     if (expanded) {
@@ -163,6 +165,9 @@ void PreviewView::resizeEvent(QResizeEvent *event) {
     }else {
         this->fitInView(imageGen.areaSim, Qt::KeepAspectRatio);
     }
+
+    // Set the target image points to the new size
+    imageGen.setTargetImgPoints(this->size().width() * this->size().height(), imageGen.genPreview);
 
     QGraphicsView::resizeEvent(event);
     // Background redraw will be triggered
@@ -197,7 +202,6 @@ void PreviewView::drawBackground(QPainter *painter, const QRectF &rect)
     // a factor of imgPerSimUnit. The image itself has dimensions that start at 0,0,
     // whilst the scene can start at any point.
 
-
     painter->fillRect(sceneRect(), backgroundColour);
     if (0) { // Draw only the requested portion of the background
         // This is somewhat unreliable (Dean R 2021-02-17)
@@ -209,6 +213,9 @@ void PreviewView::drawBackground(QPainter *painter, const QRectF &rect)
         //               this->width(), this->height());
     }else { // Redraw the entire background (seems more resiliant with various types of resizing)
         painter->drawImage(sceneRect(), *patternImage, patternImage->rect());
+//                qDebug("drawBackground. rect=(%.2fx%.2f). @(%.2f, %.2f). viewSz=(%dx%d)",
+//                       rect.width(), rect.height(), rect.x(), rect.y(),
+//                       this->width(), this->height());
     }
 }
 
@@ -253,4 +260,3 @@ void PreviewScene::OverlayTextSlot(QString text)
     textOverlay.setDefaultTextColor(Qt::gray);
     this->addItem(&textOverlay);
  }
-

@@ -9,7 +9,7 @@
 ValueEditorWidget::ValueEditorWidget(QString name, qreal *numberIn, qreal minIn, qreal maxIn, int precisionIn) :
     extValue(numberIn), minVal(minIn), maxVal(maxIn), precision(precisionIn)
 {
-    //this->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+    //this->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
     this->setMinimumWidth(200);
     this->setMaximumHeight(80);
 
@@ -41,7 +41,6 @@ ValueEditorWidget::ValueEditorWidget(QString name, qreal *numberIn, qreal minIn,
 
 /** ****************************************************************************
  * @brief ValueEditorWidget::SpinChangedSlot
- * @param newVal
  */
 void ValueEditorWidget::SpinChangedSlot()
 {
@@ -114,7 +113,6 @@ EditorGroupWidget::~EditorGroupWidget()
  */
 ValueEditorWidget * EditorGroupWidget::AddValueEditor(ValueEditorWidget *valEditWidget)
 {
-    this->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
     valueEditors.append(valEditWidget);
     layout.addWidget(valEditWidget);
 

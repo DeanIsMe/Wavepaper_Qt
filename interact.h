@@ -16,10 +16,14 @@ public:
         arrangement,
         colours,
         mask,
+        // Four bar linkage
+        lengths,
+        angleInc,
+        position,
     };
 
 private:
-    static constexpr Type defaultType = Type::arrangement;
+    static constexpr Type defaultType = Type::lengths;
 
     MainWindow& mainWindow;
     ImageGen & imgGen;
@@ -36,6 +40,7 @@ private:
     MaskCfg maskConfigBackup;
     // For colour list changes
     ColourList clrListBackup;
+    FourBarCfg fourBarBackup;
 
 private:
     void Cancel();

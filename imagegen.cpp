@@ -12,7 +12,6 @@
 #include <QCoreApplication>
 #include <previewscene.h>
 
-
 ImageGen imageGen;
 
 /** ****************************************************************************
@@ -33,6 +32,18 @@ ImageGen::ImageGen() : colourMap(s.clrList, s.maskCfg, *this) {
 
     colourMap.CalcColourIndex(genQuick);
     colourMap.CalcMaskIndex(genQuick);
+
+    PreCalcTrigTables();
+}
+
+/** ****************************************************************************
+ * @brief ImageGen::PreCalcTrigTables
+ */
+void ImageGen::PreCalcTrigTables() {
+    double iToRad = 1. / (double)trigTableLen * 2. * PI;
+    for (int i=0; i < trigTableLen; i++) {
+        sincos(i*iToRad, &sinTable[i], &cosTable[i]);
+    }
 }
 
 /** ****************************************************************************
@@ -117,9 +128,11 @@ void ImageGen::setTargetImgPoints(qint32 imgPoints, GenSettings & genSet) const 
             (qreal)genSet.areaImg.width() * (qreal)genSet.areaImg.height() - 1) > 0.02) {
         qFatal("setTargetImgPoints: viewWindow and simWindow are different ratios!");
     }
+
+    genSet.pointsPerRev = 200; // TODO Where should this be set?
 }
 
-/**
+/** ****************************************************************************
  * @brief ImageGen::EmittersHidden
  * @return
  */
@@ -140,6 +153,7 @@ void ImageGen::SaveImage()
         GenSettings genFinal;
         setTargetImgPoints(outResolution.width() * outResolution.height(), genFinal);
         genFinal.indexedClr = false; // Use accurate colours
+        genFinal.pointsPerRev = 400;
         QImage imgFinal;
 
         QVector<EmitterF> emittersF;
@@ -230,6 +244,7 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
     fnTimer.start();
     // This function works in image logical coordinates, which are integers
 
+    /*
     QVector<EmitterF> emittersF;
     if (GetEmitterList(emittersF)) {
         return -2;
@@ -402,6 +417,87 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
 
 
     mainWindow->textWindow->appendPlainText(imgGenTime);
+    */
+
+
+
+    // FOUR-BAR-LINKAGE
+
+    imageOut = QImage(genSet.areaImg.width(), genSet.areaImg.height(), QImage::Format_ARGB32);
+    //imageOut = QImage(500, 500, QImage::Format_ARGB32);
+
+    // Equations:
+    // ta2 = 2*atan(((2*la2^2*(xa - xb + la1*cos(ta1) - lb1*cos(tb1))^2 - (xa - xb + la1*cos(ta1) - lb1*cos(tb1))^4 - (ya - yb + la1*sin(ta1) - lb1*sin(tb1))^4 - 2*(ya - yb + la1*sin(ta1) - lb1*sin(tb1))^2*(xa - xb + la1*cos(ta1) - lb1*cos(tb1))^2 + 2*lb2^2*(xa - xb + la1*cos(ta1) - lb1*cos(tb1))^2 + 2*la2^2*(ya - yb + la1*sin(ta1) - lb1*sin(tb1))^2 + 2*lb2^2*(ya - yb + la1*sin(ta1) - lb1*sin(tb1))^2 - la2^4 - lb2^4 + 2*la2^2*lb2^2)^(1/2) - 2*la2*(ya - yb + la1*sin(ta1) - lb1*sin(tb1)))/((xa - xb + la1*cos(ta1) - lb1*cos(tb1))^2 + (ya - yb + la1*sin(ta1) - lb1*sin(tb1))^2 - 2*la2*(xa - xb + la1*cos(ta1) - lb1*cos(tb1)) + la2^2 - lb2^2))
+    // Simplified to:
+    // ka = xa - xb + la1*cos(ta1) - lb1*cos(tb1)
+    // kb = ya - yb + la1*sin(ta1) - lb1*sin(tb1)
+    // kc = ka^2 + kb^2 - lb2^2
+    // ta2 = 2*atan((((2*la2*lb2)^2 - (kc - la2^2)^2)^(1/2) - 2*la2*kb)/(kc - 2*la2*ka + la2^2))
+
+    auto& fb = s.fourBar;
+    qreal lenScale = 0.4 * (imageOut.width() + imageOut.height()) / (fb.la1 + fb.la2 + fb.lb1 + fb.lb2);
+
+    qreal xa_=fb.xa * lenScale + imageOut.width()/2;
+    qreal ya_=fb.ya * lenScale + imageOut.height()/2;
+    qreal xb_=fb.xb * lenScale + imageOut.width()/2;
+    qreal yb_=fb.yb * lenScale + imageOut.height()/2;
+    qreal la1_=fb.la1 * lenScale;
+    qreal lb1_=fb.lb1 * lenScale;
+    qreal la2_=fb.la2 * lenScale;
+    qreal lb2_=fb.lb2 * lenScale;
+
+    qreal ta1_ = fb.ta1Init;
+    qreal tb1_ = fb.tb1Init;
+    qint32 stepCount = fb.revCount * genSet.pointsPerRev;
+
+    qreal inca = (1. / (1. + fb.revRatioB)) / genSet.pointsPerRev * 2. * PI;
+    qreal incb = (fb.revRatioB / (1. + fb.revRatioB)) / genSet.pointsPerRev * 2. * PI;
+
+    qreal widthVariable = fb.lineWidth * lenScale * fb.lineTaperRatio;
+    qreal widthFixed = fb.lineWidth * lenScale * (1.0 - fb.lineTaperRatio);
+
+    QPainter imgPainter(&imageOut);
+    QPen imgPen = QPen(QColor(Qt::white), fb.lineWidth, Qt::SolidLine,
+                       Qt::RoundCap, Qt::RoundJoin);
+    imgPainter.setPen(imgPen);
+    imgPainter.setBackground(QBrush(Qt::black));
+    imgPainter.setBrush(QBrush(Qt::black));
+    imgPainter.fillRect(imageOut.rect(), Qt::black);
+
+
+    QPointF prevPoint;
+    for (qint32 step = 0; step < stepCount; step++) {
+        qreal xa2_ = xa_ + + la1_*cosQuick(ta1_);
+        qreal ya2_ = ya_ + la1_*sinQuick(ta1_);
+        qreal ka_ = xa2_ - xb_ - lb1_*cosQuick(tb1_);
+        qreal kb_ = ya2_ - yb_ - lb1_*sinQuick(tb1_);
+        qreal kc_ = ka_*ka_ + kb_*kb_ - lb2_*lb2_;
+        qreal kd_ = 2*la2_*lb2_;
+        qreal ke_ = kc_ - la2_*la2_;
+        qreal ta2_ = 2* atan2((sqrt(kd_*kd_ - ke_*ke_) - 2*la2_*kb_),(kc_ - 2*la2_*ka_ + la2_*la2_));
+
+        qreal x3_ = xa2_ + la2_*cosQuick(ta2_);
+        qreal y3_ = ya2_ + la2_*sinQuick(ta2_);
+
+        QPointF thisPoint(x3_, y3_);
+        if (step != 0) {
+            QLineF thisLine(prevPoint, thisPoint);
+            imgPen.setWidthF(widthFixed + widthVariable / qMax(1., thisLine.length() * genSet.pointsPerRev * 0.002));
+
+            imgPainter.setPen(imgPen);
+            imgPainter.drawLine(prevPoint, thisPoint);
+        }
+        prevPoint = thisPoint;
+
+        // Increment angles
+        ta1_ = ta1_ + inca;
+        tb1_ = tb1_ + incb;
+    }
+
+    QString imgGenTime = \
+            QString::asprintf("ImageGen %4lld ms. (%dx%d)", fnTimer.elapsed(), imageOut.width(), imageOut.height());
+    qDebug() << imgGenTime;
+    mainWindow->textWindow->appendPlainText(imgGenTime);
 
     return 0;
 }
@@ -461,6 +557,7 @@ void ImageGen::CalcPhasorTemplate(QRect templateRect, GenSettings & genSet) {
     genSet.templatePhasor.MakeNew(templateRect, s.wavelength, genSet.imgPerSimUnit);
     CalcPhasorArr(genSet.templatePhasor, *genSet.templateDist.arr, *genSet.templateAmp.arr);
 }
+
 
 /** ****************************************************************************
  * @brief ImageGen::GetActiveArrangement

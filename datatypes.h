@@ -7,6 +7,7 @@
 #include <QRgb>
 #include <QDebug>
 #include <QColor>
+#include <QPainterPath>
 #include <complex>
 
 #define FP_TO_INT(fp) (fp + 0.5 - (fp<0))
@@ -254,8 +255,8 @@ struct SumArray {
  * @brief The GenSettings struct
  */
 struct GenSettings {
-    static constexpr qint32 dfltImgPointsQuick = 100000;
-    static constexpr qint32 dfltImgPointsPreview = 500000;
+    static constexpr qint32 dfltImgPointsQuick = 500000; // Target pixels in the image
+    static constexpr qint32 dfltImgPointsPreview = 1000000; // Target pixels in the image
     double targetImgPoints = dfltImgPointsPreview; // Total number of points in the preview. Change with setTargetImgPoints()
     double imgPerSimUnit; // The imgPerSimUnit that this template was generated with
     QRect areaImg; // The rectangle of the image view area (image coordinates)
@@ -275,6 +276,10 @@ struct GenSettings {
     qint32 maskCheckSum = 0; // The checksum for the mask when the index was generated
     QVector<qreal> maskIndexed; // All mask values from locations 0 to 1.0 (indices 0 to clrIndexMax). Values are 0 to 1.0.
     QVector<quint32> maskIndexedInt; // All mask values from locations 0 to 1.0 (indices 0 to clrIndexMax). Values are (0 to 255) << 24
+
+    // Four bar linkage
+    QPainterPath paintPath;
+    qreal pointsPerRev; // Setting. How many points in the path per revolution of A & B. Low = polygonal. High = quality curves. 100 is low quality. 200 = high quality.
 };
 
 
@@ -325,6 +330,31 @@ struct MaskCfg { // Mask settings
 
 
 /** ****************************************************************************
+ * @brief The FourBarCfg struct holds all of the settings that define the four
+ * bar linkage
+ */
+struct FourBarCfg {
+    qreal xa=-30;
+    qreal ya=-50;
+    qreal xb=30;
+    qreal yb=-50;
+    qreal la1=50;
+    qreal lb1=50;
+    qreal la2=200;
+    qreal lb2=200;
+    qreal ta1Init = 0;
+    qreal tb1Init = 0;
+
+    qreal revRatioB = 1.02; // The rate of increasing the angle of 'B' vs 'A'
+    qreal revCount = 20; // When to stop drawing, in number of revolutions (A + B combined)
+
+    qreal lineWidth = 1.0;
+    qreal lineTaperRatio = 0.8;
+    qreal temp = 0.01; // !@#$
+};
+
+
+/** ****************************************************************************
  * @brief The Settings struct holds all of the settings that describe the
  * current pattern
  */
@@ -338,13 +368,16 @@ struct Settings {
     ColourList clrList; // Editing this should be handled through the ColourMap class, to update the table accordingly
     MaskCfg maskCfg;
     struct {
-        double aspectRatio = 1080./1920.; // width / height of the preview window, simulation area, generated image, ...
+        double aspectRatio = 1.; // width / height of the preview window, simulation area, generated image, ...
         double zoomLevel = 1; //
         QPointF center{0,0};
     } view;
     // Controlling information displayed
     // (Doesn't affect the actual patten)
     double emitterRadius = 2.; // Emitter radius, simulation units
+
+    // Four bar linkage
+    FourBarCfg fourBar;
 };
 
 
