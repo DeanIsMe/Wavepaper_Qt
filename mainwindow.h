@@ -4,8 +4,11 @@
 #include <QMainWindow>
 #include <QDebug>
 #include <QPlainTextEdit>
+#include <QLayout>
 #include "datatypes.h"
 #include "interact.h"
+#include "valueEditors.h"
+#include "colourmap.h"
 
 class ColourMapEditorWidget;
 
@@ -21,15 +24,20 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+    void InitMode();
+
     PreviewView * previewView;
     PreviewScene * previewScene;
     QPlainTextEdit * textWindow;
-    ColourMapEditorWidget* colourMapEditor;
+    ColourMapEditorWidget * colourMapEditor = nullptr;
     Interact interact;
+    ProgramMode programMode;
 
     void OnInteractChange(QVariant interactType);
 private:
     Ui::MainWindow *ui;
+    QHBoxLayout layoutCentral;
+    EditorGroupWidget valueEditorWidget;
 
     // QWidget interface
 protected:

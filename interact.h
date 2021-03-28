@@ -23,13 +23,14 @@ public:
     };
 
 private:
-    static constexpr Type defaultType = Type::lengths;
+    static constexpr Type defaultTypeWaves = Type::arrangement;
+    static constexpr Type defaultTypeFourBar = Type::lengths;
 
     MainWindow& mainWindow;
     ImageGen & imgGen;
     ColourMap & colourMap;
     Type active = Type::null; // Saves the active interact type upon mouse press.
-    Type typeSelected = defaultType;
+    Type typeSelected = defaultTypeWaves;
 
     QPointF pressPos; // Where the interaction started
     bool ctrlPressed; // If the 'control' key was pressed at the start of the interaction
@@ -44,6 +45,7 @@ private:
 
 private:
     void Cancel();
+    void SelectDefaultType();
 
 public:
     Interact(MainWindow& mainWindowIn, ImageGen& imgGenIn);

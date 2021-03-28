@@ -18,6 +18,11 @@ class ImageGen;
 class PreviewView;
 class PreviewScene;
 
+enum class ProgramMode {
+    waves,
+    fourBar,
+};
+
 /** ****************************************************************************
  * @brief The Map2D_C class
  * A 2D array of a data type

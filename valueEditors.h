@@ -52,6 +52,7 @@ public:
     EditorGroupWidget(ImageGen * imgGenIn);
     ~EditorGroupWidget();
     ValueEditorWidget *AddValueEditor(ValueEditorWidget * valEditWidget);
+    void ClearAllValueEditors();
 
 private:
     ImageGen * imgGen;

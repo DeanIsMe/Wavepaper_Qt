@@ -38,6 +38,8 @@
     <bool>false</bool>
    </attribute>
    <addaction name="actionSaveImage"/>
+   <addaction name="actionWaveMode"/>
+   <addaction name="actionFourBarMode"/>
    <addaction name="separator"/>
    <addaction name="actionEditGroup"/>
    <addaction name="actionHideEmitters"/>
@@ -164,7 +166,7 @@
     <string>Show Mask Chart</string>
    </property>
    <property name="toolTip">
-    <string>Show the chart that displays the chart</string>
+    <string>Show the chart that displays the mask</string>
    </property>
   </action>
   <action name="actionMaskEnable">
@@ -239,6 +241,36 @@
    </property>
    <property name="toolTip">
     <string>Move the emitter group</string>
+   </property>
+  </action>
+  <action name="actionWaveMode">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/wavesMode</normaloff>:/icons/wavesMode</iconset>
+   </property>
+   <property name="text">
+    <string>Wave Mode</string>
+   </property>
+   <property name="toolTip">
+    <string>Change to wave mode</string>
+   </property>
+  </action>
+  <action name="actionFourBarMode">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/fourBarMode</normaloff>:/icons/fourBarMode</iconset>
+   </property>
+   <property name="text">
+    <string>Four Bar Mode</string>
+   </property>
+   <property name="toolTip">
+    <string>Change to four bar linkage mode</string>
    </property>
   </action>
  </widget>

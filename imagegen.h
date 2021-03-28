@@ -110,6 +110,8 @@ private:
     void CalcPhasorTemplate(QRect templateRect, GenSettings &genSet);
 
     void PreCalcTrigTables();
+    int GenerateImageWaves(QImage &imageOut, GenSettings &genSet);
+    int GenerateImageFourBar(QImage &imageOut, GenSettings &genSet);
 };
 
 extern ImageGen imageGen;

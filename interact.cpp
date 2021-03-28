@@ -17,7 +17,7 @@
  */
 Interact::Interact(MainWindow &mainWindowIn, ImageGen& imgGenIn) :
     mainWindow(mainWindowIn), imgGen(imgGenIn), colourMap(imgGenIn.colourMap) {
-
+    SelectDefaultType();
 }
 
 /** ****************************************************************************
@@ -34,9 +34,21 @@ void Interact::SelectType(Type type) {
 
 void Interact::DeselectType(Interact::Type type) {
     if (typeSelected == type) {
-        SelectType(defaultType); // Revert to default
+        SelectDefaultType();
     }
 }
+
+
+void Interact::SelectDefaultType()
+{
+    if (mainWindow.programMode == ProgramMode::waves) {
+        SelectType(defaultTypeWaves); // Revert to default
+    }
+    else if (mainWindow.programMode == ProgramMode::fourBar) {
+        SelectType(defaultTypeFourBar); // Revert to default
+    }
+}
+
 
 /** ****************************************************************************
  * @brief Interact::mousePressEvent

@@ -1,13 +1,12 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include <QLayout>
+
 #include <QWidget>
 #include <QPushButton>
 #include <QBrush>
 #include <QKeyEvent>
 #include "previewscene.h"
 #include "imagegen.h"
-#include "colourmap.h"
 #include "interact.h"
 #include "valueEditors.h"
 
@@ -19,9 +18,12 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , interact(*this, imageGen)
+    , programMode(ProgramMode::waves)
     , ui(new Ui::MainWindow)
+    , valueEditorWidget(&imageGen)
 {
     ui->setupUi(this);
+
 
     // Add a text window for debugging info
     textWindow = new QPlainTextEdit;
@@ -36,18 +38,18 @@ MainWindow::MainWindow(QWidget *parent)
 
     QWidget * central = new QWidget;
     setCentralWidget(central);
-    QHBoxLayout * layoutCentral = new QHBoxLayout;
-    central->setLayout(layoutCentral);
+
+    central->setLayout(&layoutCentral);
 
     // Example button column
     QVBoxLayout * layoutButtonCol = new QVBoxLayout;
 
-    layoutCentral->addLayout(layoutButtonCol);
+    layoutCentral.addLayout(layoutButtonCol);
 
     imageGen.InitViewAreas();
 
     previewView = new PreviewView(this);
-    layoutCentral->addWidget(previewView);
+    layoutCentral.addWidget(previewView);
 
     previewScene = new PreviewScene(previewView, *this);
     previewScene->setSceneRect(imageGen.areaSim);
@@ -100,48 +102,16 @@ MainWindow::MainWindow(QWidget *parent)
     previewScene->EmitterArngmtToList(imageGen);
     imageGen.NewImageNeeded();
 
-    // Add colour map editor UI
-    if (0) {
-    colourMapEditor = new ColourMapEditorWidget(imageGen);
-    layoutCentral->addWidget(colourMapEditor);
-
-    QObject::connect(ui->actionShowMaskChart, QAction::toggled,
-                     colourMapEditor, &ColourMapEditorWidget::SetMaskChartVisible);
-
-    // actionMaskEnable is handled by the function on_actionMaskEnable_triggered
-
-    QObject::connect(&interact, &Interact::InteractTypeChanged,
-                     this, &MainWindow::OnInteractChange, Qt::QueuedConnection);
-    }
+    InitMode();
 
     // Value editors
-    EditorGroupWidget * valueEditors = new EditorGroupWidget(&imageGen);
-
-
-
-    valueEditors->AddValueEditor(new ValueEditorWidget("Pos Bx", &imageGen.s.fourBar.xb, 1, 500, 0));
-    valueEditors->AddValueEditor(new ValueEditorWidget("Pos By", &imageGen.s.fourBar.yb, 1, 500, 0));
-    valueEditors->AddValueEditor(new ValueEditorWidget("Length A1", &imageGen.s.fourBar.la1, 1, 500, 0));
-    valueEditors->AddValueEditor(new ValueEditorWidget("Length A2", &imageGen.s.fourBar.la2, 1, 500, 0));
-    valueEditors->AddValueEditor(new ValueEditorWidget("Length B1", &imageGen.s.fourBar.lb1, 1, 500, 0));
-    valueEditors->AddValueEditor(new ValueEditorWidget("Length B2", &imageGen.s.fourBar.lb2, 1, 500, 0));
-    valueEditors->AddValueEditor(new ValueEditorWidget("Init angle A", &imageGen.s.fourBar.ta1Init, -2*PI, 2*PI, 2));
-
-    valueEditors->AddValueEditor(new ValueEditorWidget("Revolution count", &imageGen.s.fourBar.revCount, 1, 1000, 0));
-
-    valueEditors->AddValueEditor(new ValueEditorWidget("Revolution ratio B", &imageGen.s.fourBar.revRatioB, 0, 1000, 4));
-
-    valueEditors->AddValueEditor(new ValueEditorWidget("Line width", &imageGen.s.fourBar.lineWidth, 0., 10., 2));
-    valueEditors->AddValueEditor(new ValueEditorWidget("Line taper ratio", &imageGen.s.fourBar.lineTaperRatio, 0., 1., 2));
-
-
     QScrollArea * valueEditorsScroll = new QScrollArea();
-    valueEditorsScroll->setWidget(valueEditors);
+    valueEditorsScroll->setWidget(&valueEditorWidget);
     valueEditorsScroll->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Minimum);
-    layoutCentral->addWidget(valueEditorsScroll);
+    layoutCentral.addWidget(valueEditorsScroll);
 
     // Text window for debugging
-    layoutCentral->addWidget(textWindow);
+    layoutCentral.addWidget(textWindow);
 }
 
 /** ****************************************************************************
@@ -150,6 +120,54 @@ MainWindow::MainWindow(QWidget *parent)
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+/** ****************************************************************************
+ * @brief MainWindow::InitMode
+ */
+void MainWindow::InitMode()
+{
+    qDebug("Init mode %d", (int)programMode);
+    if (colourMapEditor) {
+        layoutCentral.removeWidget(colourMapEditor);
+    }
+
+    // Add colour map editor UI
+    if (programMode == ProgramMode::waves) {
+        if (colourMapEditor) {delete colourMapEditor;}
+        colourMapEditor = new ColourMapEditorWidget(imageGen);
+        layoutCentral.addWidget(colourMapEditor);
+
+        QObject::connect(ui->actionShowMaskChart, QAction::toggled,
+                         colourMapEditor, &ColourMapEditorWidget::SetMaskChartVisible);
+
+        // actionMaskEnable is handled by the function on_actionMaskEnable_triggered
+
+        QObject::connect(&interact, &Interact::InteractTypeChanged,
+                         this, &MainWindow::OnInteractChange, Qt::QueuedConnection);
+    }
+
+    // Value editors
+    valueEditorWidget.ClearAllValueEditors();
+    if (programMode == ProgramMode::waves) {
+        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Wavelength", &imageGen.s.wavelength, 1, 200, 1));
+    }
+    if (programMode == ProgramMode::fourBar) {
+        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Pos Bx", &imageGen.s.fourBar.xb, 1, 500, 0));
+        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Pos By", &imageGen.s.fourBar.yb, 1, 500, 0));
+        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Length A1", &imageGen.s.fourBar.la1, 1, 500, 0));
+        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Length A2", &imageGen.s.fourBar.la2, 1, 500, 0));
+        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Length B1", &imageGen.s.fourBar.lb1, 1, 500, 0));
+        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Length B2", &imageGen.s.fourBar.lb2, 1, 500, 0));
+        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Init angle A", &imageGen.s.fourBar.ta1Init, -2*PI, 2*PI, 2));
+
+        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Revolution count", &imageGen.s.fourBar.revCount, 1, 1000, 0));
+
+        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Revolution ratio B", &imageGen.s.fourBar.revRatioB, 0, 1000, 4));
+
+        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Line width", &imageGen.s.fourBar.lineWidth, 0., 10., 2));
+        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Line taper ratio", &imageGen.s.fourBar.lineTaperRatio, 0., 1., 2));
+    }
 }
 
 /** ****************************************************************************

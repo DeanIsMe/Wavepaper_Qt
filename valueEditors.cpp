@@ -107,6 +107,18 @@ EditorGroupWidget::~EditorGroupWidget()
 }
 
 /** ****************************************************************************
+ * @brief EditorGroupWidget::ClearAllValueEditors
+ */
+void EditorGroupWidget::ClearAllValueEditors()
+{
+    for (qint32 i = 0; i < valueEditors.length(); i++) {
+        layout.removeWidget(valueEditors[i]);
+    }
+    qDeleteAll(valueEditors);
+    valueEditors.clear();
+}
+
+/** ****************************************************************************
  * @brief EditorGroupWidget::AddValueEditor
  * @param valEditWidget
  * @return

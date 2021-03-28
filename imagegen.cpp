@@ -244,260 +244,265 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
     fnTimer.start();
     // This function works in image logical coordinates, which are integers
 
-    /*
-    QVector<EmitterF> emittersF;
-    if (GetEmitterList(emittersF)) {
-        return -2;
-    }
-    if (emittersF.size() == 0) {
-        qWarning("fillImageData: No emitters! Abort drawing");
-        return -1;
-    }
-    // Convert emLocs to image coordinates
-    QVector<EmitterI> emittersImg(emittersF.size());
-    for (int32_t i = 0; i < emittersF.size(); i++) {
-        emittersImg[i] = EmitterI(emittersF[i], genSet.imgPerSimUnit);
-    }
-
-//    qDebug() << "Simulation window " << RectFToQString(areaSim) << "[sim units]";
-//    qDebug() << "   Image size " << RectToQString(genSet.areaImg) << "[img units]";
-//    qDebug("imgPerSimUnit = %.2f. numpoints", genSet.imgPerSimUnit);
-
-    // TEMPLATES
-
-    // Determine the range of the offset template
-    QRect templateRect(0,0,0,0);
-    for (EmitterI e : emittersImg) {
-        templateRect |= genSet.areaImg.translated(-e.loc);
-        // !@# need to upgrade the use of this template function to avoid crazy big arrays
-    }
-
-    // *************************************************************************
-    // Distance template
-    bool templatDistChanged = false;
-    if (!genSet.templateDist.arr || !genSet.templateDist.arr->rect().contains(templateRect) ||
-            genSet.imgPerSimUnit != genSet.templateDist.imgPerSimUnit) {
-        // Must recalculate distance template
-        CalcDistTemplate(templateRect, genSet);
-        templatDistChanged = true;
-    }
-
-    // *************************************************************************
-    // Single emiiter amplitude template
-    bool templatAmpChanged = false;
-    qreal distOffset = (qreal)(genSet.areaImg.height() + genSet.areaImg.width()) / 2. * s.distOffsetF / genSet.imgPerSimUnit;
-    if (templatDistChanged || !genSet.templateAmp.arr ||
-            (genSet.templateAmp.arr->rect() != genSet.templateDist.arr->rect()) ||
-            genSet.templateAmp.distOffset != distOffset) {
-        // Must recalculate amplitude template
-        CalcAmpTemplate(distOffset, genSet);
-        templatAmpChanged = true;
-    }
-
-    // *************************************************************************
-    // Single emitter phasor template
-    bool templatePhasorChanged = false;
-    if (templatAmpChanged || !genSet.templatePhasor.arr ||
-            genSet.imgPerSimUnit != genSet.templatePhasor.imgPerSimUnit ||
-            s.wavelength != genSet.templatePhasor.wavelength ||
-            !genSet.templatePhasor.arr->rect().contains(templateRect)) {
-        CalcPhasorTemplate(templateRect, genSet);
-        templatePhasorChanged = true;
-    }
-
-    auto timePostTemplates = fnTimer.elapsed();
-
-    // CALC PHASOR SUM
-
-    // Generate a map of the phasors for each emitter, and sum together
-    // Use the distance and amplitude templates
-
-    // First, determine if it needs to be recalculated
-    CheckSum sum;
-    sum.Add((void*)&genSet.templateDist, sizeof(genSet.templateDist));
-    sum.Add((void*)&genSet.templateAmp, sizeof(genSet.templateAmp));
-    sum.Add((void*)&genSet.templatePhasor, sizeof(genSet.templatePhasor));
-    sum.Add((void*)emittersImg.data(), sizeof(emittersImg[0]) * emittersImg.length());
-    bool phasorSumChanged = false;
-    if (templatePhasorChanged || genSet.combinedArr.phasorArr == nullptr ||
-            genSet.combinedArr.checkSum != sum.Get()) {
-        // Recalculate the phasor sum array
-        if (genSet.combinedArr.phasorArr) {delete genSet.combinedArr.phasorArr;}
-        genSet.combinedArr.phasorArr = new Complex2D_C(genSet.areaImg);
-        genSet.combinedArr.checkSum = sum.Get();
-        for (const EmitterI& e : emittersImg) {
-            AddPhasorArr(e, *genSet.templateDist.arr, *genSet.templateAmp.arr, *genSet.templatePhasor.arr, *genSet.combinedArr.phasorArr);
+    if (mainWindow->programMode == ProgramMode::waves) {
+        QVector<EmitterF> emittersF;
+        if (GetEmitterList(emittersF)) {
+            return -2;
+        }
+        if (emittersF.size() == 0) {
+            qWarning("fillImageData: No emitters! Abort drawing");
+            return -1;
+        }
+        // Convert emLocs to image coordinates
+        QVector<EmitterI> emittersImg(emittersF.size());
+        for (int32_t i = 0; i < emittersF.size(); i++) {
+            emittersImg[i] = EmitterI(emittersF[i], genSet.imgPerSimUnit);
         }
 
-        // Calculate amplitudes, min and max values
-        if (genSet.combinedArr.ampArr) {delete genSet.combinedArr.ampArr;}
-        genSet.combinedArr.ampArr = new Double2D_C(genSet.combinedArr.phasorArr->rect());
-        genSet.combinedArr.ampMax = 0;
-        genSet.combinedArr.ampMin = genSet.templateAmp.arr->getPoint(1,1);
+        //    qDebug() << "Simulation window " << RectFToQString(areaSim) << "[sim units]";
+        //    qDebug() << "   Image size " << RectToQString(genSet.areaImg) << "[img units]";
+        //    qDebug("imgPerSimUnit = %.2f. numpoints", genSet.imgPerSimUnit);
 
-        qint32 y0 = genSet.combinedArr.ampArr->yTop;
-        qint32 ye = genSet.combinedArr.ampArr->yTop + genSet.combinedArr.ampArr->height;
-        qint32 x0 = genSet.combinedArr.ampArr->xLeft;
-        qint32 xe = genSet.combinedArr.ampArr->xLeft + genSet.combinedArr.ampArr->width;
-        for (qint32 y = y0; y < ye; y++) {
-            for (int x = x0; x < xe; x++) {
-                qreal amp = std::abs(genSet.combinedArr.phasorArr->getPoint(x, y));
-                genSet.combinedArr.ampArr->setPoint(x, y, amp);
-                genSet.combinedArr.ampMin = std::min(genSet.combinedArr.ampMin, amp);
-                genSet.combinedArr.ampMax = std::max(genSet.combinedArr.ampMax, amp);
+        // TEMPLATES
+
+        // Determine the range of the offset template
+        QRect templateRect(0,0,0,0);
+        for (EmitterI e : emittersImg) {
+            templateRect |= genSet.areaImg.translated(-e.loc);
+            // !@# need to upgrade the use of this template function to avoid crazy big arrays
+        }
+
+        // *************************************************************************
+        // Distance template
+        bool templatDistChanged = false;
+        if (!genSet.templateDist.arr || !genSet.templateDist.arr->rect().contains(templateRect) ||
+                genSet.imgPerSimUnit != genSet.templateDist.imgPerSimUnit) {
+            // Must recalculate distance template
+            CalcDistTemplate(templateRect, genSet);
+            templatDistChanged = true;
+        }
+
+        // *************************************************************************
+        // Single emiiter amplitude template
+        bool templatAmpChanged = false;
+        qreal distOffset = (qreal)(genSet.areaImg.height() + genSet.areaImg.width()) / 2. * s.distOffsetF / genSet.imgPerSimUnit;
+        if (templatDistChanged || !genSet.templateAmp.arr ||
+                (genSet.templateAmp.arr->rect() != genSet.templateDist.arr->rect()) ||
+                genSet.templateAmp.distOffset != distOffset) {
+            // Must recalculate amplitude template
+            CalcAmpTemplate(distOffset, genSet);
+            templatAmpChanged = true;
+        }
+
+        // *************************************************************************
+        // Single emitter phasor template
+        bool templatePhasorChanged = false;
+        if (templatAmpChanged || !genSet.templatePhasor.arr ||
+                genSet.imgPerSimUnit != genSet.templatePhasor.imgPerSimUnit ||
+                s.wavelength != genSet.templatePhasor.wavelength ||
+                !genSet.templatePhasor.arr->rect().contains(templateRect)) {
+            CalcPhasorTemplate(templateRect, genSet);
+            templatePhasorChanged = true;
+        }
+
+        auto timePostTemplates = fnTimer.elapsed();
+
+        // CALC PHASOR SUM
+
+        // Generate a map of the phasors for each emitter, and sum together
+        // Use the distance and amplitude templates
+
+        // First, determine if it needs to be recalculated
+        CheckSum sum;
+        sum.Add((void*)&genSet.templateDist, sizeof(genSet.templateDist));
+        sum.Add((void*)&genSet.templateAmp, sizeof(genSet.templateAmp));
+        sum.Add((void*)&genSet.templatePhasor, sizeof(genSet.templatePhasor));
+        sum.Add((void*)emittersImg.data(), sizeof(emittersImg[0]) * emittersImg.length());
+        bool phasorSumChanged = false;
+        if (templatePhasorChanged || genSet.combinedArr.phasorArr == nullptr ||
+                genSet.combinedArr.checkSum != sum.Get()) {
+            // Recalculate the phasor sum array
+            if (genSet.combinedArr.phasorArr) {delete genSet.combinedArr.phasorArr;}
+            genSet.combinedArr.phasorArr = new Complex2D_C(genSet.areaImg);
+            genSet.combinedArr.checkSum = sum.Get();
+            for (const EmitterI& e : emittersImg) {
+                AddPhasorArr(e, *genSet.templateDist.arr, *genSet.templateAmp.arr, *genSet.templatePhasor.arr, *genSet.combinedArr.phasorArr);
+            }
+
+            // Calculate amplitudes, min and max values
+            if (genSet.combinedArr.ampArr) {delete genSet.combinedArr.ampArr;}
+            genSet.combinedArr.ampArr = new Double2D_C(genSet.combinedArr.phasorArr->rect());
+            genSet.combinedArr.ampMax = 0;
+            genSet.combinedArr.ampMin = genSet.templateAmp.arr->getPoint(1,1);
+
+            qint32 y0 = genSet.combinedArr.ampArr->yTop;
+            qint32 ye = genSet.combinedArr.ampArr->yTop + genSet.combinedArr.ampArr->height;
+            qint32 x0 = genSet.combinedArr.ampArr->xLeft;
+            qint32 xe = genSet.combinedArr.ampArr->xLeft + genSet.combinedArr.ampArr->width;
+            for (qint32 y = y0; y < ye; y++) {
+                for (int x = x0; x < xe; x++) {
+                    qreal amp = std::abs(genSet.combinedArr.phasorArr->getPoint(x, y));
+                    genSet.combinedArr.ampArr->setPoint(x, y, amp);
+                    genSet.combinedArr.ampMin = std::min(genSet.combinedArr.ampMin, amp);
+                    genSet.combinedArr.ampMax = std::max(genSet.combinedArr.ampMax, amp);
+                }
+            }
+            phasorSumChanged = true;
+        }
+
+        auto timePostPhasors = fnTimer.elapsed();
+        bool colourIndexChanged = false;
+
+        // COLOUR MAP
+        // Use simple checksums to determine when data changes
+        CheckSum sumClrList((void*)s.clrList.data(), sizeof(s.clrList[0]) * s.clrList.length());
+        CheckSum sumMask((void*)&s.maskCfg, sizeof(s.maskCfg));
+        if (sumClrList != genSet.clrListCheckSum
+                || genSet.clrIndexed.length() != genSet.clrIndexMax+1
+                || sumMask != genSet.maskCheckSum
+                || genSet.maskIndexed.length() != genSet.clrIndexMax+1) {
+            colourMap.CalcColourIndex(genSet);
+            genSet.clrListCheckSum = sumClrList;
+
+            colourMap.CalcMaskIndex(genSet);
+            genSet.maskCheckSum = sumMask;
+
+            colourIndexChanged = true;
+        }
+        qint32 sumClrBars = sumClrList.Get() + sumMask.Get();
+        if (sumClrBars != mainWindow->colourMapEditor->GetSumClrBars()
+                || colourIndexChanged) {
+            mainWindow->colourMapEditor->DrawColourBars(genSet, sumClrBars);
+        }
+
+        auto timePostColourIndices = fnTimer.elapsed();
+
+        // CREATE PIXEL ARRAY
+        // (apply colour map to phasor sum array)
+        // (It's assumed this is always necessary. Otherwise we shouldn't recalculating here)
+        Rgb2D_C* pixArr = new Rgb2D_C(genSet.areaImg);
+        qreal maxAmp = genSet.combinedArr.ampMax;
+        qreal minAmp = genSet.combinedArr.ampMin;
+        qreal mult = 1. / (maxAmp - minAmp);
+        for (int y = pixArr->yTop; y < pixArr->yTop + pixArr->height; y++) {
+            for (int x = pixArr->xLeft; x < pixArr->xLeft + pixArr->width; x++) {
+                // Calculate location in range 0 to 1;
+                qreal loc = (genSet.combinedArr.ampArr->getPoint(x, y) - minAmp) * mult;
+                if (genSet.indexedClr) {
+                    pixArr->setPoint(x, y, colourMap.GetColourValueIndexed(genSet, loc)); // Faster
+                }
+                else {
+                    pixArr->setPoint(x, y, colourMap.GetColourValue(genSet, loc));
+                }
             }
         }
-        phasorSumChanged = true;
+
+        auto timePostPixArr = fnTimer.elapsed();
+
+        imageOut = QImage((uchar*)pixArr->getDataPtr(), pixArr->width, pixArr->height, QImage::Format_ARGB32,
+                          &ImageDataDealloc, pixArr);
+        // QRgb is ARGB32 (8 bits per channel)
+
+        auto timePostImage = fnTimer.elapsed();
+
+        QString imgGenTime = \
+                QString::asprintf("ImageGen %4lld ms. Templates=%4lldms (%d,%d,%d), PhasorMap=%4lldms (%d), ClrIdx=%4lldms(%d), Colouring=%4lldms, Image=%4lldms",
+                                  fnTimer.elapsed(), timePostTemplates,
+                                  templatDistChanged, templatAmpChanged, templatePhasorChanged,
+                                  timePostPhasors - timePostTemplates, phasorSumChanged,
+                                  timePostColourIndices - timePostPhasors, colourIndexChanged,
+                                  timePostPixArr - timePostColourIndices,
+                                  timePostImage - timePostPixArr);
+        qDebug() << imgGenTime;
+
+
+        mainWindow->textWindow->appendPlainText(imgGenTime);
     }
 
-    auto timePostPhasors = fnTimer.elapsed();
-    bool colourIndexChanged = false;
 
-    // COLOUR MAP
-    // Use simple checksums to determine when data changes
-    CheckSum sumClrList((void*)s.clrList.data(), sizeof(s.clrList[0]) * s.clrList.length());
-    CheckSum sumMask((void*)&s.maskCfg, sizeof(s.maskCfg));
-    if (sumClrList != genSet.clrListCheckSum
-            || genSet.clrIndexed.length() != genSet.clrIndexMax+1
-            || sumMask != genSet.maskCheckSum
-            || genSet.maskIndexed.length() != genSet.clrIndexMax+1) {
-        colourMap.CalcColourIndex(genSet);
-        genSet.clrListCheckSum = sumClrList;
+    // *************************************************************************
+    else if (mainWindow->programMode == ProgramMode::fourBar) {
 
-        colourMap.CalcMaskIndex(genSet);
-        genSet.maskCheckSum = sumMask;
 
-        colourIndexChanged = true;
-    }
-    qint32 sumClrBars = sumClrList.Get() + sumMask.Get();
-    if (sumClrBars != mainWindow->colourMapEditor->GetSumClrBars()
-            || colourIndexChanged) {
-        mainWindow->colourMapEditor->DrawColourBars(genSet, sumClrBars);
-    }
 
-    auto timePostColourIndices = fnTimer.elapsed();
+        // FOUR-BAR-LINKAGE
 
-    // CREATE PIXEL ARRAY
-    // (apply colour map to phasor sum array)
-    // (It's assumed this is always necessary. Otherwise we shouldn't recalculating here)
-    Rgb2D_C* pixArr = new Rgb2D_C(genSet.areaImg);
-    qreal maxAmp = genSet.combinedArr.ampMax;
-    qreal minAmp = genSet.combinedArr.ampMin;
-    qreal mult = 1. / (maxAmp - minAmp);
-    for (int y = pixArr->yTop; y < pixArr->yTop + pixArr->height; y++) {
-        for (int x = pixArr->xLeft; x < pixArr->xLeft + pixArr->width; x++) {
-            // Calculate location in range 0 to 1;
-            qreal loc = (genSet.combinedArr.ampArr->getPoint(x, y) - minAmp) * mult;
-            if (genSet.indexedClr) {
-                pixArr->setPoint(x, y, colourMap.GetColourValueIndexed(genSet, loc)); // Faster
+        imageOut = QImage(genSet.areaImg.width(), genSet.areaImg.height(), QImage::Format_ARGB32);
+        //imageOut = QImage(500, 500, QImage::Format_ARGB32);
+
+        // Equations:
+        // ta2 = 2*atan(((2*la2^2*(xa - xb + la1*cos(ta1) - lb1*cos(tb1))^2 - (xa - xb + la1*cos(ta1) - lb1*cos(tb1))^4 - (ya - yb + la1*sin(ta1) - lb1*sin(tb1))^4 - 2*(ya - yb + la1*sin(ta1) - lb1*sin(tb1))^2*(xa - xb + la1*cos(ta1) - lb1*cos(tb1))^2 + 2*lb2^2*(xa - xb + la1*cos(ta1) - lb1*cos(tb1))^2 + 2*la2^2*(ya - yb + la1*sin(ta1) - lb1*sin(tb1))^2 + 2*lb2^2*(ya - yb + la1*sin(ta1) - lb1*sin(tb1))^2 - la2^4 - lb2^4 + 2*la2^2*lb2^2)^(1/2) - 2*la2*(ya - yb + la1*sin(ta1) - lb1*sin(tb1)))/((xa - xb + la1*cos(ta1) - lb1*cos(tb1))^2 + (ya - yb + la1*sin(ta1) - lb1*sin(tb1))^2 - 2*la2*(xa - xb + la1*cos(ta1) - lb1*cos(tb1)) + la2^2 - lb2^2))
+        // Simplified to:
+        // ka = xa - xb + la1*cos(ta1) - lb1*cos(tb1)
+        // kb = ya - yb + la1*sin(ta1) - lb1*sin(tb1)
+        // kc = ka^2 + kb^2 - lb2^2
+        // ta2 = 2*atan((((2*la2*lb2)^2 - (kc - la2^2)^2)^(1/2) - 2*la2*kb)/(kc - 2*la2*ka + la2^2))
+
+        auto& fb = s.fourBar;
+        qreal lenScale = 0.4 * (imageOut.width() + imageOut.height()) / (fb.la1 + fb.la2 + fb.lb1 + fb.lb2);
+
+        qreal xa_=fb.xa * lenScale + imageOut.width()/2;
+        qreal ya_=fb.ya * lenScale + imageOut.height()/2;
+        qreal xb_=fb.xb * lenScale + imageOut.width()/2;
+        qreal yb_=fb.yb * lenScale + imageOut.height()/2;
+        qreal la1_=fb.la1 * lenScale;
+        qreal lb1_=fb.lb1 * lenScale;
+        qreal la2_=fb.la2 * lenScale;
+        qreal lb2_=fb.lb2 * lenScale;
+
+        qreal ta1_ = fb.ta1Init;
+        qreal tb1_ = fb.tb1Init;
+        qint32 stepCount = fb.revCount * genSet.pointsPerRev;
+
+        qreal inca = (1. / (1. + fb.revRatioB)) / genSet.pointsPerRev * 2. * PI;
+        qreal incb = (fb.revRatioB / (1. + fb.revRatioB)) / genSet.pointsPerRev * 2. * PI;
+
+        qreal widthVariable = fb.lineWidth * lenScale * fb.lineTaperRatio;
+        qreal widthFixed = fb.lineWidth * lenScale * (1.0 - fb.lineTaperRatio);
+
+        QPainter imgPainter(&imageOut);
+        QPen imgPen = QPen(QColor(Qt::white), fb.lineWidth, Qt::SolidLine,
+                           Qt::RoundCap, Qt::RoundJoin);
+        imgPainter.setPen(imgPen);
+        imgPainter.setBackground(QBrush(Qt::black));
+        imgPainter.setBrush(QBrush(Qt::black));
+        imgPainter.fillRect(imageOut.rect(), Qt::black);
+
+
+        QPointF prevPoint;
+        for (qint32 step = 0; step < stepCount; step++) {
+            qreal xa2_ = xa_ + + la1_*cosQuick(ta1_);
+            qreal ya2_ = ya_ + la1_*sinQuick(ta1_);
+            qreal ka_ = xa2_ - xb_ - lb1_*cosQuick(tb1_);
+            qreal kb_ = ya2_ - yb_ - lb1_*sinQuick(tb1_);
+            qreal kc_ = ka_*ka_ + kb_*kb_ - lb2_*lb2_;
+            qreal kd_ = 2*la2_*lb2_;
+            qreal ke_ = kc_ - la2_*la2_;
+            qreal ta2_ = 2* atan2((sqrt(kd_*kd_ - ke_*ke_) - 2*la2_*kb_),(kc_ - 2*la2_*ka_ + la2_*la2_));
+
+            qreal x3_ = xa2_ + la2_*cosQuick(ta2_);
+            qreal y3_ = ya2_ + la2_*sinQuick(ta2_);
+
+            QPointF thisPoint(x3_, y3_);
+            if (step != 0) {
+                QLineF thisLine(prevPoint, thisPoint);
+                imgPen.setWidthF(widthFixed + widthVariable / qMax(1., thisLine.length() * genSet.pointsPerRev * 0.002));
+
+                imgPainter.setPen(imgPen);
+                imgPainter.drawLine(prevPoint, thisPoint);
             }
-            else {
-                pixArr->setPoint(x, y, colourMap.GetColourValue(genSet, loc));
-            }
+            prevPoint = thisPoint;
+
+            // Increment angles
+            ta1_ = ta1_ + inca;
+            tb1_ = tb1_ + incb;
         }
+
+        QString imgGenTime = \
+                QString::asprintf("ImageGen %4lld ms. (%dx%d)", fnTimer.elapsed(), imageOut.width(), imageOut.height());
+        qDebug() << imgGenTime;
+        mainWindow->textWindow->appendPlainText(imgGenTime);
     }
-
-    auto timePostPixArr = fnTimer.elapsed();
-
-    imageOut = QImage((uchar*)pixArr->getDataPtr(), pixArr->width, pixArr->height, QImage::Format_ARGB32,
-                      &ImageDataDealloc, pixArr);
-                      // QRgb is ARGB32 (8 bits per channel)
-
-    auto timePostImage = fnTimer.elapsed();
-
-    QString imgGenTime = \
-            QString::asprintf("ImageGen %4lld ms. Templates=%4lldms (%d,%d,%d), PhasorMap=%4lldms (%d), ClrIdx=%4lldms(%d), Colouring=%4lldms, Image=%4lldms",
-                              fnTimer.elapsed(), timePostTemplates,
-                              templatDistChanged, templatAmpChanged, templatePhasorChanged,
-                              timePostPhasors - timePostTemplates, phasorSumChanged,
-                              timePostColourIndices - timePostPhasors, colourIndexChanged,
-                              timePostPixArr - timePostColourIndices,
-                              timePostImage - timePostPixArr);
-    qDebug() << imgGenTime;
-
-
-    mainWindow->textWindow->appendPlainText(imgGenTime);
-    */
-
-
-
-    // FOUR-BAR-LINKAGE
-
-    imageOut = QImage(genSet.areaImg.width(), genSet.areaImg.height(), QImage::Format_ARGB32);
-    //imageOut = QImage(500, 500, QImage::Format_ARGB32);
-
-    // Equations:
-    // ta2 = 2*atan(((2*la2^2*(xa - xb + la1*cos(ta1) - lb1*cos(tb1))^2 - (xa - xb + la1*cos(ta1) - lb1*cos(tb1))^4 - (ya - yb + la1*sin(ta1) - lb1*sin(tb1))^4 - 2*(ya - yb + la1*sin(ta1) - lb1*sin(tb1))^2*(xa - xb + la1*cos(ta1) - lb1*cos(tb1))^2 + 2*lb2^2*(xa - xb + la1*cos(ta1) - lb1*cos(tb1))^2 + 2*la2^2*(ya - yb + la1*sin(ta1) - lb1*sin(tb1))^2 + 2*lb2^2*(ya - yb + la1*sin(ta1) - lb1*sin(tb1))^2 - la2^4 - lb2^4 + 2*la2^2*lb2^2)^(1/2) - 2*la2*(ya - yb + la1*sin(ta1) - lb1*sin(tb1)))/((xa - xb + la1*cos(ta1) - lb1*cos(tb1))^2 + (ya - yb + la1*sin(ta1) - lb1*sin(tb1))^2 - 2*la2*(xa - xb + la1*cos(ta1) - lb1*cos(tb1)) + la2^2 - lb2^2))
-    // Simplified to:
-    // ka = xa - xb + la1*cos(ta1) - lb1*cos(tb1)
-    // kb = ya - yb + la1*sin(ta1) - lb1*sin(tb1)
-    // kc = ka^2 + kb^2 - lb2^2
-    // ta2 = 2*atan((((2*la2*lb2)^2 - (kc - la2^2)^2)^(1/2) - 2*la2*kb)/(kc - 2*la2*ka + la2^2))
-
-    auto& fb = s.fourBar;
-    qreal lenScale = 0.4 * (imageOut.width() + imageOut.height()) / (fb.la1 + fb.la2 + fb.lb1 + fb.lb2);
-
-    qreal xa_=fb.xa * lenScale + imageOut.width()/2;
-    qreal ya_=fb.ya * lenScale + imageOut.height()/2;
-    qreal xb_=fb.xb * lenScale + imageOut.width()/2;
-    qreal yb_=fb.yb * lenScale + imageOut.height()/2;
-    qreal la1_=fb.la1 * lenScale;
-    qreal lb1_=fb.lb1 * lenScale;
-    qreal la2_=fb.la2 * lenScale;
-    qreal lb2_=fb.lb2 * lenScale;
-
-    qreal ta1_ = fb.ta1Init;
-    qreal tb1_ = fb.tb1Init;
-    qint32 stepCount = fb.revCount * genSet.pointsPerRev;
-
-    qreal inca = (1. / (1. + fb.revRatioB)) / genSet.pointsPerRev * 2. * PI;
-    qreal incb = (fb.revRatioB / (1. + fb.revRatioB)) / genSet.pointsPerRev * 2. * PI;
-
-    qreal widthVariable = fb.lineWidth * lenScale * fb.lineTaperRatio;
-    qreal widthFixed = fb.lineWidth * lenScale * (1.0 - fb.lineTaperRatio);
-
-    QPainter imgPainter(&imageOut);
-    QPen imgPen = QPen(QColor(Qt::white), fb.lineWidth, Qt::SolidLine,
-                       Qt::RoundCap, Qt::RoundJoin);
-    imgPainter.setPen(imgPen);
-    imgPainter.setBackground(QBrush(Qt::black));
-    imgPainter.setBrush(QBrush(Qt::black));
-    imgPainter.fillRect(imageOut.rect(), Qt::black);
-
-
-    QPointF prevPoint;
-    for (qint32 step = 0; step < stepCount; step++) {
-        qreal xa2_ = xa_ + + la1_*cosQuick(ta1_);
-        qreal ya2_ = ya_ + la1_*sinQuick(ta1_);
-        qreal ka_ = xa2_ - xb_ - lb1_*cosQuick(tb1_);
-        qreal kb_ = ya2_ - yb_ - lb1_*sinQuick(tb1_);
-        qreal kc_ = ka_*ka_ + kb_*kb_ - lb2_*lb2_;
-        qreal kd_ = 2*la2_*lb2_;
-        qreal ke_ = kc_ - la2_*la2_;
-        qreal ta2_ = 2* atan2((sqrt(kd_*kd_ - ke_*ke_) - 2*la2_*kb_),(kc_ - 2*la2_*ka_ + la2_*la2_));
-
-        qreal x3_ = xa2_ + la2_*cosQuick(ta2_);
-        qreal y3_ = ya2_ + la2_*sinQuick(ta2_);
-
-        QPointF thisPoint(x3_, y3_);
-        if (step != 0) {
-            QLineF thisLine(prevPoint, thisPoint);
-            imgPen.setWidthF(widthFixed + widthVariable / qMax(1., thisLine.length() * genSet.pointsPerRev * 0.002));
-
-            imgPainter.setPen(imgPen);
-            imgPainter.drawLine(prevPoint, thisPoint);
-        }
-        prevPoint = thisPoint;
-
-        // Increment angles
-        ta1_ = ta1_ + inca;
-        tb1_ = tb1_ + incb;
-    }
-
-    QString imgGenTime = \
-            QString::asprintf("ImageGen %4lld ms. (%dx%d)", fnTimer.elapsed(), imageOut.width(), imageOut.height());
-    qDebug() << imgGenTime;
-    mainWindow->textWindow->appendPlainText(imgGenTime);
 
     return 0;
 }
