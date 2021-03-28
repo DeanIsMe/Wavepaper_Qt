@@ -255,8 +255,8 @@ struct SumArray {
  * @brief The GenSettings struct
  */
 struct GenSettings {
-    static constexpr qint32 dfltImgPointsQuick = 500000;
-    static constexpr qint32 dfltImgPointsPreview = 1000000;
+    static constexpr qint32 dfltImgPointsQuick = 500000; // Target pixels in the image
+    static constexpr qint32 dfltImgPointsPreview = 1000000; // Target pixels in the image
     double targetImgPoints = dfltImgPointsPreview; // Total number of points in the preview. Change with setTargetImgPoints()
     double imgPerSimUnit; // The imgPerSimUnit that this template was generated with
     QRect areaImg; // The rectangle of the image view area (image coordinates)
@@ -277,8 +277,9 @@ struct GenSettings {
     QVector<qreal> maskIndexed; // All mask values from locations 0 to 1.0 (indices 0 to clrIndexMax). Values are 0 to 1.0.
     QVector<quint32> maskIndexedInt; // All mask values from locations 0 to 1.0 (indices 0 to clrIndexMax). Values are (0 to 255) << 24
 
-    // Path
+    // Four bar linkage
     QPainterPath paintPath;
+    qreal pointsPerRev; // Setting. How many points in the path per revolution of A & B. Low = polygonal. High = quality curves. 100 is low quality. 200 = high quality.
 };
 
 
@@ -341,11 +342,15 @@ struct FourBarCfg {
     qreal lb1=50;
     qreal la2=200;
     qreal lb2=200;
-    qreal inca = 0.01;
-    qreal incb = 0.0102;
     qreal ta1Init = 0;
     qreal tb1Init = 0;
-    qreal stepCount = 10000;
+
+    qreal revRatioB = 1.02; // The rate of increasing the angle of 'B' vs 'A'
+    qreal revCount = 20; // When to stop drawing, in number of revolutions (A + B combined)
+
+    qreal lineWidth = 1.0;
+    qreal lineTaperRatio = 0.8;
+    qreal temp = 0.01; // !@#$
 };
 
 

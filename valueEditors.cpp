@@ -41,7 +41,6 @@ ValueEditorWidget::ValueEditorWidget(QString name, qreal *numberIn, qreal minIn,
 
 /** ****************************************************************************
  * @brief ValueEditorWidget::SpinChangedSlot
- * @param newVal
  */
 void ValueEditorWidget::SpinChangedSlot()
 {

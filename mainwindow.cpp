@@ -118,17 +118,22 @@ MainWindow::MainWindow(QWidget *parent)
     EditorGroupWidget * valueEditors = new EditorGroupWidget(&imageGen);
 
 
-    valueEditors->AddValueEditor(new ValueEditorWidget("Step Count", &imageGen.s.fourBar.stepCount, 1000, 50000, 0)); // !@#$
+
     valueEditors->AddValueEditor(new ValueEditorWidget("Pos Bx", &imageGen.s.fourBar.xb, 1, 500, 0));
     valueEditors->AddValueEditor(new ValueEditorWidget("Pos By", &imageGen.s.fourBar.yb, 1, 500, 0));
     valueEditors->AddValueEditor(new ValueEditorWidget("Length A1", &imageGen.s.fourBar.la1, 1, 500, 0));
     valueEditors->AddValueEditor(new ValueEditorWidget("Length A2", &imageGen.s.fourBar.la2, 1, 500, 0));
     valueEditors->AddValueEditor(new ValueEditorWidget("Length B1", &imageGen.s.fourBar.lb1, 1, 500, 0));
     valueEditors->AddValueEditor(new ValueEditorWidget("Length B2", &imageGen.s.fourBar.lb2, 1, 500, 0));
-    valueEditors->AddValueEditor(new ValueEditorWidget("Angle increment A", &imageGen.s.fourBar.inca, 0.001, 0.5, 5));
-    valueEditors->AddValueEditor(new ValueEditorWidget("Angle increment B", &imageGen.s.fourBar.incb, 0.001, 0.5, 5));
     valueEditors->AddValueEditor(new ValueEditorWidget("Init angle A", &imageGen.s.fourBar.ta1Init, -2*PI, 2*PI, 2));
-    valueEditors->AddValueEditor(new ValueEditorWidget("Init angle B", &imageGen.s.fourBar.tb1Init, -2*PI, 2*PI, 2));
+
+    valueEditors->AddValueEditor(new ValueEditorWidget("Revolution count", &imageGen.s.fourBar.revCount, 1, 1000, 0));
+
+    valueEditors->AddValueEditor(new ValueEditorWidget("Revolution ratio B", &imageGen.s.fourBar.revRatioB, 0, 1000, 4));
+
+    valueEditors->AddValueEditor(new ValueEditorWidget("Line width", &imageGen.s.fourBar.lineWidth, 0., 10., 2));
+    valueEditors->AddValueEditor(new ValueEditorWidget("Line taper ratio", &imageGen.s.fourBar.lineTaperRatio, 0., 1., 2));
+
 
     QScrollArea * valueEditorsScroll = new QScrollArea();
     valueEditorsScroll->setWidget(valueEditors);

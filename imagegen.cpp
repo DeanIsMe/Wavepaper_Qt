@@ -128,6 +128,8 @@ void ImageGen::setTargetImgPoints(qint32 imgPoints, GenSettings & genSet) const 
             (qreal)genSet.areaImg.width() * (qreal)genSet.areaImg.height() - 1) > 0.02) {
         qFatal("setTargetImgPoints: viewWindow and simWindow are different ratios!");
     }
+
+    genSet.pointsPerRev = 200; // TODO Where should this be set?
 }
 
 /** ****************************************************************************
@@ -151,6 +153,7 @@ void ImageGen::SaveImage()
         GenSettings genFinal;
         setTargetImgPoints(outResolution.width() * outResolution.height(), genFinal);
         genFinal.indexedClr = false; // Use accurate colours
+        genFinal.pointsPerRev = 400;
         QImage imgFinal;
 
         QVector<EmitterF> emittersF;
@@ -443,17 +446,18 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
     qreal la2_=fb.la2 * lenScale;
     qreal lb2_=fb.lb2 * lenScale;
 
-    qreal inca = fb.inca;
-    qreal incb = fb.incb;
     qreal ta1_ = fb.ta1Init;
     qreal tb1_ = fb.tb1Init;
-    qint32 stepCount = s.fourBar.stepCount;
+    qint32 stepCount = fb.revCount * genSet.pointsPerRev;
 
-    qreal widthVaryRatio = 0.8; // !@#$ make configuable
-    qreal widthDflt = lenScale * widthVaryRatio * 1.0; // !@#$ Make configurable
+    qreal inca = (1. / (1. + fb.revRatioB)) / genSet.pointsPerRev * 2. * PI;
+    qreal incb = (fb.revRatioB / (1. + fb.revRatioB)) / genSet.pointsPerRev * 2. * PI;
+
+    qreal widthVariable = fb.lineWidth * lenScale * fb.lineTaperRatio;
+    qreal widthFixed = fb.lineWidth * lenScale * (1.0 - fb.lineTaperRatio);
 
     QPainter imgPainter(&imageOut);
-    QPen imgPen = QPen(QColor(Qt::white), widthDflt, Qt::SolidLine,
+    QPen imgPen = QPen(QColor(Qt::white), fb.lineWidth, Qt::SolidLine,
                        Qt::RoundCap, Qt::RoundJoin);
     imgPainter.setPen(imgPen);
     imgPainter.setBackground(QBrush(Qt::black));
@@ -478,8 +482,8 @@ int ImageGen::GenerateImage(QImage& imageOut, GenSettings& genSet) {
         QPointF thisPoint(x3_, y3_);
         if (step != 0) {
             QLineF thisLine(prevPoint, thisPoint);
-            // !@#$ scale the divisor according to the plot rate (incA + incB)
-            imgPen.setWidthF((1.-widthVaryRatio) + widthDflt / qMax(1., thisLine.length()));
+            imgPen.setWidthF(widthFixed + widthVariable / qMax(1., thisLine.length() * genSet.pointsPerRev * 0.002));
+
             imgPainter.setPen(imgPen);
             imgPainter.drawLine(prevPoint, thisPoint);
         }

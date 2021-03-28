@@ -237,8 +237,8 @@ void Interact::mouseMoveEvent(QGraphicsSceneMouseEvent *event, PreviewScene *sce
         // *********************************************************************
         // Four bar lengths edit
         auto newFbCfg = fourBarBackup;
-        newFbCfg.inca = fourBarBackup.inca * (1 + deltaRatio.x() * 0.01);
-        newFbCfg.incb = fourBarBackup.incb * (1 + deltaRatio.y() * 0.01);
+        newFbCfg.revRatioB = fourBarBackup.revRatioB * (1 + deltaRatio.x() * 0.01);
+        newFbCfg.revCount = fourBarBackup.revCount * (1 + deltaRatio.y() * 1.);
         imgGen.s.fourBar = newFbCfg;
     }
     else if (active == Type::position) {
@@ -318,13 +318,13 @@ void Interact::KeyPressEvent(QKeyEvent *event)
         mainWindow.previewScene->OverlayTextSlot(QString());
         break;
     case Qt::Key_Plus: // !@# temp
-        imgGen.s.distOffsetF *= 1.2;
-        qDebug("distOffsetF = %.2f", imgGen.s.distOffsetF);
+        imgGen.s.fourBar.temp *= 1.2;
+        qDebug("imgGen.s.fourBar.temp = %.4f", imgGen.s.fourBar.temp);
         imgGen.NewImageNeeded();
         break;
     case Qt::Key_Minus: // !@# temp
-        imgGen.s.distOffsetF *= (1./1.2);
-        qDebug("distOffsetF = %.2f", imgGen.s.distOffsetF);
+        imgGen.s.fourBar.temp *= (1./1.2);
+        qDebug("imgGen.s.fourBar.temp = %.4f", imgGen.s.fourBar.temp);
         imgGen.NewImageNeeded();
         break;
     case Qt::Key_Escape:
