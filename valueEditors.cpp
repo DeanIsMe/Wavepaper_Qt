@@ -65,7 +65,6 @@ void ValueEditorWidget::SliderChangedSlot()
         emit ValueEditedQuickSig();
     }
     else {
-        qDebug() << "Slider not down. Full image"; // !@#$
         emit ValueEditedSig();
     }
 }
