@@ -33,11 +33,16 @@ public:
     Interact interact;
     ProgramMode programMode;
 
+public slots:
     void OnInteractChange(QVariant interactType);
+    void ChangeModeToWaves();
+    void ChangeModeToFourBar();
 private:
     Ui::MainWindow *ui;
+    QWidget centralWidget;
     QHBoxLayout layoutCentral;
     EditorGroupWidget valueEditorWidget;
+    QScrollArea valueEditorScroll;
 
     // QWidget interface
 protected:

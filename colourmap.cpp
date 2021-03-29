@@ -653,7 +653,9 @@ ColourMapEditorWidget::ColourMapEditorWidget(ImageGen& imgGenIn) :
 */
 ColourMapEditorWidget::~ColourMapEditorWidget()
 {
-
+    if (maskSeries != nullptr) {
+        delete maskSeries;
+    }
 }
 
 

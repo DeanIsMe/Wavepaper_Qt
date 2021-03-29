@@ -24,7 +24,6 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-
     // Add a text window for debugging info
     textWindow = new QPlainTextEdit;
     QFont font("Monospace");
@@ -36,10 +35,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     imageGen.s.emitterRadius = 2.0;
 
-    QWidget * central = new QWidget;
-    setCentralWidget(central);
+    setCentralWidget(&centralWidget);
 
-    central->setLayout(&layoutCentral);
+    centralWidget.setLayout(&layoutCentral);
 
     // Example button column
     QVBoxLayout * layoutButtonCol = new QVBoxLayout;
@@ -85,6 +83,12 @@ MainWindow::MainWindow(QWidget *parent)
     QObject::connect(ui->actionSaveImage, QAction::triggered,
                      &imageGen, &ImageGen::SaveImage);
 
+    QObject::connect(ui->actionWaveMode, QAction::triggered,
+                     this, &MainWindow::ChangeModeToWaves);
+
+    QObject::connect(ui->actionFourBarMode, QAction::triggered,
+                     this, &MainWindow::ChangeModeToFourBar);
+
 
     previewScene->EmitterArngmtToList(imageGen);
 
@@ -92,26 +96,19 @@ MainWindow::MainWindow(QWidget *parent)
     qDebug() << "Preview view frameRect " << RectToQString(previewView->frameRect());
     qDebug() << "Preview view sceneRect " << RectFToQString(previewView->sceneRect());
 
-    // Generate the image
-    // Use background brush
-//    QImage * image = new QImage;
-//    imageGen.GenerateImage(*image);
-//    QBrush brush(*image);
-//    previewScene->setBackgroundBrush(brush);
-
     previewScene->EmitterArngmtToList(imageGen);
     imageGen.NewImageNeeded();
 
-    InitMode();
-
     // Value editors
-    QScrollArea * valueEditorsScroll = new QScrollArea();
-    valueEditorsScroll->setWidget(&valueEditorWidget);
-    valueEditorsScroll->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Minimum);
-    layoutCentral.addWidget(valueEditorsScroll);
+    valueEditorScroll.setWidget(&valueEditorWidget);
+    valueEditorScroll.setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Minimum);
+    valueEditorScroll.setWidgetResizable(false); // The default
+    layoutCentral.addWidget(&valueEditorScroll);
 
     // Text window for debugging
     layoutCentral.addWidget(textWindow);
+
+    InitMode();
 }
 
 /** ****************************************************************************
@@ -130,13 +127,17 @@ void MainWindow::InitMode()
     qDebug("Init mode %d", (int)programMode);
     if (colourMapEditor) {
         layoutCentral.removeWidget(colourMapEditor);
+        colourMapEditor->setVisible(false);
     }
 
     // Add colour map editor UI
     if (programMode == ProgramMode::waves) {
-        if (colourMapEditor) {delete colourMapEditor;}
-        colourMapEditor = new ColourMapEditorWidget(imageGen);
+        if (colourMapEditor == nullptr) {
+            colourMapEditor = new ColourMapEditorWidget(imageGen);
+        }
+        colourMapEditor->setVisible(true);
         layoutCentral.addWidget(colourMapEditor);
+        colourMapEditor->
 
         QObject::connect(ui->actionShowMaskChart, QAction::toggled,
                          colourMapEditor, &ColourMapEditorWidget::SetMaskChartVisible);
@@ -149,6 +150,7 @@ void MainWindow::InitMode()
 
     // Value editors
     valueEditorWidget.ClearAllValueEditors();
+
     if (programMode == ProgramMode::waves) {
         valueEditorWidget.AddValueEditor(new ValueEditorWidget("Wavelength", &imageGen.s.wavelength, 1, 200, 1));
     }
@@ -168,6 +170,15 @@ void MainWindow::InitMode()
         valueEditorWidget.AddValueEditor(new ValueEditorWidget("Line width", &imageGen.s.fourBar.lineWidth, 0., 10., 2));
         valueEditorWidget.AddValueEditor(new ValueEditorWidget("Line taper ratio", &imageGen.s.fourBar.lineTaperRatio, 0., 1., 2));
     }
+
+    QApplication::processEvents( QEventLoop::ExcludeUserInputEvents ); // https://stackoverflow.com/a/30472749/3580080
+    valueEditorWidget.resize(valueEditorWidget.sizeHint());
+    centralWidget.resize(centralWidget.sizeHint());
+
+
+    // Update the toolbar
+    ui->actionWaveMode->setChecked(programMode == ProgramMode::waves);
+    ui->actionFourBarMode->setChecked(programMode == ProgramMode::fourBar);
 }
 
 /** ****************************************************************************
@@ -251,6 +262,27 @@ void MainWindow::OnInteractChange(QVariant interactType) {
     ui->actionEditGroup->setChecked(interactType == (Interact::Type::arrangement));
     ui->actionColoursEdit->setChecked(interactType == (Interact::Type::colours));
     ui->actionMaskEdit->setChecked(interactType == (Interact::Type::mask));
+}
+
+/** ****************************************************************************
+ * @brief MainWindow::ChangeModeToWaves
+ */
+void MainWindow::ChangeModeToWaves()
+{
+    if (programMode != ProgramMode::waves) {
+        programMode = ProgramMode::waves;
+        InitMode();
+        imageGen.NewImageNeeded();
+    }
+}
+
+void MainWindow::ChangeModeToFourBar()
+{
+    if (programMode != ProgramMode::fourBar) {
+        programMode = ProgramMode::fourBar;
+        InitMode();
+        imageGen.NewImageNeeded();
+    }
 }
 
 // Note: the 'triggered' signal is NOT sent when the value is changed with 'setChecked()'.
