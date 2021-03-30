@@ -83,12 +83,10 @@ void Interact::mousePressEvent(QGraphicsSceneMouseEvent *event, PreviewScene *sc
         break;
 
     case Type::lengths:
-        fourBarBackup = imgGen.s.fourBar;
-        break;
     case Type::angleInc:
-        fourBarBackup = imgGen.s.fourBar;
-        break;
     case Type::position:
+    case Type::drawRange:
+    case Type::angleInit:
         fourBarBackup = imgGen.s.fourBar;
         break;
 
@@ -129,7 +127,10 @@ void Interact::mouseReleaseEvent(QGraphicsSceneMouseEvent *event, PreviewScene *
         break;
     case Type::lengths:
         break;
-
+    case Type::drawRange:
+        break;
+    case Type::angleInit:
+        break;
     }
 
     active = Type::null;
@@ -143,7 +144,7 @@ void Interact::mouseReleaseEvent(QGraphicsSceneMouseEvent *event, PreviewScene *
  */
 void Interact::mouseMoveEvent(QGraphicsSceneMouseEvent *event, PreviewScene *scene) {
     Q_UNUSED(scene);
-    qDebug("Mouse move    event (%7.2f, %7.2f)", event->scenePos().x(), event->scenePos().y());
+    // qDebug("Mouse move    event (%7.2f, %7.2f)", event->scenePos().x(), event->scenePos().y());
     if (!IsActive()) {return;}
     // Determine how much the mouse has moved while clicked
     QPointF deltaScene = event->scenePos() - pressPos;
@@ -239,10 +240,8 @@ void Interact::mouseMoveEvent(QGraphicsSceneMouseEvent *event, PreviewScene *sce
         // *********************************************************************
         // Four bar lengths edit
         auto newFbCfg = fourBarBackup;
-        newFbCfg.la2 = fourBarBackup.la2 * (1 + deltaRatio.y());
-        newFbCfg.lb2 = fourBarBackup.lb2 * (1 + deltaRatio.y());
-        newFbCfg.la1 = fourBarBackup.la1 * (1 + deltaRatio.x());
-        newFbCfg.lb1 = fourBarBackup.lb1 * (1 + deltaRatio.x());
+        newFbCfg.lenRatioB = newFbCfg.lenRatioB * (1 + deltaRatio.x());
+        newFbCfg.lenRatio2 = newFbCfg.lenRatio2 * (1 + deltaRatio.y());
         imgGen.s.fourBar = newFbCfg;
     }
     else if (active == Type::angleInc) {
@@ -250,15 +249,33 @@ void Interact::mouseMoveEvent(QGraphicsSceneMouseEvent *event, PreviewScene *sce
         // Four bar lengths edit
         auto newFbCfg = fourBarBackup;
         newFbCfg.revRatioB = fourBarBackup.revRatioB * (1 + deltaRatio.x() * 0.01);
-        newFbCfg.revCount = fourBarBackup.revCount * (1 + deltaRatio.y() * 1.);
+
         imgGen.s.fourBar = newFbCfg;
     }
     else if (active == Type::position) {
         // *********************************************************************
         // Four bar position edit
         auto newFbCfg = fourBarBackup;
-        newFbCfg.xb = fourBarBackup.xb * (1 + deltaRatio.x() * 10);
-        newFbCfg.xb = fourBarBackup.xb * (1 + deltaRatio.y() * 10);
+        newFbCfg.baseSepX = qMax(0., fourBarBackup.baseSepX * (1 + deltaRatio.x()));
+        newFbCfg.baseOffsetY = fourBarBackup.baseOffsetY + deltaRatio.y();
+
+        imgGen.s.fourBar = newFbCfg;
+    }
+    else if (active == Type::drawRange) {
+        // *********************************************************************
+        // Four bar drawing range
+        auto newFbCfg = fourBarBackup;
+        newFbCfg.revCount = fourBarBackup.revCount * (1 + deltaRatio.x() * 1.);
+        newFbCfg.initAngleOffset = fourBarBackup.initAngleOffset + deltaRatio.y() * 2. * PI;
+        imgGen.s.fourBar = newFbCfg;
+    }
+    else if (active == Type::angleInit) {
+        // *********************************************************************
+        // Four bar initial angle
+        auto newFbCfg = fourBarBackup;
+        //newFbCfg.revCount = fourBarBackup.revCount * (1 + deltaRatio.x() * 1.);
+        newFbCfg.ta1Init = fourBarBackup.ta1Init + deltaRatio.x() * 2. * PI;
+        newFbCfg.initAngleOffset = fourBarBackup.initAngleOffset + deltaRatio.y() * 2. * PI;
         imgGen.s.fourBar = newFbCfg;
     }
 
@@ -291,15 +308,12 @@ void Interact::Cancel() {
         break;
 
     case Type::lengths:
-        imgGen.s.fourBar = fourBarBackup;
-        break;
     case Type::angleInc:
-        imgGen.s.fourBar = fourBarBackup;
-        break;
     case Type::position:
+    case Type::angleInit:
+    case Type::drawRange:
         imgGen.s.fourBar = fourBarBackup;
         break;
-
     }
     imgGen.NewPreviewImageNeeded();
     active = Type::null;
@@ -318,16 +332,20 @@ void Interact::KeyPressEvent(QKeyEvent *event)
         imgGen.testVal--;
         break;
     case Qt::Key_1:
+        qDebug("Interact: Lengths");
         SelectType(Type::lengths);
         break;
     case Qt::Key_2:
+        qDebug("Interact: AngleInc");
         SelectType(Type::angleInc);
         break;
     case Qt::Key_3:
+        qDebug("Interact: Position");
         SelectType(Type::position);
         break;
     case Qt::Key_4:
-        mainWindow.previewScene->OverlayTextSlot(QString());
+        qDebug("Interact: drawRange");
+        SelectType(Type::drawRange);
         break;
     case Qt::Key_Plus: // !@# temp
         imgGen.s.fourBar.temp *= 1.2;

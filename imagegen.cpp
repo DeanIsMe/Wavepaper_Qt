@@ -456,26 +456,28 @@ int ImageGen::GenerateImageFourBar(QImage &imageOut, GenSettings &genSet) {
     // ta2 = 2*atan((((2*la2*lb2)^2 - (kc - la2^2)^2)^(1/2) - 2*la2*kb)/(kc - 2*la2*ka + la2^2))
 
     auto& fb = s.fourBar;
-    qreal lenScale = 0.4 * (imageOut.width() + imageOut.height()) / (fb.la1 + fb.la2 + fb.lb1 + fb.lb2);
+    qreal imgCoordScaler = 0.001 * (imageOut.width() + imageOut.height()); // Scales according to the output size
 
-    qreal xa_=fb.xa * lenScale + imageOut.width()/2;
-    qreal ya_=fb.ya * lenScale + imageOut.height()/2;
-    qreal xb_=fb.xb * lenScale + imageOut.width()/2;
-    qreal yb_=fb.yb * lenScale + imageOut.height()/2;
-    qreal la1_=fb.la1 * lenScale;
-    qreal lb1_=fb.lb1 * lenScale;
-    qreal la2_=fb.la2 * lenScale;
-    qreal lb2_=fb.lb2 * lenScale;
+    qreal lenScaler = imgCoordScaler * fb.lenBase;
+    qreal xa_ = lenScaler * -fb.baseSepX + imageOut.width()/2;;
+    qreal xb_ = lenScaler * fb.baseSepX + imageOut.width()/2;
+    qreal ya_ = lenScaler * (-2 + fb.baseOffsetY) + imageOut.height()*0.6;
+    qreal yb_ = lenScaler * (-2 - fb.baseOffsetY) + imageOut.height()*0.6;
+
+    qreal la1_ = lenScaler;
+    qreal lb1_ = lenScaler * fb.lenRatioB;
+    qreal la2_ = lenScaler * fb.lenRatio2;
+    qreal lb2_ = lenScaler * fb.lenRatioB * fb.lenRatio2;
 
     qreal ta1_ = fb.ta1Init;
-    qreal tb1_ = fb.tb1Init;
+    qreal tb1_ = ta1_ + fb.initAngleOffset;
     qint32 stepCount = fb.revCount * genSet.pointsPerRev;
 
     qreal inca = (1. / (1. + fb.revRatioB)) / genSet.pointsPerRev * 2. * PI;
     qreal incb = (fb.revRatioB / (1. + fb.revRatioB)) / genSet.pointsPerRev * 2. * PI;
 
-    qreal widthVariable = fb.lineWidth * lenScale * fb.lineTaperRatio;
-    qreal widthFixed = fb.lineWidth * lenScale * (1.0 - fb.lineTaperRatio);
+    qreal widthVariable = fb.lineWidth * imgCoordScaler * fb.lineTaperRatio;
+    qreal widthFixed = fb.lineWidth * imgCoordScaler * (1.0 - fb.lineTaperRatio);
 
     QPainter imgPainter(&imageOut);
     QPen imgPen = QPen(QColor(Qt::white), fb.lineWidth, Qt::SolidLine,

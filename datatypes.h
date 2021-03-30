@@ -339,23 +339,22 @@ struct MaskCfg { // Mask settings
  * bar linkage
  */
 struct FourBarCfg {
-    qreal xa=-30;
-    qreal ya=-50;
-    qreal xb=30;
-    qreal yb=-50;
-    qreal la1=50;
-    qreal lb1=50;
-    qreal la2=200;
-    qreal lb2=200;
-    qreal ta1Init = 0;
-    qreal tb1Init = 0;
+    qreal baseSepX = 0.6; // Horizontal separation of the 2 bases are, as a factor of lenBase. 0+
+    qreal baseOffsetY = 0.; // Vertical offset of the 2 bases, as a factor of lenBase; -ve to +ve
+
+    qreal lenRatioB = 1.0; // Length of Arm B = Length of Arm A * lenRatioB;
+    qreal lenRatio2 = 4.0; // Length of Segment 2 = Length of Segment 1 * lenRatio2;
+    qreal lenBase = 30;
+
+    qreal ta1Init = 0; // Initial angle of a1 [rad]
+    qreal initAngleOffset = 0; // initAngleB = initAngleA + initAngleOffset [rad]
+    qreal revCount = 20; // When to stop drawing, in number of revolutions (A + B combined)
 
     qreal revRatioB = 1.02; // The rate of increasing the angle of 'B' vs 'A'
-    qreal revCount = 20; // When to stop drawing, in number of revolutions (A + B combined)
 
     qreal lineWidth = 1.0;
     qreal lineTaperRatio = 0.8;
-    qreal temp = 0.01; // !@#$
+    qreal temp = 0.01; // !@#
 };
 
 

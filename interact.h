@@ -20,6 +20,8 @@ public:
         lengths,
         angleInc,
         position,
+        drawRange,
+        angleInit, // Unused
     };
     static constexpr Type defaultTypeWaves = Type::arrangement;
     static constexpr Type defaultTypeFourBar = Type::lengths;

@@ -18,7 +18,7 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , interact(*this, imageGen)
-    , programMode(ProgramMode::waves)
+    , programMode(ProgramMode::fourBar)
     , ui(new Ui::MainWindow)
     , valueEditorWidget(&imageGen)
 {
@@ -155,14 +155,15 @@ void MainWindow::InitMode()
         valueEditorWidget.AddValueEditor(new ValueEditorWidget("Wavelength", &imageGen.s.wavelength, 1, 200, 1));
     }
     if (programMode == ProgramMode::fourBar) {
-        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Pos Bx", &imageGen.s.fourBar.xb, 1, 500, 0));
-        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Pos By", &imageGen.s.fourBar.yb, 1, 500, 0));
-        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Length A1", &imageGen.s.fourBar.la1, 1, 500, 0));
-        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Length A2", &imageGen.s.fourBar.la2, 1, 500, 0));
-        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Length B1", &imageGen.s.fourBar.lb1, 1, 500, 0));
-        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Length B2", &imageGen.s.fourBar.lb2, 1, 500, 0));
-        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Init angle A", &imageGen.s.fourBar.ta1Init, -2*PI, 2*PI, 2));
+        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Base separation X", &imageGen.s.fourBar.baseSepX, 0, 5, 2));
+        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Base offset Y", &imageGen.s.fourBar.baseOffsetY, -5, 5, 2));
 
+        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Length ratio side", &imageGen.s.fourBar.lenRatioB, 0.1, 10, 3));
+        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Length ratio apex", &imageGen.s.fourBar.lenRatio2, 0.1, 10, 3));
+        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Length scale", &imageGen.s.fourBar.lenBase, 1, 200, 0));
+
+        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Init angle A", &imageGen.s.fourBar.ta1Init, -2*PI, 2*PI, 2));
+        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Init angle offset", &imageGen.s.fourBar.initAngleOffset, -2*PI, 2*PI, 2));
         valueEditorWidget.AddValueEditor(new ValueEditorWidget("Revolution count", &imageGen.s.fourBar.revCount, 1, 1000, 0));
 
         valueEditorWidget.AddValueEditor(new ValueEditorWidget("Revolution ratio B", &imageGen.s.fourBar.revRatioB, 0, 1000, 4));
@@ -187,6 +188,13 @@ void MainWindow::InitMode()
     // Update the toolbar
     ui->actionWaveMode->setChecked(programMode == ProgramMode::waves);
     ui->actionFourBarMode->setChecked(programMode == ProgramMode::fourBar);
+
+    if (programMode == ProgramMode::waves) {
+        // TODO update the toolbar
+        //ui->toolBarHorz->
+    }
+
+
 
 
 
