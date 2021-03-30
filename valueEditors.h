@@ -39,7 +39,6 @@ private slots:
     void SliderChangedSlot();
 public slots:
     void ApplyExtValue();
-
 };
 
 /** ****************************************************************************

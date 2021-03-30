@@ -171,6 +171,14 @@ void MainWindow::InitMode()
         valueEditorWidget.AddValueEditor(new ValueEditorWidget("Line taper ratio", &imageGen.s.fourBar.lineTaperRatio, 0., 1., 2));
     }
 
+    // Interact mode
+    if (programMode == ProgramMode::waves) {
+        interact.SelectType(Interact::defaultTypeWaves);
+    }
+    else if (programMode == ProgramMode::fourBar) {
+        interact.SelectType(Interact::defaultTypeFourBar);
+    }
+
     QApplication::processEvents( QEventLoop::ExcludeUserInputEvents ); // https://stackoverflow.com/a/30472749/3580080
     valueEditorWidget.resize(valueEditorWidget.sizeHint());
     centralWidget.resize(centralWidget.sizeHint());
@@ -179,6 +187,9 @@ void MainWindow::InitMode()
     // Update the toolbar
     ui->actionWaveMode->setChecked(programMode == ProgramMode::waves);
     ui->actionFourBarMode->setChecked(programMode == ProgramMode::fourBar);
+
+
+
 }
 
 /** ****************************************************************************

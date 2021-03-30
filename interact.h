@@ -21,10 +21,10 @@ public:
         angleInc,
         position,
     };
-
-private:
     static constexpr Type defaultTypeWaves = Type::arrangement;
     static constexpr Type defaultTypeFourBar = Type::lengths;
+
+private:
 
     MainWindow& mainWindow;
     ImageGen & imgGen;
