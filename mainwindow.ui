@@ -273,6 +273,51 @@
     <string>Change to four bar linkage mode</string>
    </property>
   </action>
+  <action name="actionFbEditLengths">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/length</normaloff>:/icons/length</iconset>
+   </property>
+   <property name="text">
+    <string>Edit arm lengths</string>
+   </property>
+   <property name="toolTip">
+    <string>Edit arm lengths</string>
+   </property>
+  </action>
+  <action name="actionFbEditAngleInc">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/anglesInc</normaloff>:/icons/anglesInc</iconset>
+   </property>
+   <property name="text">
+    <string>Edit angle increment</string>
+   </property>
+   <property name="toolTip">
+    <string>Edit angle increment</string>
+   </property>
+  </action>
+  <action name="actionFbEditDrawRange">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/drawRange</normaloff>:/icons/drawRange</iconset>
+   </property>
+   <property name="text">
+    <string>Edit draw range</string>
+   </property>
+   <property name="toolTip">
+    <string>Edit draw range</string>
+   </property>
+  </action>
  </widget>
  <resources>
   <include location="Resources.qrc"/>

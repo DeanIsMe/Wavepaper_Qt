@@ -59,5 +59,8 @@ private slots:
     void on_actionMaskEdit_toggled(bool arg1);
     void on_actionColoursEdit_toggled(bool arg1);
     void on_actionEditGroup_toggled(bool arg1);
+    void on_actionFbEditLengths_toggled(bool arg1);
+    void on_actionFbEditAngleInc_toggled(bool arg1);
+    void on_actionFbEditDrawRange_toggled(bool arg1);
 };
 #endif // MAINWINDOW_H

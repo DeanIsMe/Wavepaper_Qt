@@ -17,5 +17,8 @@
         <file alias="wavesMode">Resources/waves-24px.svg</file>
         <file alias="fourBarMode">Resources/fourbar-24px.svg</file>
         <file alias="reset">Resources/restart_alt-24px.svg</file>
+        <file alias="length">Resources/length-24px.svg</file>
+        <file alias="anglesInc">Resources/angles_inc-24px.svg</file>
+        <file alias="drawRange">Resources/draw_range-24px.svg</file>
     </qresource>
 </RCC>

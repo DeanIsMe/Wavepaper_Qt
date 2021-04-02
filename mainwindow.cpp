@@ -1,4 +1,4 @@
-#include "mainwindow.h"
+ #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
 #include <QWidget>
@@ -18,7 +18,7 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , interact(*this, imageGen)
-    , programMode(ProgramMode::fourBar)
+    , programMode(ProgramMode::waves)
     , ui(new Ui::MainWindow)
     , valueEditorWidget(&imageGen)
 {
@@ -88,7 +88,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     QObject::connect(ui->actionFourBarMode, QAction::triggered,
                      this, &MainWindow::ChangeModeToFourBar);
-
 
     previewScene->EmitterArngmtToList(imageGen);
 
@@ -186,13 +185,39 @@ void MainWindow::InitMode()
 
 
     // Update the toolbar
-    ui->actionWaveMode->setChecked(programMode == ProgramMode::waves);
-    ui->actionFourBarMode->setChecked(programMode == ProgramMode::fourBar);
+    ui->toolBarHorz->clear();
+
+    QList<QAction *> actionsToAdd;
+    actionsToAdd.append(ui->actionSaveImage);
+    actionsToAdd.append(ui->actionWaveMode);
+    actionsToAdd.append(ui->actionFourBarMode);
+
+
 
     if (programMode == ProgramMode::waves) {
-        // TODO update the toolbar
-        //ui->toolBarHorz->
+        actionsToAdd.append(ui->actionEditGroup);
+        actionsToAdd.append(ui->actionHideEmitters);
+        actionsToAdd.append(ui->actionMore);
+        actionsToAdd.append(ui->actionFewer);
+        actionsToAdd.append(ui->actionMirrorHor);
+        actionsToAdd.append(ui->actionMirrorVert);
+        actionsToAdd.append(ui->actionWavelengthDecrease);
+        actionsToAdd.append(ui->actionWavelengthIncrease);
+        actionsToAdd.append(ui->actionMaskEnable);
+        actionsToAdd.append(ui->actionMaskEdit);
+        actionsToAdd.append(ui->actionShowMaskChart);
+        actionsToAdd.append(ui->actionColoursEdit);
     }
+    if (programMode == ProgramMode::fourBar) {
+        actionsToAdd.append(ui->actionFbEditLengths);
+        actionsToAdd.append(ui->actionFbEditAngleInc);
+        actionsToAdd.append(ui->actionFbEditDrawRange);
+    }
+
+    ui->toolBarHorz->addActions(actionsToAdd);
+
+    ui->actionWaveMode->setChecked(programMode == ProgramMode::waves);
+    ui->actionFourBarMode->setChecked(programMode == ProgramMode::fourBar);
 
 
 
@@ -281,6 +306,10 @@ void MainWindow::OnInteractChange(QVariant interactType) {
     ui->actionEditGroup->setChecked(interactType == (Interact::Type::arrangement));
     ui->actionColoursEdit->setChecked(interactType == (Interact::Type::colours));
     ui->actionMaskEdit->setChecked(interactType == (Interact::Type::mask));
+
+    ui->actionFbEditLengths->setChecked(interactType == Interact::Type::lengths);
+    ui->actionFbEditAngleInc->setChecked(interactType == Interact::Type::angleInc);
+    ui->actionFbEditDrawRange->setChecked(interactType == Interact::Type::drawRange);
 }
 
 /** ****************************************************************************
@@ -325,4 +354,17 @@ void MainWindow::on_actionHideEmitters_toggled(bool unused) {
     Q_UNUSED(unused);
 }
 
+void MainWindow::on_actionFbEditLengths_toggled(bool arg1)
+{
+    interact.SetTypeSelect(Interact::Type::lengths, arg1);
+}
 
+void MainWindow::on_actionFbEditAngleInc_toggled(bool arg1)
+{
+    interact.SetTypeSelect(Interact::Type::angleInc, arg1);
+}
+
+void MainWindow::on_actionFbEditDrawRange_toggled(bool arg1)
+{
+    interact.SetTypeSelect(Interact::Type::drawRange, arg1);
+}

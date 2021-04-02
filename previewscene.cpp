@@ -172,8 +172,8 @@ void PreviewView::resizeEvent(QResizeEvent *event) {
     QGraphicsView::resizeEvent(event);
     // Background redraw will be triggered
 
-    imageGen.NewImageNeeded();
-    // TODO reduce the gradual scaling that occurs
+    // !@# imageGen.NewImageNeeded();
+    // TODO reduce the gradual scaling that occurs when generating a new image here
 }
 
 /** ****************************************************************************
