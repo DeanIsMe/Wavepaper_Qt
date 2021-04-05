@@ -65,6 +65,10 @@ MainWindow::MainWindow(QWidget *parent)
                      previewScene, &PreviewScene::OnEmitterArngmtChange,
                      Qt::QueuedConnection);
 
+
+    QObject::connect(&interact, &Interact::InteractTypeChanged,
+                     this, &MainWindow::OnInteractChange, Qt::QueuedConnection);
+
     // Action trigger events
     QObject::connect(ui->actionFewer, QAction::triggered,
                      &imageGen, &ImageGen::EmitterCountDecrease);
@@ -133,18 +137,11 @@ void MainWindow::InitMode()
     if (programMode == ProgramMode::waves) {
         if (colourMapEditor == nullptr) {
             colourMapEditor = new ColourMapEditorWidget(imageGen);
+            QObject::connect(ui->actionShowMaskChart, QAction::toggled,
+                             colourMapEditor, &ColourMapEditorWidget::SetMaskChartVisible);
+            layoutCentral.addWidget(colourMapEditor);
         }
         colourMapEditor->setVisible(true);
-        layoutCentral.addWidget(colourMapEditor);
-        colourMapEditor->
-
-        QObject::connect(ui->actionShowMaskChart, QAction::toggled,
-                         colourMapEditor, &ColourMapEditorWidget::SetMaskChartVisible);
-
-        // actionMaskEnable is handled by the function on_actionMaskEnable_triggered
-
-        QObject::connect(&interact, &Interact::InteractTypeChanged,
-                         this, &MainWindow::OnInteractChange, Qt::QueuedConnection);
     }
 
     // Value editors
