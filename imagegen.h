@@ -27,7 +27,6 @@ public:
 
 private:
     MainWindow * mainWindow = nullptr;
-    QList<EmArrangement> arngmtList;
     bool pendingQuickImage; // True if a quick image is pending to be generated
     bool pendingPreviewImage; // True if a preview image is pending to be generated
     bool hideEmitters = true; // When true, the emitters are not drawn on the preview window

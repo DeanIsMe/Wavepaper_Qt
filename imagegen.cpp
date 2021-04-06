@@ -588,10 +588,10 @@ void ImageGen::CalcPhasorTemplate(QRect templateRect, GenSettings & genSet) {
  */
 EmArrangement* ImageGen::GetActiveArrangement()
 {
-    if (arngmtList.size() == 0) {
+    if (s.emArrangements.size() == 0) {
         return nullptr;
     }
-    return &arngmtList.last();
+    return &s.emArrangements.last();
 }
 
 /** ****************************************************************************
@@ -872,13 +872,13 @@ int ImageGen::EmitterArrangementToLocs(const EmArrangement & arngmt, QVector<QPo
  */
 int ImageGen::GetEmitterList(QVector<EmitterF> & emitters) {
 
-    if (arngmtList.size() == 0) {
-        arngmtList.append(DefaultArrangement());
+    if (s.emArrangements.size() == 0) {
+        s.emArrangements.append(DefaultArrangement());
     }
 
     // Build a vector of all emitter locations from the arrangements
     QVector<QPointF> emLocs;
-    for (EmArrangement arn : arngmtList) {
+    for (EmArrangement arn : s.emArrangements) {
         QVector<QPointF> thisEmLocs;
         EmitterArrangementToLocs(arn, thisEmLocs);
         emLocs.append(thisEmLocs);
