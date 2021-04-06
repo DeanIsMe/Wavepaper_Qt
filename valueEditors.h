@@ -10,6 +10,8 @@
 #include <QList>
 #include <QScrollArea>
 
+class EditorGroupWidget;
+
 /** ****************************************************************************
  * @brief The ValueEditorWidget class manages GUI editing for a single value
  * It contains a slider & a spin box, which are
@@ -22,7 +24,10 @@ class ValueEditorWidget : public QWidget {
     Q_OBJECT;
 public:
     ValueEditorWidget(QString name, qreal* numberIn, qreal minIn, qreal maxIn, int precisionIn = 0);
+    ~ValueEditorWidget();
+    void SetParentGroupWidget(EditorGroupWidget * ptrIn) {parentGroupWidget = ptrIn;}
 private:
+    EditorGroupWidget * parentGroupWidget;
     qreal * const extValue; // External value that these widgets edit
     qreal minVal;
     qreal maxVal;
@@ -42,7 +47,7 @@ public slots:
 };
 
 /** ****************************************************************************
- * @brief The EditorGroupWidget class contains a group of
+ * @brief The EditorGroupWidget class contains a group of ValueEditorWidgets
  */
 class EditorGroupWidget : public QWidget
 {
@@ -51,6 +56,7 @@ public:
     EditorGroupWidget(ImageGen * imgGenIn);
     ~EditorGroupWidget();
     ValueEditorWidget *AddValueEditor(ValueEditorWidget * valEditWidget);
+    bool RemoveValueEditor(ValueEditorWidget * valEditWidget);
     void ClearAllValueEditors();
 
 private:

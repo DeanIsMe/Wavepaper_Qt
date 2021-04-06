@@ -37,6 +37,17 @@ ValueEditorWidget::ValueEditorWidget(QString name, qreal *numberIn, qreal minIn,
     slider.setOrientation(Qt::Horizontal);
     QObject::connect(&slider, &QSlider::valueChanged, this, &ValueEditorWidget::SliderChangedSlot);
     QObject::connect(&slider, &QSlider::sliderReleased, this, &ValueEditorWidget::SliderChangedSlot);
+    parentGroupWidget = nullptr;
+}
+
+/** ****************************************************************************
+ * @brief ValueEditorWidget::~ValueEditorWidget
+ */
+ValueEditorWidget::~ValueEditorWidget()
+{
+    if (parentGroupWidget != nullptr) {
+        parentGroupWidget->RemoveValueEditor(this);
+    }
 }
 
 /** ****************************************************************************
@@ -127,6 +138,7 @@ ValueEditorWidget * EditorGroupWidget::AddValueEditor(ValueEditorWidget *valEdit
 {
     valueEditors.append(valEditWidget);
     layout.addWidget(valEditWidget);
+    valEditWidget->SetParentGroupWidget(this);
 
     // Connect signals and slots for this
     QObject::connect(valEditWidget, &ValueEditorWidget::ValueEditedSig, imgGen, &ImageGen::NewImageNeeded);
@@ -135,4 +147,21 @@ ValueEditorWidget * EditorGroupWidget::AddValueEditor(ValueEditorWidget *valEdit
     QObject::connect(imgGen, &ImageGen::GenerateImageSignal, valEditWidget, &ValueEditorWidget::ApplyExtValue);
 
     return valEditWidget;
+}
+
+/** ****************************************************************************
+ * @brief EditorGroupWidget::RemoveValueEditor removes the given value editor
+ * from the list. Does NOT delete the object.
+ * @param valEditWidget
+ * @returns true if the value was removed
+ */
+bool EditorGroupWidget::RemoveValueEditor(ValueEditorWidget *valEditWidget)
+{
+    layout.removeWidget(valEditWidget);
+    return valueEditors.removeOne(valEditWidget);
+//    for (int i = 0; i < valueEditors.length(); i++) {
+//        if (valEditWidget == valueEditors[i]) {
+//            // Remove this widget
+//        }
+//    }
 }
