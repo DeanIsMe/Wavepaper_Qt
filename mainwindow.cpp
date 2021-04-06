@@ -149,6 +149,13 @@ void MainWindow::InitMode()
 
     if (programMode == ProgramMode::waves) {
         valueEditorWidget.AddValueEditor(new ValueEditorWidget("Wavelength", &imageGen.s.wavelength, 1, 200, 1));
+        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Linearity", &imageGen.s.distOffsetF, 0, 1.0, 2));
+
+        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Mask Revolutions", &imageGen.s.maskCfg.numRevs, 1, 80, 0));
+        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Mask Offset", &imageGen.s.maskCfg.offset, 0, 1, 2));
+        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Mask Duty Cycle", &imageGen.s.maskCfg.dutyCycle, 0, 1, 2));
+        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Mask Smooth", &imageGen.s.maskCfg.smooth, 0, 2.0, 2));
+
     }
     if (programMode == ProgramMode::fourBar) {
         valueEditorWidget.AddValueEditor(new ValueEditorWidget("Base separation X", &imageGen.s.fourBar.baseSepX, 0, 5, 2));
