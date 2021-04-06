@@ -41,8 +41,7 @@ private:
     Ui::MainWindow *ui;
     QWidget centralWidget;
     QHBoxLayout layoutCentral;
-    EditorGroupWidget valueEditorWidget;
-    QScrollArea valueEditorScroll;
+    EditorGroupWidget * valueEditorWidget;
 
     // QWidget interface
 protected:

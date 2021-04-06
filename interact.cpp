@@ -347,6 +347,10 @@ void Interact::KeyPressEvent(QKeyEvent *event)
         qDebug("Interact: drawRange");
         SelectType(Type::drawRange);
         break;
+    case Qt::Key_5:
+        mainWindow.dumpObjectInfo();
+        mainWindow.dumpObjectTree();
+        break;
     case Qt::Key_Plus: // !@# temp
         imgGen.s.fourBar.temp *= 1.2;
         qDebug("imgGen.s.fourBar.temp = %.4f", imgGen.s.fourBar.temp);

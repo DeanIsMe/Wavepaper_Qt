@@ -20,7 +20,6 @@ MainWindow::MainWindow(QWidget *parent)
     , interact(*this, imageGen)
     , programMode(ProgramMode::waves)
     , ui(new Ui::MainWindow)
-    , valueEditorWidget(&imageGen)
 {
     ui->setupUi(this);
 
@@ -103,10 +102,12 @@ MainWindow::MainWindow(QWidget *parent)
     imageGen.NewImageNeeded();
 
     // Value editors
-    valueEditorScroll.setWidget(&valueEditorWidget);
-    valueEditorScroll.setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Minimum);
-    valueEditorScroll.setWidgetResizable(false); // The default
-    layoutCentral.addWidget(&valueEditorScroll);
+    valueEditorWidget = new EditorGroupWidget(&imageGen);
+    QScrollArea * valueEditorScroll = new QScrollArea();
+    valueEditorScroll->setWidget(valueEditorWidget);
+    valueEditorScroll->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Minimum);
+    valueEditorScroll->setWidgetResizable(false); // The default
+    layoutCentral.addWidget(valueEditorScroll);
 
     // Text window for debugging
     layoutCentral.addWidget(textWindow);
@@ -128,7 +129,8 @@ MainWindow::~MainWindow()
 void MainWindow::InitMode()
 {
     qDebug("Init mode %d", (int)programMode);
-    if (colourMapEditor) {
+
+    if (colourMapEditor != nullptr) {
         layoutCentral.removeWidget(colourMapEditor);
         colourMapEditor->setVisible(false);
     }
@@ -139,40 +141,40 @@ void MainWindow::InitMode()
             colourMapEditor = new ColourMapEditorWidget(imageGen);
             QObject::connect(ui->actionShowMaskChart, QAction::toggled,
                              colourMapEditor, &ColourMapEditorWidget::SetMaskChartVisible);
-            layoutCentral.addWidget(colourMapEditor);
         }
+        layoutCentral.addWidget(colourMapEditor);
         colourMapEditor->setVisible(true);
     }
 
     // Value editors
-    valueEditorWidget.ClearAllValueEditors();
+    valueEditorWidget->ClearAllValueEditors();
 
     if (programMode == ProgramMode::waves) {
-        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Wavelength", &imageGen.s.wavelength, 1, 200, 1));
-        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Linearity", &imageGen.s.distOffsetF, 0, 1.0, 2));
+        valueEditorWidget->AddValueEditor(new ValueEditorWidget("Wavelength", &imageGen.s.wavelength, 1, 200, 1));
+        valueEditorWidget->AddValueEditor(new ValueEditorWidget("Linearity", &imageGen.s.distOffsetF, 0, 1.0, 2));
 
-        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Mask Revolutions", &imageGen.s.maskCfg.numRevs, 1, 80, 0));
-        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Mask Offset", &imageGen.s.maskCfg.offset, 0, 1, 2));
-        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Mask Duty Cycle", &imageGen.s.maskCfg.dutyCycle, 0, 1, 2));
-        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Mask Smooth", &imageGen.s.maskCfg.smooth, 0, 2.0, 2));
+        valueEditorWidget->AddValueEditor(new ValueEditorWidget("Mask Revolutions", &imageGen.s.maskCfg.numRevs, 1, 80, 0));
+        valueEditorWidget->AddValueEditor(new ValueEditorWidget("Mask Offset", &imageGen.s.maskCfg.offset, 0, 1, 2));
+        valueEditorWidget->AddValueEditor(new ValueEditorWidget("Mask Duty Cycle", &imageGen.s.maskCfg.dutyCycle, 0, 1, 2));
+        valueEditorWidget->AddValueEditor(new ValueEditorWidget("Mask Smooth", &imageGen.s.maskCfg.smooth, 0, 2.0, 2));
 
     }
     if (programMode == ProgramMode::fourBar) {
-        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Base separation X", &imageGen.s.fourBar.baseSepX, 0, 5, 2));
-        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Base offset Y", &imageGen.s.fourBar.baseOffsetY, -5, 5, 2));
+        valueEditorWidget->AddValueEditor(new ValueEditorWidget("Base separation X", &imageGen.s.fourBar.baseSepX, 0, 5, 2));
+        valueEditorWidget->AddValueEditor(new ValueEditorWidget("Base offset Y", &imageGen.s.fourBar.baseOffsetY, -5, 5, 2));
 
-        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Length ratio side", &imageGen.s.fourBar.lenRatioB, 0.1, 10, 3));
-        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Length ratio apex", &imageGen.s.fourBar.lenRatio2, 0.1, 10, 3));
-        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Length scale", &imageGen.s.fourBar.lenBase, 1, 200, 0));
+        valueEditorWidget->AddValueEditor(new ValueEditorWidget("Length ratio side", &imageGen.s.fourBar.lenRatioB, 0.1, 10, 3));
+        valueEditorWidget->AddValueEditor(new ValueEditorWidget("Length ratio apex", &imageGen.s.fourBar.lenRatio2, 0.1, 10, 3));
+        valueEditorWidget->AddValueEditor(new ValueEditorWidget("Length scale", &imageGen.s.fourBar.lenBase, 1, 200, 0));
 
-        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Init angle A", &imageGen.s.fourBar.ta1Init, -2*PI, 2*PI, 2));
-        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Init angle offset", &imageGen.s.fourBar.initAngleOffset, -2*PI, 2*PI, 2));
-        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Revolution count", &imageGen.s.fourBar.revCount, 1, 1000, 0));
+        valueEditorWidget->AddValueEditor(new ValueEditorWidget("Init angle A", &imageGen.s.fourBar.ta1Init, -2*PI, 2*PI, 2));
+        valueEditorWidget->AddValueEditor(new ValueEditorWidget("Init angle offset", &imageGen.s.fourBar.initAngleOffset, -2*PI, 2*PI, 2));
+        valueEditorWidget->AddValueEditor(new ValueEditorWidget("Revolution count", &imageGen.s.fourBar.revCount, 1, 1000, 0));
 
-        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Revolution ratio B", &imageGen.s.fourBar.revRatioB, 0, 1000, 4));
+        valueEditorWidget->AddValueEditor(new ValueEditorWidget("Revolution ratio B", &imageGen.s.fourBar.revRatioB, 0, 1000, 4));
 
-        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Line width", &imageGen.s.fourBar.lineWidth, 0., 10., 2));
-        valueEditorWidget.AddValueEditor(new ValueEditorWidget("Line taper ratio", &imageGen.s.fourBar.lineTaperRatio, 0., 1., 2));
+        valueEditorWidget->AddValueEditor(new ValueEditorWidget("Line width", &imageGen.s.fourBar.lineWidth, 0., 10., 2));
+        valueEditorWidget->AddValueEditor(new ValueEditorWidget("Line taper ratio", &imageGen.s.fourBar.lineTaperRatio, 0., 1., 2));
     }
 
     // Interact mode
@@ -184,7 +186,7 @@ void MainWindow::InitMode()
     }
 
     QApplication::processEvents( QEventLoop::ExcludeUserInputEvents ); // https://stackoverflow.com/a/30472749/3580080
-    valueEditorWidget.resize(valueEditorWidget.sizeHint());
+    valueEditorWidget->resize(valueEditorWidget->sizeHint());
     centralWidget.resize(centralWidget.sizeHint());
 
 
