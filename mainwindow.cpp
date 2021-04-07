@@ -150,31 +150,31 @@ void MainWindow::InitMode()
     valueEditorWidget->ClearAllValueEditors();
 
     if (programMode == ProgramMode::waves) {
-        valueEditorWidget->AddValueEditor(new ValueEditorWidget("Wavelength", &imageGen.s.wavelength, 1, 200, 1));
-        valueEditorWidget->AddValueEditor(new ValueEditorWidget("Linearity", &imageGen.s.distOffsetF, 0, 1.0, 2));
+        valueEditorWidget->AddValueEditor(new SliderSpinEditor("Wavelength", &imageGen.s.wavelength, 1, 200, 1));
+        valueEditorWidget->AddValueEditor(new SliderSpinEditor("Linearity", &imageGen.s.distOffsetF, 0, 1.0, 2));
 
-        valueEditorWidget->AddValueEditor(new ValueEditorWidget("Mask Revolutions", &imageGen.s.maskCfg.numRevs, 1, 80, 0));
-        valueEditorWidget->AddValueEditor(new ValueEditorWidget("Mask Offset", &imageGen.s.maskCfg.offset, 0, 1, 2));
-        valueEditorWidget->AddValueEditor(new ValueEditorWidget("Mask Duty Cycle", &imageGen.s.maskCfg.dutyCycle, 0, 1, 2));
-        valueEditorWidget->AddValueEditor(new ValueEditorWidget("Mask Smooth", &imageGen.s.maskCfg.smooth, 0, 2.0, 2));
+        valueEditorWidget->AddValueEditor(new SliderSpinEditor("Mask Revolutions", &imageGen.s.maskCfg.numRevs, 1, 80, 0));
+        valueEditorWidget->AddValueEditor(new SliderSpinEditor("Mask Offset", &imageGen.s.maskCfg.offset, 0, 1, 2));
+        valueEditorWidget->AddValueEditor(new SliderSpinEditor("Mask Duty Cycle", &imageGen.s.maskCfg.dutyCycle, 0, 1, 2));
+        valueEditorWidget->AddValueEditor(new SliderSpinEditor("Mask Smooth", &imageGen.s.maskCfg.smooth, 0, 2.0, 2));
 
     }
     if (programMode == ProgramMode::fourBar) {
-        valueEditorWidget->AddValueEditor(new ValueEditorWidget("Base separation X", &imageGen.s.fourBar.baseSepX, 0, 5, 2));
-        valueEditorWidget->AddValueEditor(new ValueEditorWidget("Base offset Y", &imageGen.s.fourBar.baseOffsetY, -5, 5, 2));
+        valueEditorWidget->AddValueEditor(new SliderSpinEditor("Base separation X", &imageGen.s.fourBar.baseSepX, 0, 5, 2));
+        valueEditorWidget->AddValueEditor(new SliderSpinEditor("Base offset Y", &imageGen.s.fourBar.baseOffsetY, -5, 5, 2));
 
-        valueEditorWidget->AddValueEditor(new ValueEditorWidget("Length ratio side", &imageGen.s.fourBar.lenRatioB, 0.1, 10, 3));
-        valueEditorWidget->AddValueEditor(new ValueEditorWidget("Length ratio apex", &imageGen.s.fourBar.lenRatio2, 0.1, 10, 3));
-        valueEditorWidget->AddValueEditor(new ValueEditorWidget("Length scale", &imageGen.s.fourBar.lenBase, 1, 200, 0));
+        valueEditorWidget->AddValueEditor(new SliderSpinEditor("Length ratio side", &imageGen.s.fourBar.lenRatioB, 0.1, 10, 3));
+        valueEditorWidget->AddValueEditor(new SliderSpinEditor("Length ratio apex", &imageGen.s.fourBar.lenRatio2, 0.1, 10, 3));
+        valueEditorWidget->AddValueEditor(new SliderSpinEditor("Length scale", &imageGen.s.fourBar.lenBase, 1, 200, 0));
 
-        valueEditorWidget->AddValueEditor(new ValueEditorWidget("Init angle A", &imageGen.s.fourBar.ta1Init, -2*PI, 2*PI, 2));
-        valueEditorWidget->AddValueEditor(new ValueEditorWidget("Init angle offset", &imageGen.s.fourBar.initAngleOffset, -2*PI, 2*PI, 2));
-        valueEditorWidget->AddValueEditor(new ValueEditorWidget("Revolution count", &imageGen.s.fourBar.revCount, 1, 1000, 0));
+        valueEditorWidget->AddValueEditor(new SliderSpinEditor("Init angle A", &imageGen.s.fourBar.ta1Init, -2*PI, 2*PI, 2));
+        valueEditorWidget->AddValueEditor(new SliderSpinEditor("Init angle offset", &imageGen.s.fourBar.initAngleOffset, -2*PI, 2*PI, 2));
+        valueEditorWidget->AddValueEditor(new SliderSpinEditor("Revolution count", &imageGen.s.fourBar.revCount, 1, 1000, 0));
 
-        valueEditorWidget->AddValueEditor(new ValueEditorWidget("Revolution ratio B", &imageGen.s.fourBar.revRatioB, 0, 1000, 4));
+        valueEditorWidget->AddValueEditor(new SliderSpinEditor("Revolution ratio B", &imageGen.s.fourBar.revRatioB, 0, 1000, 4));
 
-        valueEditorWidget->AddValueEditor(new ValueEditorWidget("Line width", &imageGen.s.fourBar.lineWidth, 0., 10., 2));
-        valueEditorWidget->AddValueEditor(new ValueEditorWidget("Line taper ratio", &imageGen.s.fourBar.lineTaperRatio, 0., 1., 2));
+        valueEditorWidget->AddValueEditor(new SliderSpinEditor("Line width", &imageGen.s.fourBar.lineWidth, 0., 10., 2));
+        valueEditorWidget->AddValueEditor(new SliderSpinEditor("Line taper ratio", &imageGen.s.fourBar.lineTaperRatio, 0., 1., 2));
     }
 
     // Interact mode

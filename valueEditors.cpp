@@ -3,10 +3,10 @@
 #include "imagegen.h"
 
 /** ****************************************************************************
- * @brief ValueEditorWidget::ValueEditorWidget
+ * @brief SliderSpinEditor::SliderSpinEditor
  * @param numberIn
  */
-ValueEditorWidget::ValueEditorWidget(QString name, qreal *numberIn, qreal minIn, qreal maxIn, int precisionIn) :
+SliderSpinEditor::SliderSpinEditor(QString name, qreal *numberIn, qreal minIn, qreal maxIn, int precisionIn) :
     extValue(numberIn), minVal(minIn), maxVal(maxIn), precision(precisionIn)
 {
     //this->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
@@ -31,19 +31,19 @@ ValueEditorWidget::ValueEditorWidget(QString name, qreal *numberIn, qreal minIn,
     slider.setMaximum(maxVal * sliderScaler);
 
     layout->addWidget(&spinBox);
-    QObject::connect(&spinBox, &QAbstractSpinBox::editingFinished, this, &ValueEditorWidget::SpinChangedSlot);
+    QObject::connect(&spinBox, &QAbstractSpinBox::editingFinished, this, &SliderSpinEditor::SpinChangedSlot);
 
     layout->addWidget(&slider);
     slider.setOrientation(Qt::Horizontal);
-    QObject::connect(&slider, &QSlider::valueChanged, this, &ValueEditorWidget::SliderChangedSlot);
-    QObject::connect(&slider, &QSlider::sliderReleased, this, &ValueEditorWidget::SliderChangedSlot);
+    QObject::connect(&slider, &QSlider::valueChanged, this, &SliderSpinEditor::SliderChangedSlot);
+    QObject::connect(&slider, &QSlider::sliderReleased, this, &SliderSpinEditor::SliderChangedSlot);
     parentGroupWidget = nullptr;
 }
 
 /** ****************************************************************************
- * @brief ValueEditorWidget::~ValueEditorWidget
+ * @brief SliderSpinEditor::~SliderSpinEditor
  */
-ValueEditorWidget::~ValueEditorWidget()
+SliderSpinEditor::~SliderSpinEditor()
 {
     if (parentGroupWidget != nullptr) {
         parentGroupWidget->RemoveValueEditor(this);
@@ -51,9 +51,9 @@ ValueEditorWidget::~ValueEditorWidget()
 }
 
 /** ****************************************************************************
- * @brief ValueEditorWidget::SpinChangedSlot
+ * @brief SliderSpinEditor::SpinChangedSlot
  */
-void ValueEditorWidget::SpinChangedSlot()
+void SliderSpinEditor::SpinChangedSlot()
 {
     *extValue = spinBox.value();
     slider.blockSignals(true);
@@ -63,9 +63,9 @@ void ValueEditorWidget::SpinChangedSlot()
 }
 
 /** ****************************************************************************
- * @brief ValueEditorWidget::SliderChangedSlot
+ * @brief SliderSpinEditor::SliderChangedSlot
  */
-void ValueEditorWidget::SliderChangedSlot()
+void SliderSpinEditor::SliderChangedSlot()
 {
     *extValue = (qreal)slider.value() / sliderScaler;
     spinBox.blockSignals(true);
@@ -82,10 +82,10 @@ void ValueEditorWidget::SliderChangedSlot()
 
 
 /** ****************************************************************************
- * @brief ValueEditorWidget::ApplyExtValue pulls the external value and applies
+ * @brief SliderSpinEditor::ApplyExtValue pulls the external value and applies
  * it to this widget
  */
-void ValueEditorWidget::ApplyExtValue()
+void SliderSpinEditor::ApplyExtValue()
 {
     spinBox.blockSignals(true);
     spinBox.setValue(*extValue);
@@ -134,17 +134,17 @@ void EditorGroupWidget::ClearAllValueEditors()
  * @param valEditWidget
  * @return
  */
-ValueEditorWidget * EditorGroupWidget::AddValueEditor(ValueEditorWidget *valEditWidget)
+SliderSpinEditor * EditorGroupWidget::AddValueEditor(SliderSpinEditor *valEditWidget)
 {
     valueEditors.append(valEditWidget);
     layout.addWidget(valEditWidget);
     valEditWidget->SetParentGroupWidget(this);
 
     // Connect signals and slots for this
-    QObject::connect(valEditWidget, &ValueEditorWidget::ValueEditedSig, imgGen, &ImageGen::NewImageNeeded);
-    QObject::connect(valEditWidget, &ValueEditorWidget::ValueEditedQuickSig, imgGen, &ImageGen::NewQuickImageNeeded);
+    QObject::connect(valEditWidget, &SliderSpinEditor::ValueEditedSig, imgGen, &ImageGen::NewImageNeeded);
+    QObject::connect(valEditWidget, &SliderSpinEditor::ValueEditedQuickSig, imgGen, &ImageGen::NewQuickImageNeeded);
     // This is inefficient - should use a smarter method of determining when to update the values (perhaps)
-    QObject::connect(imgGen, &ImageGen::GenerateImageSignal, valEditWidget, &ValueEditorWidget::ApplyExtValue);
+    QObject::connect(imgGen, &ImageGen::GenerateImageSignal, valEditWidget, &SliderSpinEditor::ApplyExtValue);
 
     return valEditWidget;
 }
@@ -155,7 +155,7 @@ ValueEditorWidget * EditorGroupWidget::AddValueEditor(ValueEditorWidget *valEdit
  * @param valEditWidget
  * @returns true if the value was removed
  */
-bool EditorGroupWidget::RemoveValueEditor(ValueEditorWidget *valEditWidget)
+bool EditorGroupWidget::RemoveValueEditor(SliderSpinEditor *valEditWidget)
 {
     layout.removeWidget(valEditWidget);
     return valueEditors.removeOne(valEditWidget);

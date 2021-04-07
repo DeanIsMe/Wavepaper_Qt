@@ -13,18 +13,18 @@
 class EditorGroupWidget;
 
 /** ****************************************************************************
- * @brief The ValueEditorWidget class manages GUI editing for a single value
+ * @brief The SliderSpinEditor class manages GUI editing for a single value
  * It contains a slider & a spin box, which are
  * both tied to some external qreal value. When the number is edited from one
  * of these widgets, a signal is emitted 'ValueEditedSig'.
  * When the value is changed externally, the external program should call 'ApplyValue'
  * to update the widget values.
  */
-class ValueEditorWidget : public QWidget {
+class SliderSpinEditor : public QWidget {
     Q_OBJECT;
 public:
-    ValueEditorWidget(QString name, qreal* numberIn, qreal minIn, qreal maxIn, int precisionIn = 0);
-    ~ValueEditorWidget();
+    SliderSpinEditor(QString name, qreal* numberIn, qreal minIn, qreal maxIn, int precisionIn = 0);
+    ~SliderSpinEditor();
     void SetParentGroupWidget(EditorGroupWidget * ptrIn) {parentGroupWidget = ptrIn;}
 private:
     EditorGroupWidget * parentGroupWidget;
@@ -47,7 +47,7 @@ public slots:
 };
 
 /** ****************************************************************************
- * @brief The EditorGroupWidget class contains a group of ValueEditorWidgets
+ * @brief The EditorGroupWidget class contains a group of SliderSpinEditor
  */
 class EditorGroupWidget : public QWidget
 {
@@ -55,8 +55,8 @@ class EditorGroupWidget : public QWidget
 public:
     EditorGroupWidget(ImageGen * imgGenIn);
     ~EditorGroupWidget();
-    ValueEditorWidget *AddValueEditor(ValueEditorWidget * valEditWidget);
-    bool RemoveValueEditor(ValueEditorWidget * valEditWidget);
+    SliderSpinEditor *AddValueEditor(SliderSpinEditor * valEditWidget);
+    bool RemoveValueEditor(SliderSpinEditor * valEditWidget);
     void ClearAllValueEditors();
 
 private:
@@ -65,7 +65,7 @@ private:
     //void (*widgetEditedValueSlot)(void);
     void (*valueChangedSignal)(void);
     QVBoxLayout layout;
-    QList<ValueEditorWidget*> valueEditors;
+    QList<SliderSpinEditor*> valueEditors;
 
 };
 
