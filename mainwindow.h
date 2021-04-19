@@ -26,11 +26,11 @@ public:
 
     void InitMode();
 
-    PreviewView * previewView;
-    PreviewScene * previewScene;
-    QPlainTextEdit * textWindow;
+    PreviewView * previewView = nullptr;
+    PreviewScene * previewScene = nullptr;
+    QPlainTextEdit * textWindow = nullptr;
     ColourMapEditorWidget * colourMapEditor = nullptr;
-    EditorGroupWidget * valueEditorWidget;
+    EditorGroupWidget * valueEditorWidget = nullptr;
     Interact interact;
     ProgramMode programMode;
 

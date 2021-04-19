@@ -164,6 +164,9 @@ SliderSpinEditor * EditorGroupWidget::AddValueEditor(SliderSpinEditor *valEditWi
     if (valRedrawsOverlay) {
         QObject::connect(valEditWidget, &SliderSpinEditor::ValueEditedSig, imgGen, &ImageGen::EmitterArngmtChanged);
         QObject::connect(valEditWidget, &SliderSpinEditor::ValueEditedQuickSig, imgGen, &ImageGen::EmitterArngmtChanged);
+
+        QObject::connect(valEditWidget, &SliderSpinEditor::ValueEditedSig, this, &EditorGroupWidget::ForceOverlayOff);
+        QObject::connect(valEditWidget, &SliderSpinEditor::ValueEditedQuickSig, this, &EditorGroupWidget::ForceOverlayOn);
     }
     return valEditWidget;
 }

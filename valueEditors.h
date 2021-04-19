@@ -66,9 +66,15 @@ public:
     SliderSpinEditor *AddValueEditor(SliderSpinEditor * valEditWidget, bool valRedrawsOverlay=false);
     bool RemoveValueEditor(SliderSpinEditor * valEditWidget);
     void ClearAllValueEditors();
+    bool ForceOverlayIsOn() {return forceOverlay;}
+
+private slots:
+    void ForceOverlayOn() { forceOverlay = true; }
+    void ForceOverlayOff() { forceOverlay = false; }
 
 private:
     ImageGen * imgGen;
+    bool forceOverlay = false; // True when the overlay (drawing of emitter) should be forced on
 
     //void (*widgetEditedValueSlot)(void);
     void (*valueChangedSignal)(void);

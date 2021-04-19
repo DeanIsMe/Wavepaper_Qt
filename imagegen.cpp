@@ -137,7 +137,8 @@ void ImageGen::setTargetImgPoints(qint32 imgPoints, GenSettings & genSet) const 
  * @return
  */
 bool ImageGen::EmittersHidden() {
-    return hideEmitters && !mainWindow->interact.TypeIsActive(Interact::Type::arrangement);
+    return hideEmitters && !mainWindow->interact.TypeIsActive(Interact::Type::arrangement)
+            && !(mainWindow->valueEditorWidget != nullptr && mainWindow->valueEditorWidget->ForceOverlayIsOn());
 }
 
 /** ****************************************************************************
