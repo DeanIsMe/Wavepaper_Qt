@@ -236,10 +236,7 @@ void MainWindow::InitMode()
 
     ui->actionWaveMode->setChecked(programMode == ProgramMode::waves);
     ui->actionFourBarMode->setChecked(programMode == ProgramMode::fourBar);
-
-
-
-
+    ui->actionHideEmitters->setChecked(imageGen.GetHideEmitters());
 
 }
 

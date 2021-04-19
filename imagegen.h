@@ -91,6 +91,7 @@ public slots:
         hideEmitters = hide;
         emit EmitterArngmtChanged();
     }
+    bool GetHideEmitters() { return hideEmitters; }
 
 private slots:
     void GenerateImageSlot();
