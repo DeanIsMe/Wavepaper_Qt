@@ -63,7 +63,7 @@ class EditorGroupWidget : public QWidget
 public:
     EditorGroupWidget(ImageGen * imgGenIn);
     ~EditorGroupWidget();
-    SliderSpinEditor *AddValueEditor(SliderSpinEditor * valEditWidget);
+    SliderSpinEditor *AddValueEditor(SliderSpinEditor * valEditWidget, bool valRedrawsOverlay=false);
     bool RemoveValueEditor(SliderSpinEditor * valEditWidget);
     void ClearAllValueEditors();
 

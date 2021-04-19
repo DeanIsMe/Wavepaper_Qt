@@ -672,7 +672,7 @@ void ColourMapEditorWidget::DrawColourBars(GenSettings & genSet, qint32 sumClrBa
     Rgb2D_C* dataBarResult = new Rgb2D_C(QPoint(0,0), sizeClrBar);
     QVector<QPointF> chartData(sizeClrBar.width());
 
-    // !@#$ Ensure that the indices are calculated here
+    // !@# Ensure that the indices are calculated here
 
     for (qint32 x = dataBarBase->xLeft, i = 0; x < dataBarBase->xLeft + dataBarBase->width; x++, i++) {
         qreal loc = (qreal)i / (qreal)sizeClrBar.width();

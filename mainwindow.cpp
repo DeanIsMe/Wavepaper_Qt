@@ -1,4 +1,4 @@
- #include "mainwindow.h"
+#include "mainwindow.h"
 #include "ui_mainwindow.h"
 
 #include <QWidget>
@@ -165,10 +165,10 @@ void MainWindow::InitMode()
         // These would ideally be changed as arrangements are changed (e.g. change type, add arrangement, remove arrangement)
         // For now, this will do
         auto arngmt = imageGen.GetActiveArrangement();
-        valueEditorWidget->AddValueEditor(new SliderSpinEditor("Emitter count", &arngmt->count, 1, 100, 0));
-        valueEditorWidget->AddValueEditor(new SliderSpinEditor("Arc radius", &arngmt->arcRadius, 0, 100, 1));
-        valueEditorWidget->AddValueEditor(new SliderSpinEditor("Arc span", &arngmt->arcSpan, 0, 12.57, 3));
-        valueEditorWidget->AddValueEditor(new SliderSpinEditor("Rotation", &arngmt->rotation, -6.283, 6.283, 3));
+        valueEditorWidget->AddValueEditor(new SliderSpinEditor("Emitter count", &arngmt->count, 1, 100, 0), true);
+        valueEditorWidget->AddValueEditor(new SliderSpinEditor("Arc radius", &arngmt->arcRadius, 0, 100, 1), true);
+        valueEditorWidget->AddValueEditor(new SliderSpinEditor("Arc span", &arngmt->arcSpan, 0, 12.57, 3), true);
+        valueEditorWidget->AddValueEditor(new SliderSpinEditor("Rotation", &arngmt->rotation, -6.283, 6.283, 3), true);
     }
     if (programMode == ProgramMode::fourBar) {
         valueEditorWidget->AddValueEditor(new SliderSpinEditor("Base separation X", &imageGen.s.fourBar.baseSepX, 0, 5, 2));

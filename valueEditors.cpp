@@ -145,9 +145,11 @@ void EditorGroupWidget::ClearAllValueEditors()
 /** ****************************************************************************
  * @brief EditorGroupWidget::AddValueEditor
  * @param valEditWidget
+ * @param valRedrawsOverlay is true if changing of the value necessitates a
+ * re-drawing of the emitters
  * @return
  */
-SliderSpinEditor * EditorGroupWidget::AddValueEditor(SliderSpinEditor *valEditWidget)
+SliderSpinEditor * EditorGroupWidget::AddValueEditor(SliderSpinEditor *valEditWidget, bool valRedrawsOverlay)
 {
     valueEditors.append(valEditWidget);
     layout.addWidget(valEditWidget);
@@ -156,9 +158,13 @@ SliderSpinEditor * EditorGroupWidget::AddValueEditor(SliderSpinEditor *valEditWi
     // Connect signals and slots for this
     QObject::connect(valEditWidget, &SliderSpinEditor::ValueEditedSig, imgGen, &ImageGen::NewImageNeeded);
     QObject::connect(valEditWidget, &SliderSpinEditor::ValueEditedQuickSig, imgGen, &ImageGen::NewQuickImageNeeded);
-    // This is inefficient - should use a smarter method of determining when to update the values (perhaps)
+    // This is inefficient - but it's not called that frequently so it should be fine
     QObject::connect(imgGen, &ImageGen::GenerateImageSignal, valEditWidget, &SliderSpinEditor::ApplyExtValue);
 
+    if (valRedrawsOverlay) {
+        QObject::connect(valEditWidget, &SliderSpinEditor::ValueEditedSig, imgGen, &ImageGen::EmitterArngmtChanged);
+        QObject::connect(valEditWidget, &SliderSpinEditor::ValueEditedQuickSig, imgGen, &ImageGen::EmitterArngmtChanged);
+    }
     return valEditWidget;
 }
 
