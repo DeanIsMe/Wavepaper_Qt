@@ -35,9 +35,11 @@ void PreviewScene::mouseMoveEvent(QGraphicsSceneMouseEvent *event) {
     mainWindow.interact.mouseMoveEvent(event, this);}
 
 /** ****************************************************************************
- * @brief PreviewScene::EmitterArngmtToList
+ * @brief PreviewScene::EmittersToGraphItems creates a list of graphics items
+ * from the emitter arrangements in imgGen. It removes all existing graphics
+ * items from the scene, and adds these new ones
  */
-void PreviewScene::EmitterArngmtToList(ImageGen & imgGen) {
+void PreviewScene::EmittersToGraphItems(ImageGen & imgGen) {
     // Get the vector of emitters
     QVector<EmitterF> emitters;
     if (imgGen.GetEmitterList(emitters)) {
@@ -240,7 +242,7 @@ void PreviewScene::ListAllItems() {
  */
 void PreviewScene::OnEmitterArngmtChange()
 {
-    EmitterArngmtToList(imageGen);
+    EmittersToGraphItems(imageGen);
 }
 
 /** ****************************************************************************

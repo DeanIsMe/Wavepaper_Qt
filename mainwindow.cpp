@@ -92,13 +92,15 @@ MainWindow::MainWindow(QWidget *parent)
     QObject::connect(ui->actionFourBarMode, QAction::triggered,
                      this, &MainWindow::ChangeModeToFourBar);
 
-    previewScene->EmitterArngmtToList(imageGen);
+
+    // Preview scene
+    previewScene->EmittersToGraphItems(imageGen);
 
     qDebug() << "Preview view rect " << RectToQString(previewView->rect());
     qDebug() << "Preview view frameRect " << RectToQString(previewView->frameRect());
     qDebug() << "Preview view sceneRect " << RectFToQString(previewView->sceneRect());
 
-    previewScene->EmitterArngmtToList(imageGen);
+    previewScene->EmittersToGraphItems(imageGen);
     imageGen.NewImageNeeded();
 
     // Value editors
@@ -108,6 +110,7 @@ MainWindow::MainWindow(QWidget *parent)
     valueEditorScroll->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Minimum);
     valueEditorScroll->setWidgetResizable(false); // The default
     layoutCentral.addWidget(valueEditorScroll);
+
 
     // Text window for debugging
     layoutCentral.addWidget(textWindow);
@@ -158,6 +161,14 @@ void MainWindow::InitMode()
         valueEditorWidget->AddValueEditor(new SliderSpinEditor("Mask Duty Cycle", &imageGen.s.maskCfg.dutyCycle, 0, 1, 2));
         valueEditorWidget->AddValueEditor(new SliderSpinEditor("Mask Smooth", &imageGen.s.maskCfg.smooth, 0, 2.0, 2));
 
+        // Add arrangement quantities
+        // These would ideally be changed as arrangements are changed (e.g. change type, add arrangement, remove arrangement)
+        // For now, this will do
+        auto arngmt = imageGen.GetActiveArrangement();
+        valueEditorWidget->AddValueEditor(new SliderSpinEditor("Emitter count", &arngmt->count, 1, 100, 0));
+        valueEditorWidget->AddValueEditor(new SliderSpinEditor("Arc radius", &arngmt->arcRadius, 0, 100, 1));
+        valueEditorWidget->AddValueEditor(new SliderSpinEditor("Arc span", &arngmt->arcSpan, 0, 12.57, 3));
+        valueEditorWidget->AddValueEditor(new SliderSpinEditor("Rotation", &arngmt->rotation, -6.283, 6.283, 3));
     }
     if (programMode == ProgramMode::fourBar) {
         valueEditorWidget->AddValueEditor(new SliderSpinEditor("Base separation X", &imageGen.s.fourBar.baseSepX, 0, 5, 2));
@@ -177,6 +188,8 @@ void MainWindow::InitMode()
         valueEditorWidget->AddValueEditor(new SliderSpinEditor("Line taper ratio", &imageGen.s.fourBar.lineTaperRatio, 0., 1., 2));
     }
 
+
+
     // Interact mode
     if (programMode == ProgramMode::waves) {
         interact.SelectType(Interact::defaultTypeWaves);
@@ -188,7 +201,6 @@ void MainWindow::InitMode()
     QApplication::processEvents( QEventLoop::ExcludeUserInputEvents ); // https://stackoverflow.com/a/30472749/3580080
     valueEditorWidget->resize(valueEditorWidget->sizeHint());
     centralWidget.resize(centralWidget.sizeHint());
-
 
     // Update the toolbar
     ui->toolBarHorz->clear();
@@ -271,7 +283,7 @@ void PaintTestImage(QWidget * testCanvas) {
 void MainWindow::on_actionMirrorHor_triggered(bool checked)
 {
     imageGen.GetActiveArrangement()->mirrorHor = checked;
-    previewScene->EmitterArngmtToList(imageGen);
+    previewScene->EmittersToGraphItems(imageGen);
     imageGen.NewImageNeeded();
 }
 
@@ -282,7 +294,7 @@ void MainWindow::on_actionMirrorHor_triggered(bool checked)
 void MainWindow::on_actionMirrorVert_triggered(bool checked)
 {
     imageGen.GetActiveArrangement()->mirrorVert = checked;
-    previewScene->EmitterArngmtToList(imageGen);
+    previewScene->EmittersToGraphItems(imageGen);
     imageGen.NewImageNeeded();
 }
 

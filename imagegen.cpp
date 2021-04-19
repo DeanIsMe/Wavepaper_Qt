@@ -180,6 +180,17 @@ void ImageGen::SaveImage()
 }
 
 /** ****************************************************************************
+ * @brief ImageGen::AddArrangement
+ * @param emArrangement
+ */
+void ImageGen::AddArrangement(EmArrangement emArrangementIn)
+{
+    s.emArrangements.append(emArrangementIn);
+
+    // Add the value editors here !@#
+}
+
+/** ****************************************************************************
  * @brief ImageGen::EmitterCountIncrease
  */
 void ImageGen::EmitterCountIncrease() {
@@ -831,7 +842,7 @@ int ImageGen::EmitterArrangementToLocs(const EmArrangement & arngmt, QVector<QPo
 
     // Rotate and translate the scatterers, if needed (about the origin)
     QTransform transform;
-    transform.rotate(-arngmt.rotation);
+    transform.rotate(-arngmt.rotation * 180./PI);
     transform.translate(arngmt.center.x(), arngmt.center.y());
     for (QPointF &p : emLocsOut) {
         p = transform.map(p)   ;
@@ -867,13 +878,14 @@ int ImageGen::EmitterArrangementToLocs(const EmArrangement & arngmt, QVector<QPo
 
 /** ****************************************************************************
  * @brief GetEmitterList creates a vector holding the locations of all emitters
- * generated from the arrangements
+ * generated from the arrangements in s.emArrangements)
  * @param emittersImg
+ * @returns an error code. 0 for pass.
  */
 int ImageGen::GetEmitterList(QVector<EmitterF> & emitters) {
 
     if (s.emArrangements.size() == 0) {
-        s.emArrangements.append(DefaultArrangement());
+        AddArrangement(DefaultArrangement());
     }
 
     // Build a vector of all emitter locations from the arrangements

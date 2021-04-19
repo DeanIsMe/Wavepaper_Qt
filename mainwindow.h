@@ -30,6 +30,7 @@ public:
     PreviewScene * previewScene;
     QPlainTextEdit * textWindow;
     ColourMapEditorWidget * colourMapEditor = nullptr;
+    EditorGroupWidget * valueEditorWidget;
     Interact interact;
     ProgramMode programMode;
 
@@ -41,7 +42,7 @@ private:
     Ui::MainWindow *ui;
     QWidget centralWidget;
     QHBoxLayout layoutCentral;
-    EditorGroupWidget * valueEditorWidget;
+
 
     // QWidget interface
 protected:

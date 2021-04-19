@@ -24,11 +24,14 @@ class SliderSpinEditor : public QWidget {
     Q_OBJECT;
 public:
     SliderSpinEditor(QString name, qreal* numberIn, qreal minIn, qreal maxIn, int precisionIn = 0);
+    SliderSpinEditor(QString name, qint32* numberIn, qreal minIn, qreal maxIn, int precisionIn = 0);
     ~SliderSpinEditor();
     void SetParentGroupWidget(EditorGroupWidget * ptrIn) {parentGroupWidget = ptrIn;}
 private:
     EditorGroupWidget * parentGroupWidget;
-    qreal * const extValue; // External value that these widgets edit
+    // extValue is the external value that these widgets edit
+    qreal * const extValue; // is used when the external value is qreal (double). nullptr otherwise.
+    qint32 * const extValueInt; // is used when the external value is qreal (double). nullptr otherwise.
     qreal minVal;
     qreal maxVal;
     qreal sliderScaler; // value = sliderVal / sliderDecPlaces (because slider only supports int)
@@ -36,6 +39,11 @@ private:
 
     QDoubleSpinBox spinBox;
     QSlider slider;
+private:
+    void ConstructorSub(const QString &name);
+    qreal GetExtVal() {return extValue == nullptr ? (qreal)*extValueInt : *extValue;}
+    void SetExtVal(qreal setTo) {if (extValue == nullptr) *extValueInt = qRound(setTo);
+    else *extValue = setTo;}
 signals:
     ValueEditedSig();
     ValueEditedQuickSig();

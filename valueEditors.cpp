@@ -7,7 +7,18 @@
  * @param numberIn
  */
 SliderSpinEditor::SliderSpinEditor(QString name, qreal *numberIn, qreal minIn, qreal maxIn, int precisionIn) :
-    extValue(numberIn), minVal(minIn), maxVal(maxIn), precision(precisionIn)
+    extValue(numberIn), extValueInt(nullptr), minVal(minIn), maxVal(maxIn), precision(precisionIn)
+{
+    ConstructorSub(name);
+}
+
+SliderSpinEditor::SliderSpinEditor(QString name, qint32 *numberIn, qreal minIn, qreal maxIn, int precisionIn) :
+    extValue(nullptr), extValueInt(numberIn), minVal(minIn), maxVal(maxIn), precision(precisionIn)
+{
+    ConstructorSub(name);
+}
+
+void SliderSpinEditor::ConstructorSub(const QString& name)
 {
     //this->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
     this->setMinimumWidth(200);
@@ -40,6 +51,7 @@ SliderSpinEditor::SliderSpinEditor(QString name, qreal *numberIn, qreal minIn, q
     parentGroupWidget = nullptr;
 }
 
+
 /** ****************************************************************************
  * @brief SliderSpinEditor::~SliderSpinEditor
  */
@@ -50,14 +62,15 @@ SliderSpinEditor::~SliderSpinEditor()
     }
 }
 
+
 /** ****************************************************************************
  * @brief SliderSpinEditor::SpinChangedSlot
  */
 void SliderSpinEditor::SpinChangedSlot()
 {
-    *extValue = spinBox.value();
+    SetExtVal((qreal)spinBox.value());
     slider.blockSignals(true);
-    slider.setValue(*extValue * sliderScaler);
+    slider.setValue(GetExtVal() * sliderScaler);
     slider.blockSignals(false);
     emit ValueEditedSig();
 }
@@ -67,9 +80,9 @@ void SliderSpinEditor::SpinChangedSlot()
  */
 void SliderSpinEditor::SliderChangedSlot()
 {
-    *extValue = (qreal)slider.value() / sliderScaler;
+    SetExtVal((qreal)slider.value() / sliderScaler);
     spinBox.blockSignals(true);
-    spinBox.setValue(*extValue);
+    spinBox.setValue(GetExtVal());
     spinBox.blockSignals(false);
     if (slider.isSliderDown()) {
         // User is currently dragging the slider
@@ -88,11 +101,11 @@ void SliderSpinEditor::SliderChangedSlot()
 void SliderSpinEditor::ApplyExtValue()
 {
     spinBox.blockSignals(true);
-    spinBox.setValue(*extValue);
+    spinBox.setValue(GetExtVal());
     spinBox.blockSignals(false);
 
     slider.blockSignals(true);
-    slider.setValue(*extValue * sliderScaler);
+    slider.setValue(GetExtVal() * sliderScaler);
     slider.blockSignals(false);
 }
 
