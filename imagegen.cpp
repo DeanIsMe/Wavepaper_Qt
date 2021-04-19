@@ -137,8 +137,10 @@ void ImageGen::setTargetImgPoints(qint32 imgPoints, GenSettings & genSet) const 
  * @return
  */
 bool ImageGen::EmittersHidden() {
-    return hideEmitters && !mainWindow->interact.TypeIsActive(Interact::Type::arrangement)
-            && !(mainWindow->valueEditorWidget != nullptr && mainWindow->valueEditorWidget->ForceOverlayIsOn());
+    return mainWindow->programMode != ProgramMode::waves ||
+            (hideEmitters && !mainWindow->interact.TypeIsActive(Interact::Type::arrangement)
+            && !(mainWindow->valueEditorWidget != nullptr && mainWindow->valueEditorWidget->ForceOverlayIsOn())
+             );
 }
 
 /** ****************************************************************************
@@ -189,6 +191,17 @@ void ImageGen::AddArrangement(EmArrangement emArrangementIn)
     s.emArrangements.append(emArrangementIn);
 
     // Add the value editors here !@#
+}
+
+/** ****************************************************************************
+ * @brief ImageGen::ResetSettings
+ */
+void ImageGen::ResetSettings()
+{
+    s = Settings();
+    colourMap.SetPreset(ClrMapPreset::hot);
+    NewImageNeeded();
+    emit EmitterArngmtChanged();
 }
 
 /** ****************************************************************************

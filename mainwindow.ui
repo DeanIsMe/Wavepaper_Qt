@@ -38,6 +38,8 @@
     <bool>false</bool>
    </attribute>
    <addaction name="actionSaveImage"/>
+   <addaction name="actionReset"/>
+   <addaction name="separator"/>
    <addaction name="actionWaveMode"/>
    <addaction name="actionFourBarMode"/>
    <addaction name="separator"/>
@@ -316,6 +318,18 @@
    </property>
    <property name="toolTip">
     <string>Edit draw range</string>
+   </property>
+  </action>
+  <action name="actionReset">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/reset</normaloff>:/icons/reset</iconset>
+   </property>
+   <property name="text">
+    <string>Reset</string>
+   </property>
+   <property name="toolTip">
+    <string>Reset the settings to their default values</string>
    </property>
   </action>
  </widget>

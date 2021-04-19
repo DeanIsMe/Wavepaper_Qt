@@ -92,10 +92,11 @@ MainWindow::MainWindow(QWidget *parent)
     QObject::connect(ui->actionFourBarMode, QAction::triggered,
                      this, &MainWindow::ChangeModeToFourBar);
 
+    QObject::connect(ui->actionReset, QAction::triggered,
+                     &imageGen, &ImageGen::ResetSettings);
+
 
     // Preview scene
-    previewScene->EmittersToGraphItems(imageGen);
-
     qDebug() << "Preview view rect " << RectToQString(previewView->rect());
     qDebug() << "Preview view frameRect " << RectToQString(previewView->frameRect());
     qDebug() << "Preview view sceneRect " << RectFToQString(previewView->sceneRect());
@@ -207,6 +208,7 @@ void MainWindow::InitMode()
 
     QList<QAction *> actionsToAdd;
     actionsToAdd.append(ui->actionSaveImage);
+    actionsToAdd.append(ui->actionReset);
     actionsToAdd.append(ui->actionWaveMode);
     actionsToAdd.append(ui->actionFourBarMode);
 
@@ -238,6 +240,8 @@ void MainWindow::InitMode()
     ui->actionFourBarMode->setChecked(programMode == ProgramMode::fourBar);
     ui->actionHideEmitters->setChecked(imageGen.GetHideEmitters());
 
+    // Scene
+    previewScene->EmittersToGraphItems(imageGen);
 }
 
 /** ****************************************************************************

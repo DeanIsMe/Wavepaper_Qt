@@ -75,6 +75,7 @@ public:
 
     void SaveImage(); // Saves to a file
     void AddArrangement(EmArrangement emArrangementIn); // Adds the given emitter arrangement
+    void ResetSettings();
 
 signals:
     void NewImageReady(QImage & image, qreal imgPerSimUnitOut, QColor backgroundClr); // A new image is ready
