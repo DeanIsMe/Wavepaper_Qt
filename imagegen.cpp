@@ -507,11 +507,12 @@ int ImageGen::GenerateImageFourBar(QImage &imageOut, GenSettings &genSet) {
     QPainter imgPainter(&imageOut);
     QPen imgPen = QPen(QColor(Qt::white), fb.lineWidth, Qt::SolidLine,
                        Qt::RoundCap, Qt::RoundJoin);
+    imgPainter.setRenderHint(QPainter::Antialiasing);
+
     imgPainter.setPen(imgPen);
     imgPainter.setBackground(QBrush(Qt::black));
     imgPainter.setBrush(QBrush(Qt::black));
     imgPainter.fillRect(imageOut.rect(), Qt::black);
-
 
     QPointF prevPoint;
     for (qint32 step = 0; step < stepCount; step++) {
