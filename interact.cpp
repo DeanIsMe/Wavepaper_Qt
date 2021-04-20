@@ -351,6 +351,11 @@ void Interact::KeyPressEvent(QKeyEvent *event)
         mainWindow.dumpObjectInfo();
         mainWindow.dumpObjectTree();
         break;
+    case Qt::Key_6:
+        qDebug("valueEditorScroll sz = (%dx%d)", mainWindow.valueEditorScroll->width(), mainWindow.valueEditorScroll->height()); // !@#$
+        qDebug("editorColDummyWidget->parentWidget() = 0x%08X", (quint64) mainWindow.editorColDummyWidget->parentWidget());
+        qDebug("valueEditorScroll sz hint = (%dx%d)", mainWindow.valueEditorScroll->sizeHint().width(), mainWindow.valueEditorScroll->sizeHint().height()); // !@#$
+        break;
     case Qt::Key_Plus: // !@# temp
         imgGen.s.fourBar.temp *= 1.2;
         qDebug("imgGen.s.fourBar.temp = %.4f", imgGen.s.fourBar.temp);

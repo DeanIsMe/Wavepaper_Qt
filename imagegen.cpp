@@ -139,7 +139,7 @@ void ImageGen::setTargetImgPoints(qint32 imgPoints, GenSettings & genSet) const 
 bool ImageGen::EmittersHidden() {
     return mainWindow->programMode != ProgramMode::waves ||
             (hideEmitters && !mainWindow->interact.TypeIsActive(Interact::Type::arrangement)
-            && !(mainWindow->valueEditorWidget != nullptr && mainWindow->valueEditorWidget->ForceOverlayIsOn())
+            && !(mainWindow->valueEditorWidget != nullptr && mainWindow->valueEditorWidget->PrevEditSignalWasQuick())
              );
 }
 
@@ -445,7 +445,8 @@ int ImageGen::GenerateImageWaves(QImage &imageOut, GenSettings &genSet) {
     auto timePostImage = fnTimer.elapsed();
 
     QString imgGenTime = \
-            QString::asprintf("ImageGen %4lld ms. Templates=%4lldms (%d,%d,%d), PhasorMap=%4lldms (%d), ClrIdx=%4lldms(%d), Colouring=%4lldms, Image=%4lldms",
+            QString::asprintf("ImageGen%s %4lld ms. Templates=%4lldms (%d,%d,%d), PhasorMap=%4lldms (%d), ClrIdx=%4lldms(%d), Colouring=%4lldms, Image=%4lldms",
+                              &genSet == &genQuick ? "Quick" : "",
                               fnTimer.elapsed(), timePostTemplates,
                               templatDistChanged, templatAmpChanged, templatePhasorChanged,
                               timePostPhasors - timePostTemplates, phasorSumChanged,

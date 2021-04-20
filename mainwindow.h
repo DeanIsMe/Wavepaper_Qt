@@ -30,8 +30,11 @@ public:
     PreviewScene * previewScene = nullptr;
     QPlainTextEdit * textWindow = nullptr;
     ColourMapEditorWidget * colourMapEditor = nullptr;
-    EditorGroupWidget * valueEditorWidget = nullptr;
-    EditorGroupWidget * imgSizeValEditor = nullptr;
+    QWidget * editorColDummyWidget = nullptr;
+    ValueEditorGroupWidget * valueEditorWidget = nullptr;
+    ValueEditorGroupWidget * emitterValEditor = nullptr;
+    ValueEditorGroupWidget * imgSizeValEditor = nullptr;
+    QScrollArea * valueEditorScroll = nullptr;
     Interact interact;
     ProgramMode programMode;
 

@@ -10,7 +10,7 @@
 #include <QList>
 #include <QScrollArea>
 
-class EditorGroupWidget;
+class ValueEditorGroupWidget;
 
 /** ****************************************************************************
  * @brief The SliderSpinEditor class manages GUI editing for a single value
@@ -24,12 +24,12 @@ class SliderSpinEditor : public QWidget {
     Q_OBJECT;
 public:
     SliderSpinEditor(QString name, qreal* numberIn, qreal minIn, qreal maxIn, int precisionIn = 0);
-    SliderSpinEditor(QString name, qint32* numberIn, qreal minIn, qreal maxIn, int precisionIn = 0);
+    SliderSpinEditor(QString name, qint32* numberIn, qreal minIn, qreal maxIn);
     ~SliderSpinEditor();
-    void SetParentGroupWidget(EditorGroupWidget * ptrIn) {parentGroupWidget = ptrIn;}
+    void SetParentGroupWidget(ValueEditorGroupWidget * ptrIn) {parentGroupWidget = ptrIn;}
 private:
-    EditorGroupWidget * parentGroupWidget;
     // extValue is the external value that these widgets edit
+    ValueEditorGroupWidget * parentGroupWidget;
     qreal * const extValue; // is used when the external value is qreal (double). nullptr otherwise.
     qint32 * const extValueInt; // is used when the external value is qreal (double). nullptr otherwise.
     qreal minVal;
@@ -44,9 +44,7 @@ private:
     qreal GetExtVal() {return extValue == nullptr ? (qreal)*extValueInt : *extValue;}
     void SetExtVal(qreal setTo) {if (extValue == nullptr) *extValueInt = qRound(setTo);
     else *extValue = setTo;}
-signals:
-    ValueEditedSig();
-    ValueEditedQuickSig();
+
 private slots:
     void SpinChangedSlot();
     void SliderChangedSlot();
@@ -57,24 +55,29 @@ public slots:
 /** ****************************************************************************
  * @brief The EditorGroupWidget class contains a group of SliderSpinEditor
  */
-class EditorGroupWidget : public QWidget
+class ValueEditorGroupWidget : public QWidget
 {
     Q_OBJECT
+    friend class SliderSpinEditor;
 public:
-    EditorGroupWidget(ImageGen * imgGenIn);
-    ~EditorGroupWidget();
-    SliderSpinEditor *AddValueEditor(SliderSpinEditor * valEditWidget, bool valRedrawsOverlay=false);
+    ValueEditorGroupWidget();
+    ~ValueEditorGroupWidget();
+    SliderSpinEditor *AddValueEditor(SliderSpinEditor * valEditWidget);
     bool RemoveValueEditor(SliderSpinEditor * valEditWidget);
     void ClearAllValueEditors();
-    bool ForceOverlayIsOn() {return forceOverlay;}
-
-private slots:
-    void ForceOverlayOn() { forceOverlay = true; }
-    void ForceOverlayOff() { forceOverlay = false; }
+    bool PrevEditSignalWasQuick() {return prevEditSignalWasQuick;}
+    void ApplyExternalValues();
 
 private:
-    ImageGen * imgGen;
-    bool forceOverlay = false; // True when the overlay (drawing of emitter) should be forced on
+    void InternalValueEdited(); // Called by this widget's editors when the value is edited
+    void InternalValueEditedQuick(); // Called by this widget's editors when the value is edited during a drag
+
+signals:
+    ValueEditedSig();
+    ValueEditedQuickSig();
+
+private:
+    bool prevEditSignalWasQuick = false; // True when the overlay (drawing of emitter) should be forced on
 
     //void (*widgetEditedValueSlot)(void);
     void (*valueChangedSignal)(void);

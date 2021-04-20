@@ -12,15 +12,15 @@ SliderSpinEditor::SliderSpinEditor(QString name, qreal *numberIn, qreal minIn, q
     ConstructorSub(name);
 }
 
-SliderSpinEditor::SliderSpinEditor(QString name, qint32 *numberIn, qreal minIn, qreal maxIn, int precisionIn) :
-    extValue(nullptr), extValueInt(numberIn), minVal(minIn), maxVal(maxIn), precision(precisionIn)
+SliderSpinEditor::SliderSpinEditor(QString name, qint32 *numberIn, qreal minIn, qreal maxIn) :
+    extValue(nullptr), extValueInt(numberIn), minVal(minIn), maxVal(maxIn), precision(0)
 {
     ConstructorSub(name);
 }
 
 void SliderSpinEditor::ConstructorSub(const QString& name)
 {
-    //this->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    this->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
     this->setMinimumWidth(200);
     this->setMaximumHeight(80);
 
@@ -72,7 +72,7 @@ void SliderSpinEditor::SpinChangedSlot()
     slider.blockSignals(true);
     slider.setValue(GetExtVal() * sliderScaler);
     slider.blockSignals(false);
-    emit ValueEditedSig();
+    parentGroupWidget->InternalValueEdited();
 }
 
 /** ****************************************************************************
@@ -86,10 +86,10 @@ void SliderSpinEditor::SliderChangedSlot()
     spinBox.blockSignals(false);
     if (slider.isSliderDown()) {
         // User is currently dragging the slider
-        emit ValueEditedQuickSig();
+        parentGroupWidget->InternalValueEditedQuick();
     }
     else {
-        emit ValueEditedSig();
+        parentGroupWidget->InternalValueEdited();
     }
 }
 
@@ -116,15 +116,16 @@ void SliderSpinEditor::ApplyExtValue()
 /** ****************************************************************************
  * @brief EditorGroupWidget::EditorGroupWidget
  */
-EditorGroupWidget::EditorGroupWidget(ImageGen * imgGenIn) : imgGen(imgGenIn)
+ValueEditorGroupWidget::ValueEditorGroupWidget()
 {
+    setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
     this->setLayout(&layout);
 }
 
 /** ****************************************************************************
  * @brief EditorGroupWidget::~EditorGroupWidget
  */
-EditorGroupWidget::~EditorGroupWidget()
+ValueEditorGroupWidget::~ValueEditorGroupWidget()
 {
     qDeleteAll(valueEditors);
     valueEditors.clear();
@@ -133,7 +134,7 @@ EditorGroupWidget::~EditorGroupWidget()
 /** ****************************************************************************
  * @brief EditorGroupWidget::ClearAllValueEditors
  */
-void EditorGroupWidget::ClearAllValueEditors()
+void ValueEditorGroupWidget::ClearAllValueEditors()
 {
     for (qint32 i = 0; i < valueEditors.length(); i++) {
         layout.removeWidget(valueEditors[i]);
@@ -143,31 +144,43 @@ void EditorGroupWidget::ClearAllValueEditors()
 }
 
 /** ****************************************************************************
+ * @brief EditorGroupWidget::ApplyExternalValues
+ */
+void ValueEditorGroupWidget::ApplyExternalValues()
+{
+    for (auto& editor : valueEditors) {
+        editor->ApplyExtValue();
+    }
+}
+
+/** ****************************************************************************
+ * @brief EditorGroupWidget::InternalValueEdited
+ */
+void ValueEditorGroupWidget::InternalValueEdited()
+{
+    prevEditSignalWasQuick = false;
+    emit ValueEditedSig();
+}
+
+void ValueEditorGroupWidget::InternalValueEditedQuick()
+{
+    prevEditSignalWasQuick = true;
+    emit ValueEditedQuickSig();
+}
+
+/** ****************************************************************************
  * @brief EditorGroupWidget::AddValueEditor
  * @param valEditWidget
  * @param valRedrawsOverlay is true if changing of the value necessitates a
  * re-drawing of the emitters
  * @return
  */
-SliderSpinEditor * EditorGroupWidget::AddValueEditor(SliderSpinEditor *valEditWidget, bool valRedrawsOverlay)
+SliderSpinEditor * ValueEditorGroupWidget::AddValueEditor(SliderSpinEditor *valEditWidget)
 {
     valueEditors.append(valEditWidget);
     layout.addWidget(valEditWidget);
     valEditWidget->SetParentGroupWidget(this);
 
-    // Connect signals and slots for this
-    QObject::connect(valEditWidget, &SliderSpinEditor::ValueEditedSig, imgGen, &ImageGen::NewImageNeeded);
-    QObject::connect(valEditWidget, &SliderSpinEditor::ValueEditedQuickSig, imgGen, &ImageGen::NewQuickImageNeeded);
-    // This is inefficient - but it's not called that frequently so it should be fine
-    QObject::connect(imgGen, &ImageGen::GenerateImageSignal, valEditWidget, &SliderSpinEditor::ApplyExtValue);
-
-    if (valRedrawsOverlay) {
-        QObject::connect(valEditWidget, &SliderSpinEditor::ValueEditedSig, imgGen, &ImageGen::EmitterArngmtChanged);
-        QObject::connect(valEditWidget, &SliderSpinEditor::ValueEditedQuickSig, imgGen, &ImageGen::EmitterArngmtChanged);
-
-        QObject::connect(valEditWidget, &SliderSpinEditor::ValueEditedSig, this, &EditorGroupWidget::ForceOverlayOff);
-        QObject::connect(valEditWidget, &SliderSpinEditor::ValueEditedQuickSig, this, &EditorGroupWidget::ForceOverlayOn);
-    }
     return valEditWidget;
 }
 
@@ -177,7 +190,7 @@ SliderSpinEditor * EditorGroupWidget::AddValueEditor(SliderSpinEditor *valEditWi
  * @param valEditWidget
  * @returns true if the value was removed
  */
-bool EditorGroupWidget::RemoveValueEditor(SliderSpinEditor *valEditWidget)
+bool ValueEditorGroupWidget::RemoveValueEditor(SliderSpinEditor *valEditWidget)
 {
     layout.removeWidget(valEditWidget);
     return valueEditors.removeOne(valEditWidget);

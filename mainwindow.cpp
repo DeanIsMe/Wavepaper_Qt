@@ -23,7 +23,9 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    imgSizeValEditor = new EditorGroupWidget(&imageGen);
+    valueEditorWidget = new ValueEditorGroupWidget();
+    emitterValEditor = new ValueEditorGroupWidget();
+    imgSizeValEditor = new ValueEditorGroupWidget();
 
     // Add a text window for debugging info
     textWindow = new QPlainTextEdit;
@@ -98,7 +100,7 @@ MainWindow::MainWindow(QWidget *parent)
                      &imageGen, &ImageGen::ResetSettings);
 
     QObject::connect(ui->actionImageSize, QAction::triggered,
-                     imgSizeValEditor, &EditorGroupWidget::setVisible);
+                     imgSizeValEditor, &ValueEditorGroupWidget::setVisible);
 
 
     // Preview scene
@@ -110,12 +112,35 @@ MainWindow::MainWindow(QWidget *parent)
     imageGen.NewImageNeeded();
 
     // Value editors
-    valueEditorWidget = new EditorGroupWidget(&imageGen);
-    QScrollArea * valueEditorScroll = new QScrollArea();
-    valueEditorScroll->setWidget(valueEditorWidget);
-    valueEditorScroll->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Minimum);
-    valueEditorScroll->setWidgetResizable(false); // The default
+
+    // valueEditorWidget
+    QObject::connect(valueEditorWidget, &ValueEditorGroupWidget::ValueEditedSig, &imageGen, &ImageGen::NewImageNeeded);
+    QObject::connect(valueEditorWidget, &ValueEditorGroupWidget::ValueEditedQuickSig, &imageGen, &ImageGen::NewQuickImageNeeded);
+    // The line below is overly broad, but shouldn't be too much of an efficiency concern
+    QObject::connect(&imageGen, &ImageGen::GenerateImageSignal, valueEditorWidget, &ValueEditorGroupWidget::ApplyExternalValues);
+
+    // emitterValEditor
+    QObject::connect(emitterValEditor, &ValueEditorGroupWidget::ValueEditedSig, &imageGen, &ImageGen::NewImageNeeded);
+    QObject::connect(emitterValEditor, &ValueEditorGroupWidget::ValueEditedQuickSig, &imageGen, &ImageGen::NewQuickImageNeeded);
+    QObject::connect(&imageGen, &ImageGen::GenerateImageSignal, emitterValEditor, &ValueEditorGroupWidget::ApplyExternalValues);
+
+    QObject::connect(emitterValEditor, &ValueEditorGroupWidget::ValueEditedSig, &imageGen, &ImageGen::EmitterArngmtChanged);
+    QObject::connect(emitterValEditor, &ValueEditorGroupWidget::ValueEditedQuickSig, &imageGen, &ImageGen::EmitterArngmtChanged);
+
+
+    editorColDummyWidget = new QWidget();
+    QVBoxLayout * layoutEditorCol = new QVBoxLayout();
+    editorColDummyWidget->setLayout(layoutEditorCol);
+
+    layoutEditorCol->addWidget(valueEditorWidget);
+    layoutEditorCol->addWidget(emitterValEditor);
+
+    valueEditorScroll = new QScrollArea();
+    valueEditorScroll->setWidget(editorColDummyWidget);
+    //valueEditorScroll->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Minimum);
+    valueEditorScroll->setWidgetResizable(true); // The default
     layoutCentral.addWidget(valueEditorScroll);
+
 
     // Image size value editors
     //imgSizeValEditor->AddValueEditor(new valueEditorWidget("Width (pixels)", ));
@@ -171,14 +196,7 @@ void MainWindow::InitMode()
         valueEditorWidget->AddValueEditor(new SliderSpinEditor("Mask Duty Cycle", &imageGen.s.maskCfg.dutyCycle, 0, 1, 2));
         valueEditorWidget->AddValueEditor(new SliderSpinEditor("Mask Smooth", &imageGen.s.maskCfg.smooth, 0, 2.0, 2));
 
-        // Add arrangement quantities
-        // These would ideally be changed as arrangements are changed (e.g. change type, add arrangement, remove arrangement)
-        // For now, this will do
-        auto arngmt = imageGen.GetActiveArrangement();
-        valueEditorWidget->AddValueEditor(new SliderSpinEditor("Emitter count", &arngmt->count, 1, 100, 0), true);
-        valueEditorWidget->AddValueEditor(new SliderSpinEditor("Arc radius", &arngmt->arcRadius, 0, 100, 1), true);
-        valueEditorWidget->AddValueEditor(new SliderSpinEditor("Arc span", &arngmt->arcSpan, 0, 12.57, 3), true);
-        valueEditorWidget->AddValueEditor(new SliderSpinEditor("Rotation", &arngmt->rotation, -6.283, 6.283, 3), true);
+
     }
     if (programMode == ProgramMode::fourBar) {
         valueEditorWidget->AddValueEditor(new SliderSpinEditor("Base separation X", &imageGen.s.fourBar.baseSepX, 0, 5, 2));
@@ -198,6 +216,18 @@ void MainWindow::InitMode()
         valueEditorWidget->AddValueEditor(new SliderSpinEditor("Line taper ratio", &imageGen.s.fourBar.lineTaperRatio, 0., 1., 2));
     }
 
+    // emitterValEditor
+    emitterValEditor->ClearAllValueEditors();
+    if (programMode == ProgramMode::waves) {
+        // Add arrangement quantities
+        // These would ideally be changed as arrangements are changed (e.g. change type, add arrangement, remove arrangement)
+        // For now, adding here will do
+        auto arngmt = imageGen.GetActiveArrangement();
+        emitterValEditor->AddValueEditor(new SliderSpinEditor("Emitter count", &arngmt->count, 1, 100));
+        emitterValEditor->AddValueEditor(new SliderSpinEditor("Arc radius", &arngmt->arcRadius, 0, 100, 1));
+        emitterValEditor->AddValueEditor(new SliderSpinEditor("Arc span", &arngmt->arcSpan, 0, 12.57, 3));
+        emitterValEditor->AddValueEditor(new SliderSpinEditor("Rotation", &arngmt->rotation, -6.283, 6.283, 3));
+    }
 
 
     // Interact mode
@@ -210,6 +240,9 @@ void MainWindow::InitMode()
 
     QApplication::processEvents( QEventLoop::ExcludeUserInputEvents ); // https://stackoverflow.com/a/30472749/3580080
     valueEditorWidget->resize(valueEditorWidget->sizeHint());
+    emitterValEditor->resize(emitterValEditor->sizeHint());
+    editorColDummyWidget->resize(editorColDummyWidget->sizeHint());
+    valueEditorScroll->setMinimumWidth(editorColDummyWidget->minimumWidth());
     centralWidget.resize(centralWidget.sizeHint());
 
     // Update the toolbar
