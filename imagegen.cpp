@@ -123,7 +123,7 @@ void ImageGen::setTargetImgPoints(qint32 imgPoints, GenSettings & genSet) const 
     QRectF areaImgF(areaSim.topLeft() * genSet.imgPerSimUnit, areaSim.bottomRight() * genSet.imgPerSimUnit);
     genSet.areaImg = areaImgF.toRect();
 
-    if (abs(areaSim.width() / areaSim.height() /
+    if (std::abs(areaSim.width() / areaSim.height() /
             (qreal)genSet.areaImg.width() * (qreal)genSet.areaImg.height() - 1) > 0.02) {
         qFatal("setTargetImgPoints: viewWindow and simWindow are different ratios!");
     }

@@ -308,6 +308,7 @@ struct ClrFix {
     QColor clr; // Colour at this location
     qreal loc; // 0.0 to 1.0
     ClrFix(QColor _clr, qreal _loc) : clr(_clr), loc(_loc) {}
+    ClrFix() : clr(Qt::black), loc(0.) {}
     bool operator <(const ClrFix& other) const {
         return loc < other.loc;
     }

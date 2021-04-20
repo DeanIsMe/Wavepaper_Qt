@@ -73,8 +73,8 @@ private:
     void InternalValueEditedQuick(); // Called by this widget's editors when the value is edited during a drag
 
 signals:
-    ValueEditedSig();
-    ValueEditedQuickSig();
+    void ValueEditedSig();
+    void ValueEditedQuickSig();
 
 private:
     bool prevEditSignalWasQuick = false; // True when the overlay (drawing of emitter) should be forced on

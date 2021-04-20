@@ -47,9 +47,9 @@ void PreviewScene::EmittersToGraphItems(ImageGen & imgGen) {
     }
 
     const double emDia = imgGen.s.emitterRadius * 2.0; // Simulation/scene coordinates
-    QPen pen(QColorConstants::Black);
+    QPen pen(Qt::black);
     pen.setWidthF(imgGen.s.emitterRadius * 0.3);
-    QBrush brush(QColorConstants::White);
+    QBrush brush(Qt::white);
 
     // Delete every existing graphics item from the group
     for (QGraphicsItem * item : emItemGroup.childItems()) {

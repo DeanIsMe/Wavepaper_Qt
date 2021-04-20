@@ -430,6 +430,23 @@ bool ClrListTableModel::setData(const QModelIndex &index, const QVariant &value,
     return false;
 }
 
+#if QT_VERSION < QT_VERSION_CHECK(5,11,0)
+/** ****************************************************************************
+ * @brief ClrListTableModel::checkIndex is a function introduced in Qt 5.11
+ * For backwards compatibility, I manually added a version of this function
+ * @param index
+ * @return
+ */
+bool ClrListTableModel::checkIndex(const QModelIndex &index) {
+
+  return (index.model() == this)
+      && (index.row() > 0)
+      && (index.row() < this->rowCount())
+      && (index.column() > 0)
+      && (index.column() < this->columnCount());
+}
+#endif
+
 /** ****************************************************************************
  * @brief ClrListTableModel::flags
  * @param index
@@ -597,27 +614,27 @@ ColourMapEditorWidget::ColourMapEditorWidget(ImageGen& imgGenIn) :
     QHBoxLayout * layoutClrPresets = new QHBoxLayout();
 
     QPushButton * btnPresetJet = new QPushButton(QString("Jet"));
-    QObject::connect(btnPresetJet, QPushButton::clicked, clrMap, ColourMap::SetPresetJet);
+    QObject::connect(btnPresetJet, &QPushButton::clicked, clrMap, &ColourMap::SetPresetJet);
     layoutClrPresets->addWidget(btnPresetJet);
 
     QPushButton * btnPresetParula = new QPushButton(QString("Parula"));
-    QObject::connect(btnPresetParula, QPushButton::clicked, clrMap, ColourMap::SetPresetParula);
+    QObject::connect(btnPresetParula, &QPushButton::clicked, clrMap, &ColourMap::SetPresetParula);
     layoutClrPresets->addWidget(btnPresetParula);
 
     QPushButton * btnPresetHsv = new QPushButton(QString("Hsv"));
-    QObject::connect(btnPresetHsv, QPushButton::clicked, clrMap, ColourMap::SetPresetHsv);
+    QObject::connect(btnPresetHsv, &QPushButton::clicked, clrMap, &ColourMap::SetPresetHsv);
     layoutClrPresets->addWidget(btnPresetHsv);
 
     QPushButton * btnPresetHot = new QPushButton(QString("Hot"));
-    QObject::connect(btnPresetHot, QPushButton::clicked, clrMap, ColourMap::SetPresetHot);
+    QObject::connect(btnPresetHot, &QPushButton::clicked, clrMap, &ColourMap::SetPresetHot);
     layoutClrPresets->addWidget(btnPresetHot);
 
     QPushButton * btnPresetCool = new QPushButton(QString("Cool"));
-    QObject::connect(btnPresetCool, QPushButton::clicked, clrMap, ColourMap::SetPresetCool);
+    QObject::connect(btnPresetCool, &QPushButton::clicked, clrMap, &ColourMap::SetPresetCool);
     layoutClrPresets->addWidget(btnPresetCool);
 
     QPushButton * btnPresetBone = new QPushButton(QString("Bone"));
-    QObject::connect(btnPresetBone, QPushButton::clicked, clrMap, ColourMap::SetPresetBone);
+    QObject::connect(btnPresetBone, &QPushButton::clicked, clrMap, &ColourMap::SetPresetBone);
     layoutClrPresets->addWidget(btnPresetBone);
 
     clrMapLayout->addLayout(layoutClrPresets);
@@ -629,13 +646,13 @@ ColourMapEditorWidget::ColourMapEditorWidget(ImageGen& imgGenIn) :
     clrListTable.setColumnWidth(clrListModel.colLoc, 40);
     clrMapLayout->addWidget(&clrListTable);
 
-    QObject::connect(&clrListTable, ClrListTableView::clicked, &clrListModel, ClrListTableModel::TableClicked);
+    QObject::connect(&clrListTable, &ClrListTableView::clicked, &clrListModel, &ClrListTableModel::TableClicked);
 
     // Buttons for add and delete
     QPushButton * btnAddRow = new QPushButton("Add");
     QPushButton * btnRemoveRow = new QPushButton("Remove");
-    connect(btnAddRow, QPushButton::clicked, &clrListTable, ClrListTableView::AddRow);
-    connect(btnRemoveRow, QPushButton::clicked, &clrListTable, ClrListTableView::RemoveSelectedRows);
+    connect(btnAddRow, &QPushButton::clicked, &clrListTable, &ClrListTableView::AddRow);
+    connect(btnRemoveRow, &QPushButton::clicked, &clrListTable, &ClrListTableView::RemoveSelectedRows);
 
     QHBoxLayout * layoutAddRemoveButtons = new QHBoxLayout();
     layoutAddRemoveButtons->addWidget(btnAddRow);

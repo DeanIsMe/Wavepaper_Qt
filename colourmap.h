@@ -12,6 +12,7 @@
 #include <QChart>
 #include <QChartView>
 #include <QLineSeries>
+#include <QtGlobal>
 using namespace QtCharts;
 
 
@@ -51,8 +52,8 @@ public:
     void CalcMaskIndex(GenSettings &genSet);
 
 signals:
-    PreColourListReset();
-    PostColourListReset();
+    void PreColourListReset();
+    void PostColourListReset();
 
 public slots:
     void SetPresetHot() {SetPreset(ClrMapPreset::hot);}
@@ -96,6 +97,9 @@ public:
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     bool setData(const QModelIndex &index, const QVariant &value, int role) override;
     Qt::ItemFlags flags(const QModelIndex &index) const override;
+    #if QT_VERSION < QT_VERSION_CHECK(5,11,0)
+      bool checkIndex(const QModelIndex &index); // Introduced in Qt 5.11
+    #endif
 public slots:
     void TableClicked(const QModelIndex & index);
     void PreColourListResetSlot() {this->beginResetModel();}

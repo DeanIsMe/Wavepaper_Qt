@@ -85,33 +85,33 @@ MainWindow::MainWindow(QWidget *parent)
                      this, &MainWindow::OnInteractChange, Qt::QueuedConnection);
 
     // Action trigger events
-    QObject::connect(ui->actionFewer, QAction::triggered,
+    QObject::connect(ui->actionFewer, &QAction::triggered,
                      &imageGen, &ImageGen::EmitterCountDecrease);
-    QObject::connect(ui->actionMore, QAction::triggered,
+    QObject::connect(ui->actionMore, &QAction::triggered,
                      &imageGen, &ImageGen::EmitterCountIncrease);
 
-    QObject::connect(ui->actionWavelengthDecrease, QAction::triggered,
+    QObject::connect(ui->actionWavelengthDecrease, &QAction::triggered,
                      &imageGen, &ImageGen::WavelengthDecrease);
 
-    QObject::connect(ui->actionWavelengthIncrease, QAction::triggered,
+    QObject::connect(ui->actionWavelengthIncrease, &QAction::triggered,
                      &imageGen, &ImageGen::WavelengthIncrease);
 
-    QObject::connect(ui->actionHideEmitters, QAction::toggled,
+    QObject::connect(ui->actionHideEmitters, &QAction::toggled,
                      &imageGen, &ImageGen::HideEmitters);
 
-    QObject::connect(ui->actionSaveImage, QAction::triggered,
+    QObject::connect(ui->actionSaveImage, &QAction::triggered,
                      &imageGen, &ImageGen::SaveImage);
 
-    QObject::connect(ui->actionWaveMode, QAction::triggered,
+    QObject::connect(ui->actionWaveMode, &QAction::triggered,
                      this, &MainWindow::ChangeModeToWaves);
 
-    QObject::connect(ui->actionFourBarMode, QAction::triggered,
+    QObject::connect(ui->actionFourBarMode, &QAction::triggered,
                      this, &MainWindow::ChangeModeToFourBar);
 
-    QObject::connect(ui->actionReset, QAction::triggered,
+    QObject::connect(ui->actionReset, &QAction::triggered,
                      &imageGen, &ImageGen::ResetSettings);
 
-    QObject::connect(ui->actionImageSize, QAction::triggered,
+    QObject::connect(ui->actionImageSize, &QAction::triggered,
                      imgSizeValEditor, &ValueEditorGroupWidget::setVisible);
 
 
