@@ -91,8 +91,13 @@ void PreviewScene::EmittersToGraphItems(ImageGen & imgGen) {
  */
 void PreviewScene::AddAxesLines() {
     Interact & act = mainWindow.interact;
-    this->removeItem(&yAxisItem);
-    this->removeItem(&xAxisItem);
+
+    if (yAxisItem.isActive()) {
+        this->removeItem(&yAxisItem);
+    }
+    if (xAxisItem.isActive()) {
+        this->removeItem(&xAxisItem);
+    }
     // Axes are drawn only when interacting with an arrangement that's mirrored
     if (act.IsActive() && act.GetActiveArrangement()) {
         EmArrangement* group = act.GetActiveArrangement();
@@ -113,7 +118,7 @@ void PreviewScene::AddAxesLines() {
  * @brief PreviewView::PreviewView constructor
  * @param parent
  */
-PreviewView::PreviewView(QWidget *parent) : QGraphicsView(parent)
+PreviewView::PreviewView(QWidget *parent, MainWindow& mainWindowIn) : QGraphicsView(parent), mainWindow(mainWindowIn)
 {
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -148,7 +153,7 @@ void PreviewView::OnAspectRatioChange()
  * @param event
  */
 void PreviewView::resizeEvent(QResizeEvent *event) {
-    if (widthFromHeight != imageGen.s.view.aspectRatio < 1.) {
+    if (widthFromHeight != (imageGen.s.view.aspectRatio < 1.)) {
         OnAspectRatioChange();
     }
 
@@ -182,7 +187,17 @@ void PreviewView::resizeEvent(QResizeEvent *event) {
     }
 
     // Set the target image points to the new size
-    imageGen.setTargetImgPoints(this->size().width() * this->size().height(), imageGen.genPreview);
+    qint32 imgPixCount = this->size().width() * this->size().height();
+
+    qreal capMult = 1.0;
+    if (mainWindow.programMode == ProgramMode::fourBar) {
+        capMult = 3.0;
+    }
+
+    imageGen.setTargetImgPoints(std::min(imgPixCount, qint32(capMult * GenSettings::dfltImgPointsPreview)), imageGen.genPreview);
+
+    // Set the quick image size that the quick preview size is less
+    imageGen.setTargetImgPoints(std::min(imgPixCount, qint32(capMult * GenSettings::dfltImgPointsQuick)), imageGen.genQuick);
 
     QGraphicsView::resizeEvent(event);
     // Background redraw will be triggered

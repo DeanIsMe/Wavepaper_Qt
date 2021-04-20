@@ -102,7 +102,6 @@ void ImageGen::GenerateImageSlot()
  * @return
  */
 int ImageGen::InitViewAreas() {
-    outResolution = QSize(1080, 1080 / s.view.aspectRatio);
     areaSim = QRectF(0, 0, 100, 100. / s.view.aspectRatio);
     areaSim.moveCenter(QPoint(0,0));
 
@@ -154,7 +153,7 @@ void ImageGen::SaveImage()
                                                     tr("Images (*.png)"));
     if (!fileName.isEmpty()) {
         GenSettings genFinal;
-        setTargetImgPoints(outResolution.width() * outResolution.height(), genFinal);
+        setTargetImgPoints( qreal(outHeightPix * outHeightPix) / s.view.aspectRatio, genFinal);
         genFinal.indexedClr = false; // Use accurate colours
         genFinal.pointsPerRev = 400;
         QImage imgFinal;
@@ -201,6 +200,7 @@ void ImageGen::ResetSettings()
     s = Settings();
     colourMap.SetPreset(ClrMapPreset::hot);
     NewImageNeeded();
+    mainWindow->InitMode();
     emit EmitterArngmtChanged();
 }
 
@@ -445,8 +445,9 @@ int ImageGen::GenerateImageWaves(QImage &imageOut, GenSettings &genSet) {
     auto timePostImage = fnTimer.elapsed();
 
     QString imgGenTime = \
-            QString::asprintf("ImageGen%s %4lld ms. Templates=%4lldms (%d,%d,%d), PhasorMap=%4lldms (%d), ClrIdx=%4lldms(%d), Colouring=%4lldms, Image=%4lldms",
+            QString::asprintf("ImageGen%s %dx%dpx %4lld ms. Templates=%4lldms (%d,%d,%d), PhasorMap=%4lldms (%d), ClrIdx=%4lldms(%d), Colouring=%4lldms, Image=%4lldms",
                               &genSet == &genQuick ? "Quick" : "",
+                              pixArr->width, pixArr->height,
                               fnTimer.elapsed(), timePostTemplates,
                               templatDistChanged, templatAmpChanged, templatePhasorChanged,
                               timePostPhasors - timePostTemplates, phasorSumChanged,
@@ -901,6 +902,7 @@ int ImageGen::EmitterArrangementToLocs(const EmArrangement & arngmt, QVector<QPo
 int ImageGen::GetEmitterList(QVector<EmitterF> & emitters) {
 
     if (s.emArrangements.size() == 0) {
+        // !@# Temporary
         AddArrangement(DefaultArrangement());
     }
 

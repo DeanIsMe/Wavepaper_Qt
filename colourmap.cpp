@@ -582,6 +582,10 @@ ColourMapEditorWidget::ColourMapEditorWidget(ImageGen& imgGenIn) :
     QVBoxLayout * clrMapLayout = new QVBoxLayout();
     this->setLayout(clrMapLayout);
 
+    QLabel * widgetTitle = new QLabel();
+    widgetTitle->setText("Color map");
+    clrMapLayout->addWidget(widgetTitle);
+
     // Colour bar
     clrMapLayout->addWidget(&lblClrBarBase);
     clrMapLayout->addWidget(&lblClrBarMask);

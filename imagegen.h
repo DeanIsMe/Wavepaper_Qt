@@ -44,7 +44,7 @@ public:
     QRectF areaSim; // The rectangle of the image view area (simulation coordinates)
 
     // For the final rendered image:
-    QSize outResolution; // The output will be rendered to this resolution
+    qint32 outHeightPix = 1080; // The output will be rendered to this many pixels high
     bool saveWithTransparency = false; // If true, when an image with a mask is saved, it will be saved with transparency. If false, then the background colour will be rendered into the image
 
     QImage imgPreview;

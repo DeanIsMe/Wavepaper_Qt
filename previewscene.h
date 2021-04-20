@@ -40,7 +40,6 @@ protected:
 public:
     void EmittersToGraphItems(ImageGen &imgGen);
     void AddAxesLines();
-
 };
 
 /** ****************************************************************************
@@ -49,7 +48,7 @@ public:
 class PreviewView : public QGraphicsView {
     Q_OBJECT
 public:
-    explicit PreviewView(QWidget *parent = nullptr);
+    explicit PreviewView(QWidget *parent, MainWindow& mainWindowIn);
     // QWidget interface
 protected:
     void resizeEvent(QResizeEvent *event) override;
@@ -63,6 +62,7 @@ protected:
     void OnAspectRatioChange();
 
 protected:
+    MainWindow& mainWindow;
     bool widthFromHeight; // True if the width is determined by the height. False for the opposite.
     QImage * patternImage = nullptr;
     qreal patternImgPerSimUnit; // Saved for the pattern image

@@ -12,6 +12,10 @@
 
 class ColourMapEditorWidget;
 
+#define VERSION_MAJOR 0
+#define VERSION_MINOR 1
+#define IS_RELEASE 0
+
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
@@ -37,6 +41,7 @@ public:
     QScrollArea * valueEditorScroll = nullptr;
     Interact interact;
     ProgramMode programMode;
+    QString versionString;
 
 public slots:
     void OnInteractChange(QVariant interactType);

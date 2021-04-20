@@ -260,8 +260,8 @@ struct SumArray {
  * @brief The GenSettings struct
  */
 struct GenSettings {
-    static constexpr qint32 dfltImgPointsQuick = 500000; // Target pixels in the image
-    static constexpr qint32 dfltImgPointsPreview = 1000000; // Target pixels in the image
+    static constexpr qint32 dfltImgPointsQuick = 200000; // Target pixels in the image. May be less than this.
+    static constexpr qint32 dfltImgPointsPreview = 500000; // Target pixels in the image. May be less than this.
     double targetImgPoints = dfltImgPointsPreview; // Total number of points in the preview. Change with setTargetImgPoints()
     double imgPerSimUnit; // The imgPerSimUnit that this template was generated with
     QRect areaImg; // The rectangle of the image view area (image coordinates)
@@ -372,13 +372,13 @@ struct Settings {
     ColourList clrList; // Editing this should be handled through the ColourMap class, to update the table accordingly
     MaskCfg maskCfg;
     struct {
-        double aspectRatio = 1.; // width / height of the preview window, simulation area, generated image, ...
+        double aspectRatio = 9./16.;// width / height of the preview window, simulation area, generated image, ...
         double zoomLevel = 1; //
         QPointF center{0,0};
     } view;
     // Controlling information displayed
     // (Doesn't affect the actual patten)
-    double emitterRadius = 2.; // Emitter radius, simulation units
+    double emitterRadius = 1.2; // Emitter radius, simulation units
 
     // Four bar linkage
     FourBarCfg fourBar;

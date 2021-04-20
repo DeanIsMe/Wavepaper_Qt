@@ -23,6 +23,14 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    versionString = QString::asprintf("v%d.%d%s", VERSION_MAJOR, VERSION_MINOR, IS_RELEASE ? "" : ".DEV");
+
+    this->setWindowTitle("Wavepaper " + versionString + " - Dean Reading 2021");
+    #ifdef QT_DEBUG
+        this->setWindowTitle(this->windowTitle() + " - DEBUG BUILD");
+    #endif
+
+
     valueEditorWidget = new ValueEditorGroupWidget();
     emitterValEditor = new ValueEditorGroupWidget();
     imgSizeValEditor = new ValueEditorGroupWidget();
@@ -42,8 +50,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     imageGen.SetMainWindow(this);
 
-    imageGen.s.emitterRadius = 2.0;
-
     setCentralWidget(&centralWidget);
 
     centralWidget.setLayout(&layoutCentral);
@@ -55,7 +61,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     imageGen.InitViewAreas();
 
-    previewView = new PreviewView(this);
+    previewView = new PreviewView(this, *this);
     layoutCentral.addWidget(previewView);
 
     previewScene = new PreviewScene(previewView, *this);
@@ -152,7 +158,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Image size value editors
     //imgSizeValEditor->AddValueEditor(new valueEditorWidget("Width (pixels)", ));
-    imgSizeValEditor->AddValueEditor(new SliderSpinEditor("Aspect ratio", &imageGen.s.view.aspectRatio, 0.1, 10, 3));
+    //imgSizeValEditor->AddValueEditor(new SliderSpinEditor("Aspect ratio", &imageGen.s.view.aspectRatio, 0.1, 10, 3)); // !@# Does not work
+    imgSizeValEditor->AddValueEditor(new SliderSpinEditor("Save height (pix)", &imageGen.outHeightPix, 100, 10000));
+
     QObject::connect(imgSizeValEditor, &ValueEditorGroupWidget::ValueEditedSig, &imageGen,  &ImageGen::InitViewAreas);
 
     // Text window for debugging
@@ -230,7 +238,9 @@ void MainWindow::InitMode()
         // Add arrangement quantities
         // These would ideally be changed as arrangements are changed (e.g. change type, add arrangement, remove arrangement)
         // For now, adding here will do
-        auto arngmt = imageGen.GetActiveArrangement();
+        QVector<EmitterF> emittersF;
+        imageGen.GetEmitterList(emittersF);
+        auto arngmt = imageGen.GetActiveArrangement(); // This is just to force a default arrangement to exist (hacky)
         emitterValEditor->AddValueEditor(new SliderSpinEditor("Emitter count", &arngmt->count, 1, 100));
         emitterValEditor->AddValueEditor(new SliderSpinEditor("Arc radius", &arngmt->arcRadius, 0, 100, 1));
         emitterValEditor->AddValueEditor(new SliderSpinEditor("Arc span", &arngmt->arcSpan, 0, 12.57, 3));
@@ -442,4 +452,6 @@ void MainWindow::on_actionFbEditDrawRange_toggled(bool arg1)
 
 void MainWindow::on_actionImageSize_triggered(bool checked)
 {
+    imgSizeValEditor->ApplyExternalValues();
+    Q_UNUSED(checked);
 }
