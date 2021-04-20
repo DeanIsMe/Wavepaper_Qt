@@ -34,6 +34,12 @@ MainWindow::MainWindow(QWidget *parent)
     //textWindow->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
     textWindow->setFont(font);
 
+    #ifdef QT_DEBUG
+        textWindow->setVisible(true);
+    #else
+        textWindow->setVisible(false);
+    #endif
+
     imageGen.SetMainWindow(this);
 
     imageGen.s.emitterRadius = 2.0;
