@@ -147,7 +147,7 @@ MainWindow::MainWindow(QWidget *parent)
     // Image size value editors
     //imgSizeValEditor->AddValueEditor(new valueEditorWidget("Width (pixels)", ));
     imgSizeValEditor->AddValueEditor(new SliderSpinEditor("Aspect ratio", &imageGen.s.view.aspectRatio, 0.1, 10, 3));
-
+    QObject::connect(imgSizeValEditor, &ValueEditorGroupWidget::ValueEditedSig, &imageGen,  &ImageGen::InitViewAreas);
 
     // Text window for debugging
     layoutCentral.addWidget(textWindow);

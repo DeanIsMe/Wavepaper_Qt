@@ -146,6 +146,9 @@ void ValueEditorGroupWidget::ClearAllValueEditors()
     for (qint32 i = 0; i < valueEditors.length(); i++) {
         layout.removeWidget(valueEditors[i]);
     }
+    for (qint32 i = 0; i < lineSeparators.length(); i++) {
+        layout.removeWidget(lineSeparators[i]);
+    }
     qDeleteAll(valueEditors);
     valueEditors.clear();
 }
@@ -192,6 +195,7 @@ SliderSpinEditor * ValueEditorGroupWidget::AddValueEditor(SliderSpinEditor *valE
     line->setFrameShape(QFrame::HLine);
     line->setFrameShadow(QFrame::Sunken);
     layout.addWidget(line);
+    lineSeparators.append(line);
 
     return valEditWidget;
 }

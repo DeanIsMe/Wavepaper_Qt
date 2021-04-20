@@ -118,6 +118,17 @@ PreviewView::PreviewView(QWidget *parent) : QGraphicsView(parent)
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
+    OnAspectRatioChange();
+
+    this->setContentsMargins(0,0,0,0);
+}
+
+/** ****************************************************************************
+ * @brief PreviewView::OnAspectRatioChange should be called when the aspect
+ * ratio changes
+ */
+void PreviewView::OnAspectRatioChange()
+{
     if (imageGen.s.view.aspectRatio < 1.) {
         // Portrait orientation. Width determined from height
         widthFromHeight = true;
@@ -130,8 +141,6 @@ PreviewView::PreviewView(QWidget *parent) : QGraphicsView(parent)
         this->setMinimumWidth(300);
         this->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
     }
-
-    this->setContentsMargins(0,0,0,0);
 }
 
 /** ****************************************************************************
@@ -139,6 +148,10 @@ PreviewView::PreviewView(QWidget *parent) : QGraphicsView(parent)
  * @param event
  */
 void PreviewView::resizeEvent(QResizeEvent *event) {
+    if (widthFromHeight != imageGen.s.view.aspectRatio < 1.) {
+        OnAspectRatioChange();
+    }
+
     // Enforce the aspect ratio
 
     // Ensure that the viewable section of the screen stays the same
@@ -223,6 +236,7 @@ void PreviewView::drawBackground(QPainter *painter, const QRectF &rect)
 //                       this->width(), this->height());
     }
 }
+
 
 /** ****************************************************************************
  * @brief PreviewScene::ListAllItems

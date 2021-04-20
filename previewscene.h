@@ -60,6 +60,7 @@ public slots:
     // QGraphicsView interface
 protected:
     void drawBackground(QPainter *painter, const QRectF &rect);
+    void OnAspectRatioChange();
 
 protected:
     bool widthFromHeight; // True if the width is determined by the height. False for the opposite.

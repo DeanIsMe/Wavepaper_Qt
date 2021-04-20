@@ -20,8 +20,6 @@ ImageGen imageGen;
 ImageGen::ImageGen() : colourMap(s.clrList, s.maskCfg, *this) {
     QObject::connect(this, &ImageGen::GenerateImageSignal,
                      this, &ImageGen::GenerateImageSlot, Qt::QueuedConnection);
-    InitViewAreas();
-
     colourMap.SetPreset(ClrMapPreset::hot);
 
     genPreview.clrIndexMax = 1023;
@@ -110,6 +108,8 @@ int ImageGen::InitViewAreas() {
 
     setTargetImgPoints(GenSettings::dfltImgPointsPreview, genPreview);
     setTargetImgPoints(GenSettings::dfltImgPointsQuick, genQuick);
+
+    if (mainWindow->previewView != nullptr) {mainWindow->previewView->updateGeometry();}
     return 0;
 }
 
@@ -139,7 +139,7 @@ void ImageGen::setTargetImgPoints(qint32 imgPoints, GenSettings & genSet) const 
 bool ImageGen::EmittersHidden() {
     return mainWindow->programMode != ProgramMode::waves ||
             (hideEmitters && !mainWindow->interact.TypeIsActive(Interact::Type::arrangement)
-            && !(mainWindow->valueEditorWidget != nullptr && mainWindow->valueEditorWidget->PrevEditSignalWasQuick())
+            && !(mainWindow->emitterValEditor != nullptr && mainWindow->emitterValEditor->PrevEditSignalWasQuick())
              );
 }
 

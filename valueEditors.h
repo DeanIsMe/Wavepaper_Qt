@@ -65,7 +65,7 @@ public:
     SliderSpinEditor *AddValueEditor(SliderSpinEditor * valEditWidget);
     bool RemoveValueEditor(SliderSpinEditor * valEditWidget);
     void ClearAllValueEditors();
-    bool PrevEditSignalWasQuick() {return prevEditSignalWasQuick;}
+    bool PrevEditSignalWasQuick() const {return prevEditSignalWasQuick;}
     void ApplyExternalValues();
 
 private:
@@ -83,6 +83,7 @@ private:
     void (*valueChangedSignal)(void);
     QVBoxLayout layout;
     QList<SliderSpinEditor*> valueEditors;
+    QList<QFrame *> lineSeparators;
 
 };
 

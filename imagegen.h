@@ -47,7 +47,6 @@ public:
     QSize outResolution; // The output will be rendered to this resolution
     bool saveWithTransparency = false; // If true, when an image with a mask is saved, it will be saved with transparency. If false, then the background colour will be rendered into the image
 
-    qreal aspectRatio() const {return s.view.aspectRatio;} // Width / height
     QImage imgPreview;
     QImage imgQuick;
     qint32 testVal = 1;
