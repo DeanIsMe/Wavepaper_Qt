@@ -9,11 +9,13 @@
 #include <QAbstractTableModel>
 #include <QLabel>
 #include <QTableView>
+#if USE_QT_CHARTS
 #include <QChart>
 #include <QChartView>
 #include <QLineSeries>
-#include <QtGlobal>
 using namespace QtCharts;
+#endif
+#include <QtGlobal>
 
 
 /** ****************************************************************************
@@ -170,10 +172,12 @@ private:
     ClrListTableModel clrListModel;
     ClrListTableView clrListTable; // Table for editing the colours
 
+#if USE_QT_CHARTS
     // Line chart to display the mask
     QLineSeries * maskSeries = nullptr;
     QChart maskChart;
     QChartView maskChartView;
+#endif
 
     // QWidget interface
 protected:

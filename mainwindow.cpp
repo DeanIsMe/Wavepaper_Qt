@@ -285,7 +285,9 @@ void MainWindow::InitMode()
         actionsToAdd.append(ui->actionWavelengthIncrease);
         actionsToAdd.append(ui->actionMaskEnable);
         actionsToAdd.append(ui->actionMaskEdit);
+#if USE_QT_CHARTS
         actionsToAdd.append(ui->actionShowMaskChart);
+#endif
         actionsToAdd.append(ui->actionColoursEdit);
     }
     if (programMode == ProgramMode::fourBar) {

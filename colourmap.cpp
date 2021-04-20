@@ -607,8 +607,10 @@ ColourMapEditorWidget::ColourMapEditorWidget(ImageGen& imgGenIn) :
     clrMapLayout->addWidget(&lblClrBarBase);
     clrMapLayout->addWidget(&lblClrBarMask);
     clrMapLayout->addWidget(&lblClrBarResult);
+#if USE_QT_CHARTS
     clrMapLayout->addWidget(&maskChartView);
     maskChartView.setVisible(false);
+#endif
 
     // Colourmap presets
     QHBoxLayout * layoutClrPresets = new QHBoxLayout();
@@ -674,9 +676,11 @@ ColourMapEditorWidget::ColourMapEditorWidget(ImageGen& imgGenIn) :
 */
 ColourMapEditorWidget::~ColourMapEditorWidget()
 {
+#if USE_QT_CHARTS
     if (maskSeries != nullptr) {
         delete maskSeries;
     }
+#endif
 }
 
 
@@ -759,6 +763,7 @@ void ColourMapEditorWidget::DrawColourBars(GenSettings & genSet, qint32 sumClrBa
         */
     }
 
+#if USE_QT_CHARTS
     // MASK CHART VIEW
     // The maskChartView has an annoying border of 9 pixels that prevents it
     // from lining up with the labels. I tried many methods to get rid of this,
@@ -790,6 +795,7 @@ void ColourMapEditorWidget::DrawColourBars(GenSettings & genSet, qint32 sumClrBa
     maskChartView.setContentsMargins(0,0,0,0);
     maskChartView.setRenderHint(QPainter::Antialiasing);
     // qDebug("maskChartView.x=%d,   maskChart.x=%.2f. chartViewWidth=%d, lblColourWidth=%d", maskChartView.x(), maskChart.x(), maskChartView.width(), lblClrBarBase.width());
+#endif
 }
 
 
@@ -799,7 +805,9 @@ void ColourMapEditorWidget::DrawColourBars(GenSettings & genSet, qint32 sumClrBa
  */
 void ColourMapEditorWidget::SetMaskChartVisible(bool on)
 {
+#if USE_QT_CHARTS
     maskChartView.setVisible(on);
+#endif
 }
 
 /**
