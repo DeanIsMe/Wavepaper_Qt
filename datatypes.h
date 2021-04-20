@@ -225,8 +225,8 @@ public:
         return Add((void *) &val, sizeof(val));
     }
     qint32 Get() {return sum;}
-    operator ==(CheckSum b) {return sum == b.sum;}
-    operator !=(CheckSum b) {return sum != b.sum;}
+    bool operator ==(CheckSum b) {return sum == b.sum;}
+    bool operator !=(CheckSum b) {return sum != b.sum;}
     operator int() const {return sum;}
 };
 

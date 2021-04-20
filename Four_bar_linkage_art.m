@@ -1,3 +1,7 @@
+%% Four bar linkage art - equation derivations
+% Dean Reading 2021-01
+% 2 arms ('a' and 'b'), each with 2 segments ('1' and '2')
+
 %% Constants setup
 xa_=0;
 ya_=0;
@@ -131,7 +135,7 @@ axis square
 % ta2 = 2*atan((((2*la2*lb2)^2 - (kc - la2^2)^2)^(1/2) - 2*la2*kb)/(kc - 2*la2*ka + la2^2))
 
 
-visualizeProcess = 0; % Set to '1' if you want to visualize the plot as it's formed
+visualizeProcess = 1; % Set to '1' if you want to visualize the plot as it's formed
 % 
 % xa_=0;
 % ya_=0;
@@ -150,6 +154,7 @@ stepCount = 20000;
 vec_x = zeros(stepCount, 1);
 vec_y = zeros(stepCount, 1);
 vec_ta2 = zeros(stepCount, 1);
+speed_up = 10.0;
 
 tic
 
@@ -185,8 +190,8 @@ for step = 1 : stepCount
     
           
     % Increment angles
-    ta1_ = ta1_ + inca;
-    tb1_ = tb1_ + incb;
+    ta1_ = ta1_ + inca * speed_up;
+    tb1_ = tb1_ + incb * speed_up;
     %pause
 end
 toc
