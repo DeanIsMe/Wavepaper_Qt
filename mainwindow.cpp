@@ -130,14 +130,16 @@ MainWindow::MainWindow(QWidget *parent)
 
     editorColDummyWidget = new QWidget();
     QVBoxLayout * layoutEditorCol = new QVBoxLayout();
+    layoutEditorCol->setMargin(0);
     editorColDummyWidget->setLayout(layoutEditorCol);
+    editorColDummyWidget->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Minimum);
 
     layoutEditorCol->addWidget(valueEditorWidget);
     layoutEditorCol->addWidget(emitterValEditor);
 
     valueEditorScroll = new QScrollArea();
     valueEditorScroll->setWidget(editorColDummyWidget);
-    //valueEditorScroll->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Minimum);
+    valueEditorScroll->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Minimum);
     valueEditorScroll->setWidgetResizable(true); // The default
     layoutCentral.addWidget(valueEditorScroll);
 
@@ -229,7 +231,6 @@ void MainWindow::InitMode()
         emitterValEditor->AddValueEditor(new SliderSpinEditor("Rotation", &arngmt->rotation, -6.283, 6.283, 3));
     }
 
-
     // Interact mode
     if (programMode == ProgramMode::waves) {
         interact.SelectType(Interact::defaultTypeWaves);
@@ -241,8 +242,8 @@ void MainWindow::InitMode()
     QApplication::processEvents( QEventLoop::ExcludeUserInputEvents ); // https://stackoverflow.com/a/30472749/3580080
     valueEditorWidget->resize(valueEditorWidget->sizeHint());
     emitterValEditor->resize(emitterValEditor->sizeHint());
-    editorColDummyWidget->resize(editorColDummyWidget->sizeHint());
-    valueEditorScroll->setMinimumWidth(editorColDummyWidget->minimumWidth());
+    editorColDummyWidget->resize(editorColDummyWidget->minimumSizeHint());
+    valueEditorScroll->setMinimumWidth(valueEditorWidget->width() + 20); // 20 pix to allow for scroll bar
     centralWidget.resize(centralWidget.sizeHint());
 
     // Update the toolbar

@@ -27,9 +27,12 @@ void SliderSpinEditor::ConstructorSub(const QString& name)
     QVBoxLayout * layout = new QVBoxLayout();
     this->setLayout(layout);
 
+    QHBoxLayout * layoutRow = new QHBoxLayout();
+
     QLabel * labelName = new QLabel();
+    labelName->setAlignment(Qt::AlignLeft | Qt::AlignTop);
     labelName->setText(name);
-    layout->addWidget(labelName);
+    layoutRow->addWidget(labelName);
 
     ApplyExtValue();
 
@@ -41,7 +44,8 @@ void SliderSpinEditor::ConstructorSub(const QString& name)
     slider.setMinimum(minVal * sliderScaler);
     slider.setMaximum(maxVal * sliderScaler);
 
-    layout->addWidget(&spinBox);
+    layoutRow->addWidget(&spinBox);
+    layout->addLayout(layoutRow);
     QObject::connect(&spinBox, &QAbstractSpinBox::editingFinished, this, &SliderSpinEditor::SpinChangedSlot);
 
     layout->addWidget(&slider);
@@ -49,6 +53,7 @@ void SliderSpinEditor::ConstructorSub(const QString& name)
     QObject::connect(&slider, &QSlider::valueChanged, this, &SliderSpinEditor::SliderChangedSlot);
     QObject::connect(&slider, &QSlider::sliderReleased, this, &SliderSpinEditor::SliderChangedSlot);
     parentGroupWidget = nullptr;
+    layout->setMargin(0);
 }
 
 
@@ -118,7 +123,9 @@ void SliderSpinEditor::ApplyExtValue()
  */
 ValueEditorGroupWidget::ValueEditorGroupWidget()
 {
-    setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+    setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    layout.setMargin(10);
+    layout.setSpacing(10);
     this->setLayout(&layout);
 }
 
@@ -180,6 +187,11 @@ SliderSpinEditor * ValueEditorGroupWidget::AddValueEditor(SliderSpinEditor *valE
     valueEditors.append(valEditWidget);
     layout.addWidget(valEditWidget);
     valEditWidget->SetParentGroupWidget(this);
+
+    QFrame* line = new QFrame();
+    line->setFrameShape(QFrame::HLine);
+    line->setFrameShadow(QFrame::Sunken);
+    layout.addWidget(line);
 
     return valEditWidget;
 }
