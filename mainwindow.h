@@ -1,3 +1,7 @@
+// Wavepaper
+// Dean Reading
+// 2021
+
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
@@ -14,7 +18,7 @@ class ColourMapEditorWidget;
 
 #define VERSION_MAJOR 0
 #define VERSION_MINOR 1
-#define IS_RELEASE 0
+#define IS_RELEASE 1
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }

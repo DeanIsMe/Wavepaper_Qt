@@ -147,7 +147,7 @@ bool ImageGen::EmittersHidden() {
  */
 void ImageGen::SaveImage()
 {
-    // !@#$ Fix the errors that occur with this dialog box
+    // !@# Fix the errors that occur with this dialog box
     QString fileName = QFileDialog::getSaveFileName(mainWindow, tr("Save image"),
                                                     QString(),
                                                     tr("Images (*.png)"));
