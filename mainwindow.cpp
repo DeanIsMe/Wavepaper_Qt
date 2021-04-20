@@ -23,6 +23,8 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    imgSizeValEditor = new EditorGroupWidget(&imageGen);
+
     // Add a text window for debugging info
     textWindow = new QPlainTextEdit;
     QFont font("Monospace");
@@ -95,6 +97,9 @@ MainWindow::MainWindow(QWidget *parent)
     QObject::connect(ui->actionReset, QAction::triggered,
                      &imageGen, &ImageGen::ResetSettings);
 
+    QObject::connect(ui->actionImageSize, QAction::triggered,
+                     imgSizeValEditor, &EditorGroupWidget::setVisible);
+
 
     // Preview scene
     qDebug() << "Preview view rect " << RectToQString(previewView->rect());
@@ -111,6 +116,10 @@ MainWindow::MainWindow(QWidget *parent)
     valueEditorScroll->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Minimum);
     valueEditorScroll->setWidgetResizable(false); // The default
     layoutCentral.addWidget(valueEditorScroll);
+
+    // Image size value editors
+    //imgSizeValEditor->AddValueEditor(new valueEditorWidget("Width (pixels)", ));
+    imgSizeValEditor->AddValueEditor(new SliderSpinEditor("Aspect ratio", &imageGen.s.view.aspectRatio, 0.1, 10, 3));
 
 
     // Text window for debugging
@@ -208,6 +217,7 @@ void MainWindow::InitMode()
 
     QList<QAction *> actionsToAdd;
     actionsToAdd.append(ui->actionSaveImage);
+    actionsToAdd.append(ui->actionImageSize);
     actionsToAdd.append(ui->actionReset);
     actionsToAdd.append(ui->actionWaveMode);
     actionsToAdd.append(ui->actionFourBarMode);
@@ -239,6 +249,8 @@ void MainWindow::InitMode()
     ui->actionWaveMode->setChecked(programMode == ProgramMode::waves);
     ui->actionFourBarMode->setChecked(programMode == ProgramMode::fourBar);
     ui->actionHideEmitters->setChecked(imageGen.GetHideEmitters());
+
+    ui->actionImageSize->setChecked(imgSizeValEditor->isVisible());
 
     // Scene
     previewScene->EmittersToGraphItems(imageGen);
@@ -386,4 +398,8 @@ void MainWindow::on_actionFbEditAngleInc_toggled(bool arg1)
 void MainWindow::on_actionFbEditDrawRange_toggled(bool arg1)
 {
     interact.SetTypeSelect(Interact::Type::drawRange, arg1);
+}
+
+void MainWindow::on_actionImageSize_triggered(bool checked)
+{
 }

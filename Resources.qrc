@@ -20,5 +20,6 @@
         <file alias="length">Resources/length-24px.svg</file>
         <file alias="anglesInc">Resources/angles_inc-24px.svg</file>
         <file alias="drawRange">Resources/draw_range-24px.svg</file>
+        <file alias="imageSize">Resources/image_size-24dp.svg</file>
     </qresource>
 </RCC>

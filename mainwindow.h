@@ -31,6 +31,7 @@ public:
     QPlainTextEdit * textWindow = nullptr;
     ColourMapEditorWidget * colourMapEditor = nullptr;
     EditorGroupWidget * valueEditorWidget = nullptr;
+    EditorGroupWidget * imgSizeValEditor = nullptr;
     Interact interact;
     ProgramMode programMode;
 
@@ -62,5 +63,6 @@ private slots:
     void on_actionFbEditLengths_toggled(bool arg1);
     void on_actionFbEditAngleInc_toggled(bool arg1);
     void on_actionFbEditDrawRange_toggled(bool arg1);
+    void on_actionImageSize_triggered(bool checked);
 };
 #endif // MAINWINDOW_H

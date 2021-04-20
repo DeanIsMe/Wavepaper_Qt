@@ -38,6 +38,7 @@
     <bool>false</bool>
    </attribute>
    <addaction name="actionSaveImage"/>
+   <addaction name="actionImageSize"/>
    <addaction name="actionReset"/>
    <addaction name="separator"/>
    <addaction name="actionWaveMode"/>
@@ -330,6 +331,18 @@
    </property>
    <property name="toolTip">
     <string>Reset the settings to their default values</string>
+   </property>
+  </action>
+  <action name="actionImageSize">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/imageSize</normaloff>:/icons/imageSize</iconset>
+   </property>
+   <property name="text">
+    <string>Image size</string>
    </property>
   </action>
  </widget>
