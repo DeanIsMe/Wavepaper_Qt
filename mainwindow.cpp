@@ -193,7 +193,7 @@ void MainWindow::InitMode()
     if (programMode == ProgramMode::waves) {
         if (colourMapEditor == nullptr) {
             colourMapEditor = new ColourMapEditorWidget(imageGen);
-            QObject::connect(ui->actionShowMaskChart, QAction::toggled,
+            QObject::connect(ui->actionShowMaskChart, &QAction::toggled,
                              colourMapEditor, &ColourMapEditorWidget::SetMaskChartVisible);
         }
         layoutCentral.addWidget(colourMapEditor);
