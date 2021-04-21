@@ -17,8 +17,8 @@
 class ColourMapEditorWidget;
 
 #define VERSION_MAJOR 0
-#define VERSION_MINOR 1
-#define IS_RELEASE 1
+#define VERSION_MINOR 2
+#define IS_RELEASE 0
 
 // Qt Charts can be difficult, so here's the option to avoid it. Can turn this off for ease of compiling. Will also need to comment the line "QT += charts" in WavePaper.pro
 #define USE_QT_CHARTS 1 // 0/1. Should normally be 1.

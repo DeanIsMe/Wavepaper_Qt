@@ -102,13 +102,17 @@ void ImageGen::GenerateImageSlot()
  * @return
  */
 int ImageGen::InitViewAreas() {
-    areaSim = QRectF(0, 0, 100, 100. / s.view.aspectRatio);
+    // Simulation area is calculated such that width + height = 200.
+    qreal simAreaH = 200. / (1. + s.view.aspectRatio);
+    areaSim = QRectF(0, 0, simAreaH * s.view.aspectRatio, 200. / (1. + s.view.aspectRatio));
     areaSim.moveCenter(QPoint(0,0));
+    mainWindow->previewScene->setSceneRect(imageGen.areaSim);
+    mainWindow->previewView->setSceneRect(QRectF()); // Ensures that the scene's property is used
 
     setTargetImgPoints(GenSettings::dfltImgPointsPreview, genPreview);
     setTargetImgPoints(GenSettings::dfltImgPointsQuick, genQuick);
 
-    if (mainWindow->previewView != nullptr) {mainWindow->previewView->updateGeometry();}
+    if (mainWindow->previewView != nullptr) {mainWindow->previewView->OnAspectRatioChange();} // !@#$
     return 0;
 }
 

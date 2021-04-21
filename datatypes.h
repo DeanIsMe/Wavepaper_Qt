@@ -364,7 +364,7 @@ struct FourBarCfg {
  * current pattern
  */
 struct Settings {
-    double wavelength = 40; // Wavelength. Simulation units
+    double wavelength = 20; // Wavelength. Simulation units
     double distOffsetF = 0.1; // controls linearity. Range 0 to 1+, normally 0.1. Amplitude drops off at rate of 1/(r + sceneLength * distOffsetF).
     // as distOffsetF approaches 0, the amplitude at each emitter approaches infinity.
     bool emittersInSync; // If true then all emitters are in phase with the same amplitude. If false, then the energizer determines phase & amplitude

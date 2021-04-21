@@ -35,6 +35,9 @@ MainWindow::MainWindow(QWidget *parent)
     emitterValEditor = new ValueEditorGroupWidget();
     imgSizeValEditor = new ValueEditorGroupWidget();
 
+    previewView = new PreviewView(this, *this);
+    previewScene = new PreviewScene(previewView, *this);
+
     // Add a text window for debugging info
     textWindow = new QPlainTextEdit;
     QFont font("Monospace");
@@ -61,14 +64,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     imageGen.InitViewAreas();
 
-    previewView = new PreviewView(this, *this);
+
     layoutCentral.addWidget(previewView);
-
-    previewScene = new PreviewScene(previewView, *this);
-    previewScene->setSceneRect(imageGen.areaSim);
     previewView->setScene(previewScene);
-
-    previewView->setSceneRect(imageGen.areaSim);
 
     QObject::connect(&imageGen, &ImageGen::NewImageReady,
                      previewView, &PreviewView::OnPatternImageChange);
@@ -153,15 +151,16 @@ MainWindow::MainWindow(QWidget *parent)
     valueEditorScroll->setWidget(editorColDummyWidget);
     valueEditorScroll->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Minimum);
     valueEditorScroll->setWidgetResizable(true); // The default
+    valueEditorScroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     layoutCentral.addWidget(valueEditorScroll);
 
 
     // Image size value editors
-    //imgSizeValEditor->AddValueEditor(new valueEditorWidget("Width (pixels)", ));
-    //imgSizeValEditor->AddValueEditor(new SliderSpinEditor("Aspect ratio", &imageGen.s.view.aspectRatio, 0.1, 10, 3)); // !@# Does not work
-    imgSizeValEditor->AddValueEditor(new SliderSpinEditor("Save height (pix)", &imageGen.outHeightPix, 100, 10000));
+    imgSizeValEditor->AddValueEditor(new SliderSpinEditor("Aspect ratio (w/h)", &imageGen.s.view.aspectRatio, 0.1, 10, 5));
+    imgSizeValEditor->AddValueEditor(new SliderSpinEditor("Save image height (pix)", &imageGen.outHeightPix, 100, 10000));
 
     QObject::connect(imgSizeValEditor, &ValueEditorGroupWidget::ValueEditedSig, &imageGen,  &ImageGen::InitViewAreas);
+    QObject::connect(imgSizeValEditor, &ValueEditorGroupWidget::ValueEditedSig, &imageGen, &ImageGen::NewImageNeeded);
 
     // Text window for debugging
     layoutCentral.addWidget(textWindow);
@@ -204,7 +203,7 @@ void MainWindow::InitMode()
     valueEditorWidget->ClearAllValueEditors();
 
     if (programMode == ProgramMode::waves) {
-        valueEditorWidget->AddValueEditor(new SliderSpinEditor("Wavelength", &imageGen.s.wavelength, 1, 200, 1));
+        valueEditorWidget->AddValueEditor(new SliderSpinEditor("Wavelength", &imageGen.s.wavelength, 1, 50, 1));
         valueEditorWidget->AddValueEditor(new SliderSpinEditor("Linearity", &imageGen.s.distOffsetF, 0, 1.0, 2));
 
         valueEditorWidget->AddValueEditor(new SliderSpinEditor("Mask Revolutions", &imageGen.s.maskCfg.numRevs, 1, 80, 0));

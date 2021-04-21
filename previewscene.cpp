@@ -120,6 +120,7 @@ void PreviewScene::AddAxesLines() {
  */
 PreviewView::PreviewView(QWidget *parent, MainWindow& mainWindowIn) : QGraphicsView(parent), mainWindow(mainWindowIn)
 {
+    desiredSize = QSize(300,300);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
@@ -139,13 +140,16 @@ void PreviewView::OnAspectRatioChange()
         widthFromHeight = true;
         this->setMinimumHeight(300);
         this->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
+        desiredSize = QSize((int)((qreal)this->height() * imageGen.s.view.aspectRatio), this->height());
     }
     else {
         // Landscape orientation. Height determined from width
         widthFromHeight = false;
         this->setMinimumWidth(300);
         this->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+        desiredSize = QSize(this->width(), int((qreal)this->width() / imageGen.s.view.aspectRatio));
     }
+    this->updateGeometry();
 }
 
 /** ****************************************************************************
@@ -169,6 +173,7 @@ void PreviewView::resizeEvent(QResizeEvent *event) {
         this->setMinimumWidth(newWidth);
         //        qDebug("resizeEvent. size=(%dx%d)px. newWidth=%.2f. viewWidth=%d. Expanded=%d",
         //               event->size().width(), event->size().height(), newWidth, this->width(), expanded);
+        desiredSize = QSize((int)newWidth, event->size().height());
     }
     else { // Height from width
         qreal newHeight = (qreal)event->size().width() / imageGen.s.view.aspectRatio;
@@ -178,6 +183,7 @@ void PreviewView::resizeEvent(QResizeEvent *event) {
         this->setMinimumHeight(newHeight);
 //                qDebug("resizeEvent. size=(%dx%d)px. newHeight=%.2f. height=%d. Expanded=%d",
 //                       event->size().width(), event->size().height(), newHeight, this->height(), expanded);
+        desiredSize = QSize(event->size().width(), (int)newHeight);
     }
 
     if (expanded) {
@@ -205,6 +211,17 @@ void PreviewView::resizeEvent(QResizeEvent *event) {
     // !@# imageGen.NewImageNeeded();
     // TODO reduce the gradual scaling that occurs when generating a new image here
 }
+
+
+/** ****************************************************************************
+ * @brief PreviewView::sizeHint
+ * @return
+ */
+QSize PreviewView::sizeHint() const
+{
+    return desiredSize;
+}
+
 
 /** ****************************************************************************
  * @brief PreviewView::OnPatternImageChange
@@ -246,9 +263,10 @@ void PreviewView::drawBackground(QPainter *painter, const QRectF &rect)
         //               this->width(), this->height());
     }else { // Redraw the entire background (seems more resiliant with various types of resizing)
         painter->drawImage(sceneRect(), *patternImage, patternImage->rect());
-//                qDebug("drawBackground. rect=(%.2fx%.2f). @(%.2f, %.2f). viewSz=(%dx%d)",
+//                qDebug("drawBackground. rect=(%.2fx%.2f). @(%.2f, %.2f). viewSz=(%dx%d), sceneRect=(%.1fx%.1f)",
 //                       rect.width(), rect.height(), rect.x(), rect.y(),
-//                       this->width(), this->height());
+//                       this->width(), this->height(),
+//                       sceneRect().width(), sceneRect().height());
     }
 }
 
@@ -259,7 +277,7 @@ void PreviewView::drawBackground(QPainter *painter, const QRectF &rect)
 void PreviewScene::ListAllItems() {
     QStringList strList;
     strList.append(QString::asprintf("%d items in scene. Locs = ", items().size()));
-    for (auto item : items()) {
+    for (auto& item : items()) {
         QPointF scenePos = item->mapToScene(item->pos());
         strList.append(QString::asprintf("(%.2f, %.2f), ", scenePos.x(), scenePos.y()));
     }

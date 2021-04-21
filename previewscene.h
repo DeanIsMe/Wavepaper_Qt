@@ -49,7 +49,9 @@ class PreviewView : public QGraphicsView {
     Q_OBJECT
 public:
     explicit PreviewView(QWidget *parent, MainWindow& mainWindowIn);
-    // QWidget interface
+    QSize sizeHint() const override;
+    void OnAspectRatioChange();
+
 protected:
     void resizeEvent(QResizeEvent *event) override;
 
@@ -59,7 +61,6 @@ public slots:
     // QGraphicsView interface
 protected:
     void drawBackground(QPainter *painter, const QRectF &rect);
-    void OnAspectRatioChange();
 
 protected:
     MainWindow& mainWindow;
@@ -67,6 +68,8 @@ protected:
     QImage * patternImage = nullptr;
     qreal patternImgPerSimUnit; // Saved for the pattern image
     QColor backgroundColour = Qt::black;
+
+    QSize desiredSize;
 };
 
 #endif // PREVIEWSCENE_H

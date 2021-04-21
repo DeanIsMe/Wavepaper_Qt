@@ -396,7 +396,7 @@ QVariant ClrListTableModel::data(const QModelIndex &index, int role) const
             return QString::asprintf("%02X %02X %02X", clr.red(), clr.green(), clr.blue());
         }
         else if (index.column() == colLoc) {
-            return QString::asprintf("%.1f", clrList[index.row()].loc);
+            return QString::asprintf("%.2f", clrList[index.row()].loc);
         }
         break;
     case Qt::BackgroundRole:
