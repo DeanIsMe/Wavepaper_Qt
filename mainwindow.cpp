@@ -265,37 +265,47 @@ void MainWindow::InitMode()
     ui->toolBarHorz->clear();
 
     QList<QAction *> actionsToAdd;
+    QList<QAction *> addSeparatorBefore;
     actionsToAdd.append(ui->actionSaveImage);
     actionsToAdd.append(ui->actionImageSize);
     actionsToAdd.append(ui->actionReset);
+    addSeparatorBefore.append(ui->actionWaveMode);
     actionsToAdd.append(ui->actionWaveMode);
     actionsToAdd.append(ui->actionFourBarMode);
 
 
 
     if (programMode == ProgramMode::waves) {
-        actionsToAdd.append(ui->actionEditGroup);
-        actionsToAdd.append(ui->actionHideEmitters);
+        // !@# delete these
+        addSeparatorBefore.append(ui->actionMore);
         actionsToAdd.append(ui->actionMore);
         actionsToAdd.append(ui->actionFewer);
-        actionsToAdd.append(ui->actionMirrorHor);
-        actionsToAdd.append(ui->actionMirrorVert);
         actionsToAdd.append(ui->actionWavelengthDecrease);
         actionsToAdd.append(ui->actionWavelengthIncrease);
+
+        addSeparatorBefore.append(ui->actionHideEmitters);
+        actionsToAdd.append(ui->actionHideEmitters);
+        actionsToAdd.append(ui->actionMirrorHor);
+        actionsToAdd.append(ui->actionMirrorVert);
         actionsToAdd.append(ui->actionMaskEnable);
-        actionsToAdd.append(ui->actionMaskEdit);
-#if USE_QT_CHARTS
-        actionsToAdd.append(ui->actionShowMaskChart);
-#endif
+
+        addSeparatorBefore.append(ui->actionEditGroup);
+        actionsToAdd.append(ui->actionEditGroup);
         actionsToAdd.append(ui->actionColoursEdit);
+        actionsToAdd.append(ui->actionMaskEdit);
     }
     if (programMode == ProgramMode::fourBar) {
+        addSeparatorBefore.append(ui->actionFbEditLengths);
         actionsToAdd.append(ui->actionFbEditLengths);
         actionsToAdd.append(ui->actionFbEditAngleInc);
         actionsToAdd.append(ui->actionFbEditDrawRange);
     }
 
     ui->toolBarHorz->addActions(actionsToAdd);
+
+    for (auto& sepBefore : addSeparatorBefore) {
+        ui->toolBarHorz->insertSeparator(sepBefore);
+    }
 
     ui->actionWaveMode->setChecked(programMode == ProgramMode::waves);
     ui->actionFourBarMode->setChecked(programMode == ProgramMode::fourBar);
@@ -375,8 +385,11 @@ void MainWindow::on_actionMaskEnable_triggered(bool checked)
     // Change checkboxes
     if (!checked) {
         ui->actionShowMaskChart->setChecked(false);
+        ui->actionMaskEdit->setChecked(false);
     }
-    ui->actionMaskEdit->setChecked(checked);
+
+    ui->actionMaskEdit->setEnabled(checked);
+    ui->actionShowMaskChart->setEnabled(checked);
 }
 
 /** ****************************************************************************
