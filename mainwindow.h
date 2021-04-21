@@ -79,5 +79,9 @@ private slots:
     void on_actionFbEditAngleInc_toggled(bool arg1);
     void on_actionFbEditDrawRange_toggled(bool arg1);
     void on_actionImageSize_triggered(bool checked);
+    void on_actionEditGroup2_toggled(bool arg1);
+    void on_actionWavelengthEdit_toggled(bool arg1);
+    void on_actionEditWavelength_toggled(bool arg1);
+    void on_actionEditLocation_toggled(bool arg1);
 };
 #endif // MAINWINDOW_H

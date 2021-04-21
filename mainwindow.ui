@@ -45,14 +45,12 @@
    <addaction name="actionFourBarMode"/>
    <addaction name="separator"/>
    <addaction name="actionEditGroup"/>
+   <addaction name="actionEditGroup2"/>
+   <addaction name="actionEditLocation"/>
    <addaction name="actionHideEmitters"/>
-   <addaction name="actionMore"/>
-   <addaction name="actionFewer"/>
    <addaction name="actionMirrorHor"/>
    <addaction name="actionMirrorVert"/>
    <addaction name="separator"/>
-   <addaction name="actionWavelengthIncrease"/>
-   <addaction name="actionWavelengthDecrease"/>
    <addaction name="separator"/>
    <addaction name="actionMaskEnable"/>
    <addaction name="actionMaskEdit"/>
@@ -60,30 +58,6 @@
    <addaction name="separator"/>
    <addaction name="actionColoursEdit"/>
   </widget>
-  <action name="actionMore">
-   <property name="icon">
-    <iconset resource="Resources.qrc">
-     <normaloff>:/icons/countIncrease</normaloff>:/icons/countIncrease</iconset>
-   </property>
-   <property name="text">
-    <string>More</string>
-   </property>
-   <property name="toolTip">
-    <string>Increase the number of emitters in the group</string>
-   </property>
-  </action>
-  <action name="actionFewer">
-   <property name="icon">
-    <iconset resource="Resources.qrc">
-     <normaloff>:/icons/countDecrease</normaloff>:/icons/countDecrease</iconset>
-   </property>
-   <property name="text">
-    <string>Fewer</string>
-   </property>
-   <property name="toolTip">
-    <string>Reduce the number of emitters in the group</string>
-   </property>
-  </action>
   <action name="actionMirrorHor">
    <property name="checkable">
     <bool>true</bool>
@@ -114,30 +88,6 @@
    </property>
    <property name="toolTip">
     <string>Mirror the current group of emitters in the vertical direction (about the line x = 0).</string>
-   </property>
-  </action>
-  <action name="actionWavelengthDecrease">
-   <property name="icon">
-    <iconset resource="Resources.qrc">
-     <normaloff>:/icons/wavelengthDecrease</normaloff>:/icons/wavelengthDecrease</iconset>
-   </property>
-   <property name="text">
-    <string>Decrease Wavelength</string>
-   </property>
-   <property name="toolTip">
-    <string>Shorten the wavelength for a more variable image</string>
-   </property>
-  </action>
-  <action name="actionWavelengthIncrease">
-   <property name="icon">
-    <iconset resource="Resources.qrc">
-     <normaloff>:/icons/wavelengthIncrease</normaloff>:/icons/wavelengthIncrease</iconset>
-   </property>
-   <property name="text">
-    <string>Increase Wavelength</string>
-   </property>
-   <property name="toolTip">
-    <string>Lengthen the wavelength for a more gradual image</string>
    </property>
   </action>
   <action name="actionMaskEdit">
@@ -185,7 +135,7 @@
     <string>Mask Enable</string>
    </property>
    <property name="toolTip">
-    <string>Enable the mask</string>
+    <string>Enable the colour map mask</string>
    </property>
   </action>
   <action name="actionHideEmitters">
@@ -243,7 +193,7 @@
     <string>Edit Group</string>
    </property>
    <property name="toolTip">
-    <string>Move the emitter group</string>
+    <string>Edit the group length/radius and rotation</string>
    </property>
   </action>
   <action name="actionWaveMode">
@@ -343,6 +293,51 @@
    </property>
    <property name="text">
     <string>Image size</string>
+   </property>
+  </action>
+  <action name="actionEditGroup2">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/emitterCount</normaloff>:/icons/emitterCount</iconset>
+   </property>
+   <property name="text">
+    <string>Edit group count</string>
+   </property>
+   <property name="toolTip">
+    <string>Edit the group count (and span for arc)</string>
+   </property>
+  </action>
+  <action name="actionEditWavelength">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/wavelengthDecrease</normaloff>:/icons/wavelengthDecrease</iconset>
+   </property>
+   <property name="text">
+    <string>Edit Wavelength</string>
+   </property>
+   <property name="toolTip">
+    <string>Edit the wavelength by dragging</string>
+   </property>
+  </action>
+  <action name="actionEditLocation">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/location</normaloff>:/icons/location</iconset>
+   </property>
+   <property name="text">
+    <string>Edit group location</string>
+   </property>
+   <property name="toolTip">
+    <string>Edit the group center location</string>
    </property>
   </action>
  </widget>

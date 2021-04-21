@@ -73,6 +73,8 @@ void Interact::mousePressEvent(QGraphicsSceneMouseEvent *event, PreviewScene *sc
         clrListBackup = imgGen.s.clrList;
         break;
     case Type::arrangement:
+    case Type::arrangement2:
+    case Type::location:
         // Interact with the emitter arrangement
         grpActive = imgGen.GetActiveArrangement();
         if (!grpActive) {
@@ -80,6 +82,11 @@ void Interact::mousePressEvent(QGraphicsSceneMouseEvent *event, PreviewScene *sc
             return;
         }
         grpBackup = *grpActive; // Save, so that it can be reverted
+        break;
+
+    case Type::wavelength:
+        wavelengthBackup = imgGen.s.wavelength;
+        distOffsetBackup = imgGen.s.distOffsetF;
         break;
 
     case Type::lengths:
@@ -112,7 +119,12 @@ void Interact::mouseReleaseEvent(QGraphicsSceneMouseEvent *event, PreviewScene *
         break;
 
     case Type::arrangement:
+    case Type::arrangement2:
+    case Type::location:
         emit imgGen.EmitterArngmtChanged(); // Just need to redraw the axes lines when mirroring
+        break;
+
+    case Type::wavelength:
         break;
 
     case Type::colours:
@@ -158,38 +170,74 @@ void Interact::mouseMoveEvent(QGraphicsSceneMouseEvent *event, PreviewScene *sce
         // Alt disables snapping
         bool snapEn = (event->modifiers() & Qt::AltModifier) == 0;
 
-        if (ctrlPressed) {
-            // Change location
-            grpActive->center = grpBackup.center + deltaScene;
-            if (snapEn) {
-                grpActive->center.setX(Snap(grpActive->center.x(), 9e9, imgGen.areaSim.width() * 0.05));
-                grpActive->center.setY(Snap(grpActive->center.y(), 9e9, imgGen.areaSim.width() * 0.05));
-            }
+        // Change arrangement
+        // Length/radius + rotation
+        switch (grpActive->type) {
+        case EmType::arc: {
+            // Arc: change arcRadius and arcSpan
+            grpActive->arcRadius = std::max(0.0, grpBackup.arcRadius - deltaScene.y());
+            break;
         }
-        else {
-            // Change arrangement
-            switch (grpActive->type) {
-            case EmType::arc: {
-                // Arc: change arcRadius and arcSpan
-                grpActive->arcRadius = std::max(0.0, grpBackup.arcRadius - deltaScene.y());
-                qreal spanDelta = deltaRatio.x() * 3.1415926 * 2;
+        case EmType::line:
+            // Line: change length
+            grpActive->lenTotal = std::max(0.0, grpBackup.lenTotal - deltaScene.y());
+            break;
+        default:
+            return;
+        }
 
-                grpActive->arcSpan = std::max(0.0, grpBackup.arcSpan + spanDelta);
-                if (snapEn) {
-                    grpActive->arcSpan = Snap(grpActive->arcSpan, PI, PI * 0.1);
-                }
-                break;
-            }
-            case EmType::line:
-                // Line: change length
-                grpActive->lenTotal = std::max(0.0, grpBackup.lenTotal - deltaScene.y());
-                break;
-            default:
-                return;
-            }
+        grpActive->rotation = grpBackup.rotation - deltaRatio.x() * 3.14;
+        if (snapEn) {
+            grpActive->rotation = Snap(grpActive->rotation, 3.1415926/4., 0.1);
         }
 
         emit imgGen.EmitterArngmtChanged();
+    }
+    else if (active == Type::arrangement2) {
+        // *********************************************************************
+        // Arrangement edit 2
+        // Count (+ span for arc)
+
+        grpActive->count = qMax(1, int(grpBackup.count * (1. - deltaRatio.y())));
+
+        switch (grpActive->type) {
+        case EmType::arc:
+            // Alt disables snapping
+            bool snapEn = (event->modifiers() & Qt::AltModifier) == 0;
+
+            qreal spanDelta = deltaRatio.x() * 3.1415926 * 2;
+            grpActive->arcSpan = std::max(0.0, grpBackup.arcSpan + spanDelta);
+            if (snapEn) {
+                grpActive->arcSpan = Snap(grpActive->arcSpan, PI, PI * 0.1);
+            }
+            break;
+        default:
+            break;
+        }
+
+        emit imgGen.EmitterArngmtChanged();
+    }
+    else if (active == Type::location) {
+        // *********************************************************************
+        // Arrangement location edit
+
+        // Alt disables snapping
+        bool snapEn = (event->modifiers() & Qt::AltModifier) == 0;
+
+        // Change location
+        grpActive->center = grpBackup.center + deltaScene;
+        if (snapEn) {
+            grpActive->center.setX(Snap(grpActive->center.x(), 9e9, imgGen.areaSim.width() * 0.05));
+            grpActive->center.setY(Snap(grpActive->center.y(), 9e9, imgGen.areaSim.width() * 0.05));
+        }
+
+        emit imgGen.EmitterArngmtChanged();
+    }
+    else if (active == Type::wavelength) {
+        // *********************************************************************
+        // Wavelength edit
+        imgGen.s.wavelength = std::max(0.5, wavelengthBackup * (1. + deltaRatio.x() * 0.5));
+        imgGen.s.distOffsetF = qBound(0., distOffsetBackup  + deltaRatio.y(), 1.);
     }
     else if (active == Type::colours) {
         // *********************************************************************
@@ -293,6 +341,7 @@ void Interact::Cancel() {
         break;
 
     case Type::arrangement:
+    case Type::arrangement2:
         if (grpActive) {
             *grpActive = grpBackup;
         }
@@ -305,6 +354,11 @@ void Interact::Cancel() {
 
     case Type::mask:
         imgGen.s.maskCfg = maskConfigBackup;
+        break;
+
+    case Type::wavelength:
+        imgGen.s.wavelength = wavelengthBackup;
+        imgGen.s.distOffsetF = distOffsetBackup;
         break;
 
     case Type::lengths:

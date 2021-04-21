@@ -141,7 +141,10 @@ void ImageGen::setTargetImgPoints(qint32 imgPoints, GenSettings & genSet) const 
  */
 bool ImageGen::EmittersHidden() {
     return mainWindow->programMode != ProgramMode::waves ||
-            (hideEmitters && !mainWindow->interact.TypeIsActive(Interact::Type::arrangement)
+            (hideEmitters
+             && !mainWindow->interact.TypeIsActive(Interact::Type::arrangement)
+             && !mainWindow->interact.TypeIsActive(Interact::Type::arrangement2)
+             && !mainWindow->interact.TypeIsActive(Interact::Type::location)
             && !(mainWindow->emitterValEditor != nullptr && mainWindow->emitterValEditor->PrevEditSignalWasQuick())
              );
 }

@@ -83,17 +83,6 @@ MainWindow::MainWindow(QWidget *parent)
                      this, &MainWindow::OnInteractChange, Qt::QueuedConnection);
 
     // Action trigger events
-    QObject::connect(ui->actionFewer, &QAction::triggered,
-                     &imageGen, &ImageGen::EmitterCountDecrease);
-    QObject::connect(ui->actionMore, &QAction::triggered,
-                     &imageGen, &ImageGen::EmitterCountIncrease);
-
-    QObject::connect(ui->actionWavelengthDecrease, &QAction::triggered,
-                     &imageGen, &ImageGen::WavelengthDecrease);
-
-    QObject::connect(ui->actionWavelengthIncrease, &QAction::triggered,
-                     &imageGen, &ImageGen::WavelengthIncrease);
-
     QObject::connect(ui->actionHideEmitters, &QAction::toggled,
                      &imageGen, &ImageGen::HideEmitters);
 
@@ -274,15 +263,7 @@ void MainWindow::InitMode()
     actionsToAdd.append(ui->actionFourBarMode);
 
 
-
     if (programMode == ProgramMode::waves) {
-        // !@# delete these
-        addSeparatorBefore.append(ui->actionMore);
-        actionsToAdd.append(ui->actionMore);
-        actionsToAdd.append(ui->actionFewer);
-        actionsToAdd.append(ui->actionWavelengthDecrease);
-        actionsToAdd.append(ui->actionWavelengthIncrease);
-
         addSeparatorBefore.append(ui->actionHideEmitters);
         actionsToAdd.append(ui->actionHideEmitters);
         actionsToAdd.append(ui->actionMirrorHor);
@@ -291,6 +272,9 @@ void MainWindow::InitMode()
 
         addSeparatorBefore.append(ui->actionEditGroup);
         actionsToAdd.append(ui->actionEditGroup);
+        actionsToAdd.append(ui->actionEditGroup2);
+        actionsToAdd.append(ui->actionEditLocation);
+        actionsToAdd.append(ui->actionEditWavelength);
         actionsToAdd.append(ui->actionColoursEdit);
         actionsToAdd.append(ui->actionMaskEdit);
     }
@@ -399,6 +383,9 @@ void MainWindow::on_actionMaskEnable_triggered(bool checked)
  */
 void MainWindow::OnInteractChange(QVariant interactType) {
     ui->actionEditGroup->setChecked(interactType == (Interact::Type::arrangement));
+    ui->actionEditGroup2->setChecked(interactType == (Interact::Type::arrangement2));
+    ui->actionEditLocation->setChecked(interactType == (Interact::Type::location));
+    ui->actionEditWavelength->setChecked(interactType == (Interact::Type::wavelength));
     ui->actionColoursEdit->setChecked(interactType == (Interact::Type::colours));
     ui->actionMaskEdit->setChecked(interactType == (Interact::Type::mask));
 
@@ -468,4 +455,24 @@ void MainWindow::on_actionImageSize_triggered(bool checked)
 {
     imgSizeValEditor->ApplyExternalValues();
     Q_UNUSED(checked);
+}
+
+void MainWindow::on_actionEditGroup2_toggled(bool arg1)
+{
+    interact.SetTypeSelect(Interact::Type::arrangement2, arg1);
+}
+
+void MainWindow::on_actionWavelengthEdit_toggled(bool arg1)
+{
+    Q_UNUSED(arg1);
+}
+
+void MainWindow::on_actionEditWavelength_toggled(bool arg1)
+{
+    interact.SetTypeSelect(Interact::Type::wavelength, arg1);
+}
+
+void MainWindow::on_actionEditLocation_toggled(bool arg1)
+{
+    interact.SetTypeSelect(Interact::Type::location, arg1);
 }

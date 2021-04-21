@@ -13,7 +13,10 @@ class Interact : public QObject {
 public:
     enum Type : int {
         null,
-        arrangement,
+        arrangement, // Length/radius + rotation
+        arrangement2,// Count (+ span for arc)
+        location, // Group center
+        wavelength, // + linearity
         colours,
         mask,
         // Four bar linkage
@@ -39,6 +42,8 @@ private:
     // For emitter arrangement changes:
     EmArrangement grpBackup;
     EmArrangement * grpActive;
+    qreal wavelengthBackup;
+    qreal distOffsetBackup;
     // For mask changes
     MaskCfg maskConfigBackup;
     // For colour list changes
