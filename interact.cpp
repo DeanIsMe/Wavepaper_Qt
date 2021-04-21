@@ -176,20 +176,27 @@ void Interact::mouseMoveEvent(QGraphicsSceneMouseEvent *event, PreviewScene *sce
         case EmType::arc: {
             // Arc: change arcRadius and arcSpan
             grpActive->arcRadius = std::max(0.0, grpBackup.arcRadius - deltaScene.y());
+
+            qreal spanDelta = deltaRatio.x() * 3.1415926 * 2;
+            grpActive->arcSpan = std::max(0.0, grpBackup.arcSpan + spanDelta);
+            if (snapEn) {
+                grpActive->arcSpan = Snap(grpActive->arcSpan, PI, PI * 0.1);
+            }
             break;
         }
         case EmType::line:
-            // Line: change length
+            // Line: change length and rotation
             grpActive->lenTotal = std::max(0.0, grpBackup.lenTotal - deltaScene.y());
+
+            grpActive->rotation = grpBackup.rotation - deltaRatio.x() * 3.14;
+            if (snapEn) {
+                grpActive->rotation = Snap(grpActive->rotation, 3.1415926/4., 0.1);
+            }
             break;
         default:
             return;
         }
 
-        grpActive->rotation = grpBackup.rotation - deltaRatio.x() * 3.14;
-        if (snapEn) {
-            grpActive->rotation = Snap(grpActive->rotation, 3.1415926/4., 0.1);
-        }
 
         emit imgGen.EmitterArngmtChanged();
     }
@@ -201,16 +208,16 @@ void Interact::mouseMoveEvent(QGraphicsSceneMouseEvent *event, PreviewScene *sce
         grpActive->count = qMax(1, int(grpBackup.count * (1. - deltaRatio.y())));
 
         switch (grpActive->type) {
-        case EmType::arc:
+        case EmType::arc: { // arc: changes rotation
             // Alt disables snapping
             bool snapEn = (event->modifiers() & Qt::AltModifier) == 0;
 
-            qreal spanDelta = deltaRatio.x() * 3.1415926 * 2;
-            grpActive->arcSpan = std::max(0.0, grpBackup.arcSpan + spanDelta);
+            grpActive->rotation = grpBackup.rotation - deltaRatio.x() * 3.14;
             if (snapEn) {
-                grpActive->arcSpan = Snap(grpActive->arcSpan, PI, PI * 0.1);
+                grpActive->rotation = Snap(grpActive->rotation, 3.1415926/4., 0.1);
             }
             break;
+        }
         default:
             break;
         }
@@ -342,6 +349,7 @@ void Interact::Cancel() {
 
     case Type::arrangement:
     case Type::arrangement2:
+    case Type::location:
         if (grpActive) {
             *grpActive = grpBackup;
         }

@@ -61,6 +61,7 @@ public:
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event, PreviewScene * scene);
     bool IsActive() {return active != Type::null;}
     bool TypeIsSelected(Type type) {return typeSelected == type;}
+    Type GetTypeSelected() {return typeSelected;}
     bool TypeIsActive(Type type) {return active == type;} // Active == currently pressed
     void SelectType(Type type);
     void DeselectType(Type type);

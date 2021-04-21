@@ -112,7 +112,7 @@ int ImageGen::InitViewAreas() {
     setTargetImgPoints(GenSettings::dfltImgPointsPreview, genPreview);
     setTargetImgPoints(GenSettings::dfltImgPointsQuick, genQuick);
 
-    if (mainWindow->previewView != nullptr) {mainWindow->previewView->OnAspectRatioChange();} // !@#$
+    if (mainWindow->previewView != nullptr) {mainWindow->previewView->OnAspectRatioChange();}
     return 0;
 }
 
@@ -864,10 +864,12 @@ int ImageGen::EmitterArrangementToLocs(const EmArrangement & arngmt, QVector<QPo
         break;
     }
 
-    // Rotate and translate the scatterers, if needed (about the origin)
+    // Rotate and translate the scatterers, if needed (about its center)
+    // then, translate
+    // Note that we need to call .translate then .rotate so that the transforms are applied in the opposite order.
     QTransform transform;
-    transform.rotate(-arngmt.rotation * 180./PI);
     transform.translate(arngmt.center.x(), arngmt.center.y());
+    transform.rotate(-arngmt.rotation * 180./PI);
     for (QPointF &p : emLocsOut) {
         p = transform.map(p)   ;
     }

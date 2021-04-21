@@ -155,6 +155,7 @@ MainWindow::MainWindow(QWidget *parent)
     layoutCentral.addWidget(textWindow);
 
     InitMode();
+    OnInteractChange(interact.GetTypeSelected());
 }
 
 /** ****************************************************************************
@@ -392,6 +393,8 @@ void MainWindow::OnInteractChange(QVariant interactType) {
     ui->actionFbEditLengths->setChecked(interactType == Interact::Type::lengths);
     ui->actionFbEditAngleInc->setChecked(interactType == Interact::Type::angleInc);
     ui->actionFbEditDrawRange->setChecked(interactType == Interact::Type::drawRange);
+
+    on_actionMaskEnable_triggered(imageGen.s.maskCfg.enabled);
 }
 
 /** ****************************************************************************

@@ -96,8 +96,8 @@
    </property>
    <property name="icon">
     <iconset resource="Resources.qrc">
-     <normaloff>:/icons/edit</normaloff>
-     <normalon>:/icons/edit</normalon>:/icons/edit</iconset>
+     <normaloff>:/icons/maskEdit</normaloff>
+     <normalon>:/icons/maskEdit</normalon>:/icons/maskEdit</iconset>
    </property>
    <property name="text">
     <string>Mask Edit</string>
@@ -193,7 +193,7 @@
     <string>Edit Group</string>
    </property>
    <property name="toolTip">
-    <string>Edit the group length/radius and rotation</string>
+    <string>Edit the group length/radius and arc span</string>
    </property>
   </action>
   <action name="actionWaveMode">
@@ -307,7 +307,7 @@
     <string>Edit group count</string>
    </property>
    <property name="toolTip">
-    <string>Edit the group count (and span for arc)</string>
+    <string>Edit the group count (and rotation for arc)</string>
    </property>
   </action>
   <action name="actionEditWavelength">

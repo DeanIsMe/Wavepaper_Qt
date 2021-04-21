@@ -23,5 +23,6 @@
         <file alias="imageSize">Resources/image_size-24dp.svg</file>
         <file alias="emitterCount">Resources/blur_on_black_24dp.svg</file>
         <file alias="location">Resources/location_24dp.svg</file>
+        <file alias="maskEdit">Resources/mask-edit-24px.svg</file>
     </qresource>
 </RCC>

@@ -600,7 +600,7 @@ ColourMapEditorWidget::ColourMapEditorWidget(ImageGen& imgGenIn) :
     this->setLayout(clrMapLayout);
 
     QLabel * widgetTitle = new QLabel();
-    widgetTitle->setText("Color map");
+    widgetTitle->setText("Colour map");
     clrMapLayout->addWidget(widgetTitle);
 
     // Colour bar
